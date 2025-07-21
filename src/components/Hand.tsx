@@ -20,12 +20,25 @@ export const Hand: React.FC<HandProps> = ({
   onCardClick,
   onDragStart,
   draggedCard,
-  cardsToDiscard
+  cardsToDiscard,
+  gamePhase
 }) => {
   const canAffordCard = (card: CardType) => {
     return Object.entries(card.cost).every(([resource, cost]) => 
       resources[resource as keyof Resources] >= cost
     );
+  };
+  
+  const canPlayCard = (card: CardType) => {
+    // Verificar se tem recursos
+    if (!canAffordCard(card)) return false;
+    
+    // Verificar se é a fase correta
+    if (card.type === 'action' && gamePhase !== 'action') return false;
+    if ((card.type === 'farm' || card.type === 'city') && gamePhase !== 'build') return false;
+    if (card.type === 'landmark' && gamePhase !== 'build') return false;
+    
+    return true;
   };
 
   return (
@@ -54,9 +67,9 @@ export const Hand: React.FC<HandProps> = ({
             key={card.id}
             card={card}
             isSelected={selectedCard?.id === card.id}
-            isPlayable={canAffordCard(card)}
-            isGlowing={canAffordCard(card) && selectedCard?.id !== card.id}
-            pulseEffect={canAffordCard(card)}
+            isPlayable={canPlayCard(card)}
+            isGlowing={canPlayCard(card) && selectedCard?.id !== card.id}
+            pulseEffect={canPlayCard(card)}
             resources={resources}
             onClick={() => onCardClick(card)}
             onDragStart={onDragStart}

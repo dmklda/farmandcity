@@ -108,3 +108,14 @@ export interface CardEffect {
   discardNextTurn?: number;
   crisisProtection?: boolean;
 }
+
+interface HandProps {
+  cards: CardType[];
+  selectedCard?: CardType;
+  resources: Resources;
+  onCardClick: (card: CardType) => void;
+  onDragStart?: (card: CardType, event: React.MouseEvent) => void;
+  draggedCard?: CardType;
+  cardsToDiscard?: number;
+  gamePhase?: string;
+}

@@ -63,6 +63,12 @@ export const GameControls: React.FC<GameControlsProps> = ({
         <div className="mb-4">
           <div className="flex justify-between text-xs text-gray-600 mb-2">
             <span>Progresso do Turno</span>
+            <span className="font-bold text-purple-600">
+              {gameState.phase === 'action' ? '⚡ Cartas de Ação' : 
+               gameState.phase === 'build' ? '🏗️ Cartas de Construção' : 
+               gameState.phase === 'draw' ? '🃏 Comprar Cartas' :
+               gameState.phase === 'production' ? '⚙️ Produção Automática' : '🔄 Fim do Turno'}
+            </span>
           </div>
           <div className="flex space-x-1">
             {['draw', 'action', 'build', 'production', 'end'].map((phase, index) => (
@@ -238,9 +244,18 @@ export const GameControls: React.FC<GameControlsProps> = ({
           {gameState.selectedCard && (
             <button
               onClick={onPlaySelectedCard}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              disabled={
+                (gameState.selectedCard.type === 'action' && gameState.phase !== 'action') ||
+                ((gameState.selectedCard.type === 'farm' || gameState.selectedCard.type === 'city') && gameState.phase !== 'build') ||
+                (gameState.selectedCard.type === 'landmark' && gameState.phase !== 'build')
+              }
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
             >
-              Jogar {gameState.selectedCard.name}
+              {(gameState.selectedCard.type === 'action' && gameState.phase !== 'action') ||
+               ((gameState.selectedCard.type === 'farm' || gameState.selectedCard.type === 'city') && gameState.phase !== 'build') ||
+               (gameState.selectedCard.type === 'landmark' && gameState.phase !== 'build')
+                ? `Aguarde fase ${gameState.selectedCard.type === 'action' ? 'de Ação' : 'de Construção'}`
+                : `Jogar ${gameState.selectedCard.name}`}
             </button>
           )}
         </div>

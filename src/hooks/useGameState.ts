@@ -295,6 +295,22 @@ export const useGameState = () => {
   const playCard = useCallback((card: Card, row?: number, col?: number, type?: 'farm' | 'city') => {
     console.log('playCard called:', { card: card.name, row, col, type });
     setGameState(prev => {
+      // VALIDAÇÃO DE FASE - CRÍTICA!
+      if (card.type === 'action' && prev.phase !== 'action') {
+        console.log('Cannot play action card outside action phase. Current phase:', prev.phase);
+        return prev;
+      }
+      
+      if ((card.type === 'farm' || card.type === 'city') && prev.phase !== 'build') {
+        console.log('Cannot play construction card outside build phase. Current phase:', prev.phase);
+        return prev;
+      }
+      
+      if (card.type === 'landmark' && prev.phase !== 'build') {
+        console.log('Cannot play landmark outside build phase. Current phase:', prev.phase);
+        return prev;
+      }
+
       let newResources = { ...prev.resources };
       let newStats = { ...prev.playerStats };
       let newHand = [...prev.hand];

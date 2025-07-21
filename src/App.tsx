@@ -197,6 +197,7 @@ function App() {
               onDragStart={handleDragStart}
               draggedCard={dragState.draggedCard || undefined}
               cardsToDiscard={gameState.cardsToDiscard}
+              gamePhase={gameState.phase}
             />
           </div>
 

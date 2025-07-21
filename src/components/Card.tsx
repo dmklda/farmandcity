@@ -97,6 +97,12 @@ export const Card: React.FC<CardProps> = ({
   };
 
   const handleClick = () => {
+    // Verificar se a carta pode ser jogada na fase atual
+    if (!isPlayable) {
+      console.log('Card cannot be played in current phase or insufficient resources');
+      return;
+    }
+    
     if (card.type === 'action') {
       // Cartas de ação são jogadas imediatamente
       if (onClick) {
