@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card as CardType, Resources } from '../types/game';
-import { Wheat, Building, Zap, Crown, Coins, Apple, Hammer, Users, Star, Sparkles } from 'lucide-react';
-import { useDragDrop } from '../hooks/useDragDrop';
+import { Wheat, Building, Zap, Crown, Coins, Apple, Hammer, Users, Star } from 'lucide-react';
 
 interface CardProps {
   card: CardType;

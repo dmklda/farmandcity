@@ -76,7 +76,7 @@ export const BoosterShop: React.FC<BoosterShopProps> = ({
 
   const canAfford = (cost: any) => {
     return Object.entries(cost).every(([resource, amount]) => 
-      resources[resource as keyof Resources] >= amount
+      resources[resource as keyof Resources] >= (amount as number)
     );
   };
 

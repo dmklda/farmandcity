@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { GameEvent, PlayerStats } from '../types/game';
-import { Users, Trophy, Star, TrendingUp, Calendar, Award } from 'lucide-react';
+import { PlayerStats } from '../types/game';
+import { Users, Trophy, Calendar } from 'lucide-react';
 
 interface MultiplayerEventsProps {
   playerStats: PlayerStats;
@@ -77,7 +77,7 @@ export const MultiplayerEvents: React.FC<MultiplayerEventsProps> = ({
 
   const canParticipate = (event: any) => {
     return Object.entries(event.requirements).every(([key, value]) => 
-      playerStats[key as keyof PlayerStats] >= value
+      playerStats[key as keyof PlayerStats] >= (value as number)
     );
   };
 

@@ -360,15 +360,10 @@ export const actionCards: Card[] = [
     name: 'Dia de Mercado',
     type: 'action',
     rarity: 'common',
-    cost: { coins: 1, food: 0, materials: 0, population: 0 },
+    cost: { coins: 1 },
     effect: {
       description: 'Compre uma carta adicional no próximo turno',
       trigger: 'instant',
-      production: null,
-      diceNumbers: null,
-      comboEffect: null,
-      crisisEffect: null,
-      duration: null,
       buyExtraCard: 1
     }
   },
@@ -377,15 +372,10 @@ export const actionCards: Card[] = [
     name: 'Resposta de Emergência',
     type: 'action',
     rarity: 'uncommon',
-    cost: { coins: 2, food: 0, materials: 0, population: 0 },
+    cost: { coins: 2 },
     effect: {
       description: 'Cancele o próximo evento de crise',
       trigger: 'instant',
-      production: null,
-      diceNumbers: null,
-      comboEffect: null,
-      crisisEffect: null,
-      duration: null,
       crisisProtection: true
     }
   },
@@ -394,15 +384,11 @@ export const actionCards: Card[] = [
     name: 'Acordo Comercial',
     type: 'action',
     rarity: 'common',
-    cost: { coins: 1, food: 0, materials: 0, population: 0 },
+    cost: { coins: 1 },
     effect: {
       description: 'Ganhe 3 moedas e descarte uma carta no próximo turno',
       trigger: 'instant',
-      production: { coins: 3, food: 0, materials: 0, population: 0 },
-      diceNumbers: null,
-      comboEffect: null,
-      crisisEffect: null,
-      duration: null,
+      production: { coins: 3 },
       discardNextTurn: 1
     }
   },

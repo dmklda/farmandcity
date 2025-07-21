@@ -6,6 +6,7 @@ export interface Card {
     coins?: number;
     food?: number;
     materials?: number;
+    population?: number;
   };
   effect: {
     description: string;
@@ -20,6 +21,9 @@ export interface Card {
     comboEffect?: string;
     crisisEffect?: string;
     duration?: number;
+    buyExtraCard?: number;
+    discardNextTurn?: number;
+    crisisProtection?: boolean;
   };
   rarity: 'starter' | 'common' | 'uncommon' | 'rare' | 'legendary' | 'crisis' | 'booster';
   image?: string;

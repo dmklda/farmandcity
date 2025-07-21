@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameState } from './hooks/useGameState';
 import { useDragDrop } from './hooks/useDragDrop';
 import { ResourceBar } from './components/ResourceBar';
@@ -13,7 +13,7 @@ import { Gamepad2, Sparkles, ShoppingBag, Users } from 'lucide-react';
 
 function App() {
   const { gameState, previousResources, streak, achievements, rollDice, playCard, selectCard, selectCell, nextPhase, purchaseCard } = useGameState();
-  const { dragState, startDrag, updateDrag, endDrag } = useDragDrop();
+  const { dragState, startDrag, endDrag } = useDragDrop();
   const [showBoosterShop, setShowBoosterShop] = useState(false);
   const [showMultiplayerEvents, setShowMultiplayerEvents] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -41,9 +41,9 @@ function App() {
     selectCell(row, col, type);
   };
 
-  const handleDragStart = (card: any, event: React.MouseEvent) => {
+  const handleDragStart = (card: any) => {
     console.log('Card selected for placement:', { card: card.name, type: card.type });
-    startDrag(card, event);
+    startDrag(card);
   };
 
   const handleCardDrop = (row: number, col: number, type: 'farm' | 'city') => {
@@ -71,7 +71,7 @@ function App() {
           gameState.selectedCard,
           gameState.selectedCell.row,
           gameState.selectedCell.col,
-          gameState.selectedCell.type
+          gameState.selectedCell.type === 'empty' ? 'farm' : gameState.selectedCell.type
         );
       }
     }
@@ -160,7 +160,7 @@ function App() {
                 type="farm"
                 selectedCard={gameState.selectedCard}
                 onCellClick={(row, col) => handleCellClick(row, col, 'farm')}
-                draggedCard={dragState.draggedCard}
+                draggedCard={dragState.draggedCard || undefined}
                 onCardDrop={(row, col) => handleCardDrop(row, col, 'farm')}
                 isDragActive={dragState.isDragging}
               />
@@ -169,7 +169,7 @@ function App() {
                 type="city"
                 selectedCard={gameState.selectedCard}
                 onCellClick={(row, col) => handleCellClick(row, col, 'city')}
-                draggedCard={dragState.draggedCard}
+                draggedCard={dragState.draggedCard || undefined}
                 onCardDrop={(row, col) => handleCardDrop(row, col, 'city')}
                 isDragActive={dragState.isDragging}
               />
@@ -182,7 +182,7 @@ function App() {
               resources={gameState.resources}
               onCardClick={handleCardClick}
               onDragStart={handleDragStart}
-              draggedCard={dragState.draggedCard}
+              draggedCard={dragState.draggedCard || undefined}
               cardsToDiscard={gameState.cardsToDiscard}
             />
           </div>
@@ -310,7 +310,7 @@ function App() {
       {showBoosterShop && (
         <BoosterShop
           onClose={() => setShowBoosterShop(false)}
-          onPurchaseCard={handlePurchaseCard}
+          onPurchase={handlePurchaseCard}
           resources={gameState.resources}
         />
       )}

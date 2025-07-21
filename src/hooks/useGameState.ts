@@ -96,7 +96,7 @@ export const useGameState = () => {
     cardsToBuyExtra: 0
   });
 
-  const [previousResources, setPreviousResources] = useState<Resources>(initialResources);
+  const [previousResources] = useState<Resources>(initialResources);
   const [streak, setStreak] = useState(0);
   const [achievements, setAchievements] = useState<string[]>([]);
 
