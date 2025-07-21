@@ -38,6 +38,12 @@ export const Hand: React.FC<HandProps> = ({
     if ((card.type === 'farm' || card.type === 'city') && gamePhase !== 'build') return false;
     if (card.type === 'landmark' && gamePhase !== 'build') return false;
     
+    // For action cards, check if actions are currently allowed
+    if (card.type === 'action' && gamePhase === 'action') {
+      // If no action card has been played yet, or if dice roll is not required, allow action
+      return !diceRollRequired;
+    }
+    
     return true;
   };
 

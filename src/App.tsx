@@ -198,6 +198,7 @@ function App() {
               draggedCard={dragState.draggedCard || undefined}
               cardsToDiscard={gameState.cardsToDiscard}
               gamePhase={gameState.phase}
+              diceRollRequired={gameState.diceRollRequired}
             />
           </div>
 

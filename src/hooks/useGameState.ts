@@ -107,7 +107,10 @@ export const useGameState = () => {
     lastDiceRoll: undefined,
     activatedCards: [],
     cardsToDiscard: 0,
-    cardsToBuyExtra: 0
+    cardsToBuyExtra: 0,
+    actionCardPlayed: false,
+    diceRollRequired: false,
+    canPlayActions: true
   });
 
   const [previousResources] = useState<Resources>(initialResources);
@@ -287,7 +290,9 @@ export const useGameState = () => {
         playerStats: newStats,
         comboEffects: [...farmCombos, ...cityCombos],
         lastDiceRoll: diceResult,
-        activatedCards: activatedCards
+        activatedCards: activatedCards,
+        diceRollRequired: false,
+        canPlayActions: true
       };
     });
   }, [calculateComboEffects, achievements, addAchievement]);
@@ -373,6 +378,11 @@ export const useGameState = () => {
       } else if (card.type === 'action') {
         console.log('Playing action card:', card.name);
         
+        // Mark that an action card was played and dice roll is now required
+        newState.actionCardPlayed = true;
+        newState.diceRollRequired = true;
+        newState.canPlayActions = false;
+        
         // Aplicar efeito de produção imediata
         if (card.effect.production) {
           Object.entries(card.effect.production).forEach(([resource, amount]) => {
@@ -387,7 +397,10 @@ export const useGameState = () => {
             resources: newResources,
             hand: newHand,
             playerStats: newStats,
-            cardsToBuyExtra: prev.cardsToBuyExtra + card.effect.buyExtraCard
+            cardsToBuyExtra: prev.cardsToBuyExtra + card.effect.buyExtraCard,
+            actionCardPlayed: true,
+            diceRollRequired: true,
+            canPlayActions: false
           };
         }
         
@@ -397,7 +410,10 @@ export const useGameState = () => {
             resources: newResources,
             hand: newHand,
             playerStats: newStats,
-            cardsToDiscard: prev.cardsToDiscard + card.effect.discardNextTurn
+            cardsToDiscard: prev.cardsToDiscard + card.effect.discardNextTurn,
+            actionCardPlayed: true,
+            diceRollRequired: true,
+            canPlayActions: false
           };
         }
         
@@ -407,7 +423,10 @@ export const useGameState = () => {
             resources: newResources,
             hand: newHand,
             playerStats: newStats,
-            crisisProtection: true
+            crisisProtection: true,
+            actionCardPlayed: true,
+            diceRollRequired: true,
+            canPlayActions: false
           };
         }
       } else {
@@ -495,6 +514,14 @@ export const useGameState = () => {
         }
       }
 
+      // Reset action card state when entering action phase
+      if (nextPhase === 'action') {
+        newState.actionCardPlayed = false;
+        newState.diceRollRequired = false;
+        newState.canPlayActions = true;
+        newState.lastDiceRoll = undefined;
+      }
+
       // Fase de produção
       if (nextPhase === 'production') {
         let newResources = { ...prev.resources };
@@ -541,8 +568,11 @@ export const useGameState = () => {
         // Reset contador de descarte
         newState.cardsToDiscard = 0;
         
-        // Reset dado para próximo turno
+        // Reset all action states for next turn
         newState.lastDiceRoll = undefined;
+        newState.actionCardPlayed = false;
+        newState.diceRollRequired = false;
+        newState.canPlayActions = true;
         
         // Gerar evento aleatório
         const newEvent = getRandomEvent();

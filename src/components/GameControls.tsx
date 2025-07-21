@@ -135,6 +135,11 @@ export const GameControls: React.FC<GameControlsProps> = ({
               <span className="text-sm font-medium text-green-700">Efeitos Ativos</span>
             </div>
             <div className="space-y-1">
+              {gameState.diceRollRequired && (
+                <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded animate-pulse">
+                  🎲 ATENÇÃO: Role o dado antes de jogar mais cartas de ação!
+                </div>
+              )}
               {gameState.crisisProtection && (
                 <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
                   🛡️ Proteção contra crises
@@ -223,11 +228,24 @@ export const GameControls: React.FC<GameControlsProps> = ({
         <div className="space-y-3">
           <button
             onClick={onRollDice}
-            disabled={gameState.phase !== 'action' || gameState.lastDiceRoll !== undefined}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
+            disabled={gameState.phase !== 'action' || (gameState.lastDiceRoll !== undefined && !gameState.diceRollRequired)}
+            className={`w-full font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none ${
+              gameState.diceRollRequired 
+                ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 animate-pulse' 
+                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+            } ${
+              gameState.phase !== 'action' || (gameState.lastDiceRoll !== undefined && !gameState.diceRollRequired)
+                ? 'from-gray-300 to-gray-400 cursor-not-allowed'
+                : 'text-white'
+            }`}
           >
             <Dice1 className="w-5 h-5" />
-            {gameState.lastDiceRoll !== undefined ? 'Dado Rolado' : 'Rolar Dado'}
+            {gameState.diceRollRequired 
+              ? '🎲 ROLE O DADO AGORA!' 
+              : gameState.lastDiceRoll !== undefined 
+                ? 'Dado Rolado' 
+                : 'Rolar Dado'
+            }
           </button>
           
           <button
@@ -246,6 +264,7 @@ export const GameControls: React.FC<GameControlsProps> = ({
               onClick={onPlaySelectedCard}
               disabled={
                 (gameState.selectedCard.type === 'action' && gameState.phase !== 'action') ||
+                (gameState.selectedCard.type === 'action' && gameState.diceRollRequired) ||
                 ((gameState.selectedCard.type === 'farm' || gameState.selectedCard.type === 'city') && gameState.phase !== 'build') ||
                 (gameState.selectedCard.type === 'landmark' && gameState.phase !== 'build')
               }
@@ -255,6 +274,8 @@ export const GameControls: React.FC<GameControlsProps> = ({
                ((gameState.selectedCard.type === 'farm' || gameState.selectedCard.type === 'city') && gameState.phase !== 'build') ||
                (gameState.selectedCard.type === 'landmark' && gameState.phase !== 'build')
                 ? `Aguarde fase ${gameState.selectedCard.type === 'action' ? 'de Ação' : 'de Construção'}`
+                : (gameState.selectedCard.type === 'action' && gameState.diceRollRequired)
+                ? 'Role o dado primeiro!'
                 : `Jogar ${gameState.selectedCard.name}`}
             </button>
           )}

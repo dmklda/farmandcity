@@ -94,6 +94,9 @@ export interface GameState {
   activatedCards: Card[];
   cardsToDiscard: number;
   cardsToBuyExtra: number;
+  actionCardPlayed: boolean;
+  diceRollRequired: boolean;
+  canPlayActions: boolean;
 }
 
 export interface CardEffect {
@@ -118,4 +121,5 @@ interface HandProps {
   draggedCard?: CardType;
   cardsToDiscard?: number;
   gamePhase?: string;
+  diceRollRequired?: boolean;
 }
