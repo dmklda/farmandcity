@@ -217,11 +217,11 @@ export const GameControls: React.FC<GameControlsProps> = ({
         <div className="space-y-3">
           <button
             onClick={onRollDice}
-            disabled={gameState.phase !== 'action'}
+            disabled={gameState.phase !== 'action' || gameState.lastDiceRoll !== undefined}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:shadow-none"
           >
             <Dice1 className="w-5 h-5" />
-            Rolar Dado
+            {gameState.lastDiceRoll !== undefined ? 'Dado Rolado' : 'Rolar Dado'}
           </button>
           
           <button

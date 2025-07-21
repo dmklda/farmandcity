@@ -3,9 +3,9 @@ import { GameState, Card, Resources, GridCell, GameEvent, PlayerStats, ComboEffe
 import { allCards, eventCards } from '../data/cards';
 
 const initialResources: Resources = {
-  coins: 3,
-  food: 2,
-  materials: 1,
+  coins: 5,
+  food: 3,
+  materials: 2,
   population: 0
 };
 
@@ -27,6 +27,20 @@ const createEmptyGrid = (rows: number, cols: number): GridCell[][] => {
       col
     }))
   );
+};
+
+const getStarterCards = (): Card[] => {
+  // Cartas starter gratuitas conforme documentação
+  const starterCardIds = [
+    'small-garden',
+    'tent', 
+    'basic-harvest',
+    'simple-farm',
+    'simple-workshop',
+    'simple-trade'
+  ];
+  
+  return allCards.filter(card => starterCardIds.includes(card.id));
 };
 
 const getRandomCards = (count: number, rarity?: string, turn?: number): Card[] => {
@@ -72,7 +86,7 @@ const getRandomEvent = (): GameEvent | null => {
 export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>({
     resources: initialResources,
-    hand: getRandomCards(5, undefined, 1),
+    hand: getStarterCards(),
     deck: getRandomCards(20),
     farmGrid: createEmptyGrid(4, 4),
     cityGrid: createEmptyGrid(4, 4),
@@ -216,6 +230,12 @@ export const useGameState = () => {
     const diceResult = Math.floor(Math.random() * 6) + 1;
     
     setGameState(prev => {
+      // Verificar se já rolou o dado neste turno
+      if (prev.lastDiceRoll !== undefined && prev.phase === 'action') {
+        console.log('Dice already rolled this turn');
+        return prev;
+      }
+      
       let newResources = { ...prev.resources };
       let productionCount = 0;
       let activatedCards: Card[] = [];
@@ -289,8 +309,8 @@ export const useGameState = () => {
 
       console.log('Can afford card:', canAfford, 'cost:', card.cost, 'resources:', newResources);
 
-      // Temporariamente permitir jogar cartas sem verificar recursos para debug
-      const canPlay = true; // canAfford;
+      // Verificar recursos conforme documentação
+      const canPlay = canAfford;
 
       if (!canPlay) {
         console.log('Cannot afford card, returning previous state');
@@ -309,6 +329,12 @@ export const useGameState = () => {
         console.log('Placing card on grid:', { type, row, col, cardName: card.name });
         console.log('Grid before placement:', newGrid[row][col]);
         
+        // Verificar se o tipo da carta corresponde ao grid
+        if (card.type !== type) {
+          console.log('Card type mismatch:', card.type, 'vs grid type:', type);
+          return prev;
+        }
+        
         // Verificar se a célula está vazia
         if (newGrid[row][col].type !== 'empty') {
           console.log('Cell is not empty, cannot place card');
@@ -326,6 +352,7 @@ export const useGameState = () => {
 
         console.log('Grid after placement:', newGrid[row][col]);
         newStats.buildingsBuilt++;
+        newStats.reputation += 1; // +1 reputação por construção
         console.log('Card placed successfully at', row, col);
       } else if (card.type === 'action') {
         console.log('Playing action card:', card.name);
@@ -431,10 +458,8 @@ export const useGameState = () => {
 
       // Fase de compra
       if (nextPhase === 'draw') {
-        // Calcular quantas cartas comprar (base + extras)
-        const baseCards = prev.extraCardsPerTurn;
-        const extraCards = prev.cardsToBuyExtra;
-        const totalCardsToDraw = baseCards + extraCards;
+        // Comprar apenas 1 carta por turno (conforme documentação)
+        const totalCardsToDraw = 1 + prev.cardsToBuyExtra;
         
         console.log('Drawing cards:', { baseCards, extraCards, totalCardsToDraw });
         
@@ -445,15 +470,6 @@ export const useGameState = () => {
         newState.cardsToBuyExtra = 0;
         
         console.log('Cards drawn:', newCards.length, 'New hand size:', newState.hand.length);
-        
-        // Aplicar descarte se necessário
-        if (prev.cardsToDiscard > 0) {
-          // Se tem cartas para descartar, remover as primeiras cartas da mão
-          const cardsToRemove = Math.min(prev.cardsToDiscard, newState.hand.length);
-          newState.hand = newState.hand.slice(cardsToRemove);
-          newState.cardsToDiscard = 0; // Reset discard
-          console.log('Discarded cards:', cardsToRemove);
-        }
         
         // Limite de 6 cartas na mão - descartar automaticamente se exceder
         if (newState.hand.length > 6) {
@@ -498,10 +514,19 @@ export const useGameState = () => {
       if (nextPhase === 'end') {
         console.log('End phase reached, processing turn change');
         
-        // Descarte obrigatório no fim do turno (1 carta)
+        // Aplicar descarte obrigatório conforme documentação
+        const cardsToDiscard = Math.max(1, prev.cardsToDiscard); // Mínimo 1 carta
         if (newState.hand.length > 0) {
-          newState.hand = newState.hand.slice(1);
+          const actualDiscard = Math.min(cardsToDiscard, newState.hand.length);
+          newState.hand = newState.hand.slice(actualDiscard);
+          console.log('Discarded cards at end of turn:', actualDiscard);
         }
+        
+        // Reset contador de descarte
+        newState.cardsToDiscard = 0;
+        
+        // Reset dado para próximo turno
+        newState.lastDiceRoll = undefined;
         
         // Gerar evento aleatório
         const newEvent = getRandomEvent();

@@ -363,7 +363,8 @@ export const actionCards: Card[] = [
     effect: {
       description: 'Compre uma carta adicional no próximo turno',
       trigger: 'instant',
-      buyExtraCard: 1
+      buyExtraCard: 1,
+      production: {}
     }
   },
   {

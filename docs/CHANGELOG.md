@@ -1,7 +1,27 @@
 # Changelog - Jogo de Construção de Cidade
 
-## [1.1.0] - 2025-01-XX
+## [1.2.0] - 2025-01-XX
 
+### ✅ Adicionado
+- **Mecânicas Corrigidas**: Alinhamento completo com documentação
+  - Sistema de dados: apenas 1 rolagem por turno
+  - Recursos iniciais ajustados (5 moedas, 3 comida, 2 materiais)
+  - Cartas starter distribuídas automaticamente no início
+  - Validação rigorosa de custos de cartas
+  - Sistema de reputação por construções
+
+### 🔧 Corrigido
+- **Sistema de Fases**: Corrigido para seguir exatamente a documentação
+  - Fase de Compra: apenas 1 carta por turno (base)
+  - Fase de Ação: dados limitados a 1 rolagem por turno
+  - Fase de Construção: validação de tipo de carta vs grid
+  - Fase de Fim: descarte obrigatório mínimo de 1 carta
+
+- **Sistema de Recursos**: Validação correta de custos
+- **Sistema de Dados**: Reset correto entre turnos
+- **Cartas Starter**: Distribuição automática conforme especificação
+
+## [1.1.0] - 2025-01-XX
 ### ✅ Adicionado
 - **Sistema de Cartas Starter**: Cartas gratuitas para início do jogo
   - Pequeno Jardim (fazenda, 0 moedas)
