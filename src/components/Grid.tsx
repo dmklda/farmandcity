@@ -18,8 +18,7 @@ export const Grid: React.FC<GridProps> = ({
   selectedCard, 
   onCellClick,
   draggedCard,
-  onCardDrop,
-  isDragActive = false
+  onCardDrop
 }) => {
   const canPlaceCard = (cell: GridCell) => {
     const cardToCheck = draggedCard || selectedCard;

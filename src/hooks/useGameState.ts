@@ -114,7 +114,7 @@ export const useGameState = () => {
     }
   }, [achievements, updatePlayerStats]);
 
-  const calculateComboEffects = useCallback((grid: GridCell[][], type: 'farm' | 'city') => {
+  const calculateComboEffects = useCallback((grid: GridCell[][]) => {
     const combos: ComboEffect[] = [];
     
     // Verificar combos de cartas adjacentes
@@ -237,8 +237,8 @@ export const useGameState = () => {
       });
 
       // Aplicar combos
-      const farmCombos = calculateComboEffects(prev.farmGrid, 'farm');
-      const cityCombos = calculateComboEffects(prev.cityGrid, 'city');
+      const farmCombos = calculateComboEffects(prev.farmGrid);
+      const cityCombos = calculateComboEffects(prev.cityGrid);
       
       // Aplicar efeitos de combo
       [...farmCombos, ...cityCombos].forEach(combo => {
@@ -382,11 +382,11 @@ export const useGameState = () => {
 
       console.log('New state created:', {
         handLength: newState.hand.length,
-        farmGridCells: newState.farmGrid.flat().filter(cell => cell.card).length,
-        cityGridCells: newState.cityGrid.flat().filter(cell => cell.card).length,
+        farmGridCells: newState.farmGrid.flat().filter((cell: GridCell) => cell.card).length,
+        cityGridCells: newState.cityGrid.flat().filter((cell: GridCell) => cell.card).length,
         resources: newState.resources,
-        farmGrid: newState.farmGrid.map(row => row.map(cell => cell.card?.name || 'empty')),
-        cityGrid: newState.cityGrid.map(row => row.map(cell => cell.card?.name || 'empty'))
+        farmGrid: newState.farmGrid.map((row: GridCell[]) => row.map((cell: GridCell) => cell.card?.name || 'empty')),
+        cityGrid: newState.cityGrid.map((row: GridCell[]) => row.map((cell: GridCell) => cell.card?.name || 'empty'))
       });
       
       console.log('Returning new state');
@@ -399,10 +399,14 @@ export const useGameState = () => {
   }, []);
 
   const selectCell = useCallback((row: number, col: number, type: 'farm' | 'city') => {
-    setGameState(prev => ({ 
-      ...prev, 
-      selectedCell: { row, col, type } 
-    }));
+    setGameState(prev => {
+      const grid = type === 'farm' ? prev.farmGrid : prev.cityGrid;
+      const cell = grid[row][col];
+      return { 
+        ...prev, 
+        selectedCell: cell 
+      };
+    });
   }, []);
 
   const nextPhase = useCallback(() => {
@@ -473,8 +477,8 @@ export const useGameState = () => {
         });
 
         // Aplicar combos de produção por turno
-        const farmCombos = calculateComboEffects(prev.farmGrid, 'farm');
-        const cityCombos = calculateComboEffects(prev.cityGrid, 'city');
+        const farmCombos = calculateComboEffects(prev.farmGrid);
+        const cityCombos = calculateComboEffects(prev.cityGrid);
         
         [...farmCombos, ...cityCombos].forEach(combo => {
           if (combo.type === 'boost_orchards') {

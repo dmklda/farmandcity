@@ -76,9 +76,10 @@ export const MultiplayerEvents: React.FC<MultiplayerEventsProps> = ({
   const [activeEvents, setActiveEvents] = useState<any[]>([]);
 
   const canParticipate = (event: any) => {
-    return Object.entries(event.requirements).every(([key, value]) => 
-      playerStats[key as keyof PlayerStats] >= (value as number)
-    );
+    return Object.entries(event.requirements).every(([key, value]) => {
+      const statValue = playerStats[key as keyof PlayerStats];
+      return typeof statValue === 'number' && statValue >= (value as number);
+    });
   };
 
   const joinEvent = (event: any) => {
