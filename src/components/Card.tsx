@@ -28,19 +28,22 @@ const getCardTypeIcon = (type: CardType['type']) => {
 
 const getCardTypeColor = (type: CardType['type']) => {
   switch (type) {
-    case 'farm': return 'bg-gradient-to-r from-green-500 to-green-600';
-    case 'city': return 'bg-gradient-to-r from-blue-500 to-blue-600';
-    case 'action': return 'bg-gradient-to-r from-purple-500 to-purple-600';
-    case 'landmark': return 'bg-gradient-to-r from-yellow-500 to-yellow-600';
+    case 'farm': return 'bg-gradient-to-r from-farm to-farm/80';
+    case 'city': return 'bg-gradient-to-r from-city to-city/80';
+    case 'action': return 'bg-gradient-to-r from-action to-action/80';
+    case 'landmark': return 'bg-gradient-to-r from-landmark to-landmark/80';
   }
 };
 
 const getRarityColor = (rarity: CardType['rarity']) => {
   switch (rarity) {
-    case 'common': return 'border-gray-300';
-    case 'uncommon': return 'border-green-400';
-    case 'rare': return 'border-blue-400';
-    case 'legendary': return 'border-purple-400';
+    case 'starter': return 'border-muted';
+    case 'common': return 'border-muted-foreground';
+    case 'uncommon': return 'border-success';
+    case 'rare': return 'border-secondary';
+    case 'legendary': return 'border-accent';
+    case 'crisis': return 'border-error';
+    case 'booster': return 'border-warning';
   }
 };
 

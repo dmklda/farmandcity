@@ -9,13 +9,15 @@ import { Landmarks } from './components/Landmarks';
 import { BoosterShop } from './components/BoosterShop';
 import { MultiplayerEvents } from './components/MultiplayerEvents';
 import { TurnTransition } from './components/TurnTransition';
-import { Gamepad2, Sparkles, ShoppingBag, Users } from 'lucide-react';
+import { GameRules } from './components/GameRules';
+import { Gamepad2, Sparkles, ShoppingBag, Users, Book } from 'lucide-react';
 
 function App() {
   const { gameState, previousResources, streak, achievements, rollDice, playCard, selectCard, selectCell, nextPhase, purchaseCard } = useGameState();
   const { dragState, startDrag, endDrag } = useDragDrop();
   const [showBoosterShop, setShowBoosterShop] = useState(false);
   const [showMultiplayerEvents, setShowMultiplayerEvents] = useState(false);
+  const [showGameRules, setShowGameRules] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [previousTurn, setPreviousTurn] = useState(gameState.turn);
 
@@ -87,35 +89,46 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 p-4 relative overflow-hidden font-game">
       {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-        <div className="absolute top-20 left-20 w-40 h-40 bg-gradient-to-br from-green-300 to-emerald-400 rounded-full animate-float"></div>
-        <div className="absolute top-40 right-32 w-32 h-32 bg-gradient-to-br from-blue-300 to-cyan-400 rounded-full animate-float delay-1000"></div>
-        <div className="absolute bottom-32 left-40 w-36 h-36 bg-gradient-to-br from-purple-300 to-pink-400 rounded-full animate-float delay-2000"></div>
-        <div className="absolute bottom-20 right-20 w-28 h-28 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full animate-float delay-500"></div>
-        <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-gradient-to-br from-indigo-300 to-purple-400 rounded-full animate-float delay-1500"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-20 left-20 w-40 h-40 bg-gradient-to-br from-farm to-primary rounded-full animate-float"></div>
+        <div className="absolute top-40 right-32 w-32 h-32 bg-gradient-to-br from-city to-secondary rounded-full animate-float delay-1000"></div>
+        <div className="absolute bottom-32 left-40 w-36 h-36 bg-gradient-to-br from-action to-accent rounded-full animate-float delay-2000"></div>
+        <div className="absolute bottom-20 right-20 w-28 h-28 bg-gradient-to-br from-landmark to-warning rounded-full animate-float delay-500"></div>
+        <div className="absolute top-1/2 left-1/2 w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-full animate-float delay-1500"></div>
       </div>
       
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 relative z-10">
           <div className="flex items-center justify-center gap-6 mb-6">
-            <div className="p-4 bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl shadow-2xl animate-pulse">
+            <div className="p-4 bg-gradient-to-r from-farm to-city rounded-2xl shadow-2xl animate-pulse">
               <Gamepad2 className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-6xl font-extrabold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent animate-pulse">
+            <h1 className="text-6xl font-extrabold bg-gradient-to-r from-farm via-city to-action bg-clip-text text-transparent animate-pulse">
               Fazenda & Cidade
             </h1>
-            <div className="p-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl shadow-2xl animate-pulse">
+            <div className="p-4 bg-gradient-to-r from-city to-action rounded-2xl shadow-2xl animate-pulse">
               <Sparkles className="w-10 h-10 text-white" />
             </div>
           </div>
-          <p className="text-2xl text-gray-700 font-bold mb-3">
+          
+          {/* Game Rules Button */}
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={() => setShowGameRules(true)}
+              className="bg-gradient-to-r from-primary to-secondary hover:from-primary/80 hover:to-secondary/80 text-white font-bold py-2 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+            >
+              <Book className="w-4 h-4" />
+              Manual do Jogo
+            </button>
+          </div>
+          <p className="text-2xl text-foreground font-bold mb-3">
             Construa sua fazenda e cidade usando cartas estratégicas
           </p>
-          <p className="text-lg text-gray-600 font-medium mb-4">
-            Combine recursos, construa edifícios e complete marcos históricos
+          <p className="text-lg text-muted-foreground font-medium mb-4">
+            Combine recursos, construa edifícios e complete marcos históricos para alcançar a vitória
           </p>
           
           {/* Streak and Achievement Display */}
@@ -319,6 +332,13 @@ function App() {
         <MultiplayerEvents
           onClose={() => setShowMultiplayerEvents(false)}
           playerStats={gameState.playerStats}
+        />
+      )}
+      
+      {showGameRules && (
+        <GameRules
+          isOpen={showGameRules}
+          onClose={() => setShowGameRules(false)}
         />
       )}
 

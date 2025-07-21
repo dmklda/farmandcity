@@ -354,7 +354,6 @@ export const actionCards: Card[] = [
     },
     rarity: 'rare'
   },
-  // Action Cards
   {
     id: 'market-day',
     name: 'Dia de Mercado',
@@ -365,18 +364,6 @@ export const actionCards: Card[] = [
       description: 'Compre uma carta adicional no próximo turno',
       trigger: 'instant',
       buyExtraCard: 1
-    }
-  },
-  {
-    id: 'emergency-response',
-    name: 'Resposta de Emergência',
-    type: 'action',
-    rarity: 'uncommon',
-    cost: { coins: 2 },
-    effect: {
-      description: 'Cancele o próximo evento de crise',
-      trigger: 'instant',
-      crisisProtection: true
     }
   },
   {
