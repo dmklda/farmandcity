@@ -11,6 +11,8 @@ interface HandProps {
   onDragStart?: (card: CardType, event: React.MouseEvent) => void;
   draggedCard?: CardType;
   cardsToDiscard?: number;
+  gamePhase?: string;
+  diceRollRequired?: boolean;
 }
 
 export const Hand: React.FC<HandProps> = ({ 
@@ -21,7 +23,8 @@ export const Hand: React.FC<HandProps> = ({
   onDragStart,
   draggedCard,
   cardsToDiscard,
-  gamePhase
+  gamePhase,
+  diceRollRequired = false
 }) => {
   const canAffordCard = (card: CardType) => {
     return Object.entries(card.cost).every(([resource, cost]) => 

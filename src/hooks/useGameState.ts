@@ -378,11 +378,6 @@ export const useGameState = () => {
       } else if (card.type === 'action') {
         console.log('Playing action card:', card.name);
         
-        // Mark that an action card was played and dice roll is now required
-        newState.actionCardPlayed = true;
-        newState.diceRollRequired = true;
-        newState.canPlayActions = false;
-        
         // Aplicar efeito de produção imediata
         if (card.effect.production) {
           Object.entries(card.effect.production).forEach(([resource, amount]) => {
@@ -439,7 +434,10 @@ export const useGameState = () => {
         hand: newHand,
         farmGrid: type === 'farm' ? newGrid : prev.farmGrid,
         cityGrid: type === 'city' ? newGrid : prev.cityGrid,
-        playerStats: newStats
+        playerStats: newStats,
+        actionCardPlayed: card.type === 'action' ? true : prev.actionCardPlayed,
+        diceRollRequired: card.type === 'action' ? true : prev.diceRollRequired,
+        canPlayActions: card.type === 'action' ? false : prev.canPlayActions
       };
 
       console.log('New state created:', {
@@ -496,7 +494,7 @@ export const useGameState = () => {
         // Comprar apenas 1 carta por turno (conforme documentação)
         const totalCardsToDraw = 1 + prev.cardsToBuyExtra;
         
-        console.log('Drawing cards:', { baseCards, extraCards, totalCardsToDraw });
+        console.log('Drawing cards:', { totalCardsToDraw });
         
         const newCards = getRandomCards(totalCardsToDraw, undefined, prev.turn);
         newState.hand = [...prev.hand, ...newCards];
@@ -517,7 +515,7 @@ export const useGameState = () => {
       // Reset action card state when entering action phase
       if (nextPhase === 'action') {
         newState.actionCardPlayed = false;
-        newState.diceRollRequired = false;
+        newState.diceRollRequired = true;
         newState.canPlayActions = true;
         newState.lastDiceRoll = undefined;
       }
