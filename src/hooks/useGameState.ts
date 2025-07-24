@@ -1,629 +1,115 @@
-import { useState, useCallback } from 'react';
-import { GameState, Card, Resources, GridCell, GameEvent, PlayerStats, ComboEffect } from '../types/game';
-import { allCards, eventCards } from '../data/cards';
+import { useState, useEffect } from 'react';
+import { GameState, GamePhase, GridCell } from '../types/gameState';
+import { starterCards, baseDeck } from '../data/cards';
+import { Resources } from '../types/resources';
+import { Card } from '../types/card';
+import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../src/utils/gameUtils';
 
-const initialResources: Resources = {
-  coins: 5,
-  food: 3,
-  materials: 2,
-  population: 0
-};
+const DECK_LIMIT = 28;
+const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end'];
 
-const initialPlayerStats: PlayerStats = {
-  reputation: 0,
-  totalProduction: 0,
-  buildingsBuilt: 0,
-  landmarksCompleted: 0,
-  crisisSurvived: 0,
-  achievements: []
-};
+export function useGameState() {
+  // --- ESTADO PRINCIPAL ---
+  const [customDeck, setCustomDeck] = useState<Card[]>([]);
+  const [magicUsedThisTurn, setMagicUsedThisTurn] = useState(false);
+  const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
+  const getActiveDeck = () => (customDeck.length > 0 ? customDeck.slice(0, DECK_LIMIT) : shuffle(baseDeck).slice(0, DECK_LIMIT));
+  const [game, setGame] = useState<GameState>(() => getInitialState(getActiveDeck()));
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [selectedGrid, setSelectedGrid] = useState<'farm' | 'city' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [productionSummary, setProductionSummary] = useState<string | null>(null);
+  const [actionSummary, setActionSummary] = useState<string | null>(null);
+  const [diceResult, setDiceResult] = useState<number | null>(null);
+  const [diceUsed, setDiceUsed] = useState<boolean>(false);
+  const [diceProductionSummary, setDiceProductionSummary] = useState<string | null>(null);
+  const [victory, setVictory] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [discardMode, setDiscardMode] = useState(false);
+  const [defeat, setDefeat] = useState<string | null>(null);
+  const [builtThisTurn, setBuiltThisTurn] = useState<{ farm: boolean; city: boolean }>({ farm: false, city: false });
+  const [actionThisTurn, setActionThisTurn] = useState(false);
+  const [discardedCards, setDiscardedCards] = useState<Card[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
+  const [builtCountThisTurn, setBuiltCountThisTurn] = useState(0);
+  const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
+  const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
 
-const createEmptyGrid = (rows: number, cols: number): GridCell[][] => {
-  return Array.from({ length: rows }, (_, row) =>
-    Array.from({ length: cols }, (_, col) => ({
-      id: `${row}-${col}`,
-      type: 'empty',
-      row,
-      col
-    }))
-  );
-};
+  // --- EFFECTS E HANDLERS (resumido para exemplo) ---
+  // ... (copiar todos os useEffect e handlers do App.tsx para cá)
 
-const getStarterCards = (): Card[] => {
-  // Cartas starter gratuitas conforme documentação
-  const starterCardIds = [
-    'small-garden',
-    'tent', 
-    'basic-harvest',
-    'simple-farm',
-    'simple-workshop',
-    'simple-trade'
-  ];
-  
-  return allCards.filter(card => starterCardIds.includes(card.id));
-};
-
-const getRandomCards = (count: number, rarity?: string, turn?: number): Card[] => {
-  let filteredCards = rarity 
-    ? allCards.filter(card => card.rarity === rarity)
-    : allCards.filter(card => card.rarity !== 'crisis' && card.rarity !== 'booster');
-  
-  // Nos primeiros turnos (1-3), priorizar cartas starter e common
-  if (turn && turn <= 3) {
-    filteredCards = filteredCards.filter(card => 
-      card.rarity === 'starter' || card.rarity === 'common'
-    );
-  }
-  
-  // Se não há cartas suficientes, incluir uncommon
-  if (filteredCards.length < count && turn && turn <= 3) {
-    filteredCards = allCards.filter(card => 
-      card.rarity !== 'crisis' && card.rarity !== 'booster' && 
-      (card.rarity === 'starter' || card.rarity === 'common' || card.rarity === 'uncommon')
-    );
-  }
-  
-  const shuffled = [...filteredCards].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-};
-
-const getRandomEvent = (): GameEvent | null => {
-  // 20% chance de evento a cada turno
-  if (Math.random() > 0.2) return null;
-  
-  const eventCard = eventCards[Math.floor(Math.random() * eventCards.length)];
-  return {
-    id: eventCard.id,
-    type: 'crisis',
-    name: eventCard.name,
-    description: eventCard.effect.description,
-    effect: eventCard.effect,
-    duration: eventCard.effect.duration || 1,
-    active: true
+  // --- PROPS PARA COMPONENTES ---
+  const sidebarProps = {
+    resources: {
+      coins: game.resources.coins,
+      food: game.resources.food,
+      materials: game.resources.materials,
+      population: game.resources.population,
+      coinsPerTurn: 0, // TODO: calcular produção por turno
+      foodPerTurn: 0,
+      materialsPerTurn: 0,
+      populationStatus: game.resources.population > 0 ? 'Estável' : 'Crítico',
+    },
+    progress: {
+      reputation: game.playerStats.reputation,
+      reputationMax: 10,
+      production: game.playerStats.totalProduction,
+      productionMax: 1000,
+      landmarks: game.playerStats.landmarks,
+      landmarksMax: 3,
+      turn: game.turn,
+      turnMax: 20,
+    },
+    victory: {
+      reputation: game.playerStats.reputation,
+      production: game.playerStats.totalProduction,
+      landmarks: game.playerStats.landmarks,
+      turn: game.turn,
+    },
+    history,
   };
-};
-
-export const useGameState = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    resources: initialResources,
-    hand: getStarterCards(),
-    deck: getRandomCards(20),
-    farmGrid: createEmptyGrid(4, 4),
-    cityGrid: createEmptyGrid(4, 4),
-    landmarks: allCards.filter(card => card.type === 'landmark'),
-    completedLandmarks: [],
-    turn: 1,
-    phase: 'draw',
-    selectedCard: undefined,
-    selectedCell: undefined,
-    activeEvents: [],
-    playerStats: initialPlayerStats,
-    comboEffects: [],
-    crisisProtection: false,
-    weatherPrediction: false,
-    enhancedTrading: false,
-    extraCardsPerTurn: 1,
-    advancedCardAccess: false,
-    lastDiceRoll: undefined,
-    activatedCards: [],
-    cardsToDiscard: 0,
-    cardsToBuyExtra: 0,
-    actionCardPlayed: false,
-    diceRollRequired: false,
-    canPlayActions: true
-  });
-
-  const [previousResources] = useState<Resources>(initialResources);
-  const [streak, setStreak] = useState(0);
-  const [achievements, setAchievements] = useState<string[]>([]);
-
-  const updatePlayerStats = useCallback((updates: Partial<PlayerStats>) => {
-    setGameState(prev => ({
-      ...prev,
-      playerStats: { ...prev.playerStats, ...updates }
-    }));
-  }, []);
-
-  const addAchievement = useCallback((achievement: string) => {
-    if (!achievements.includes(achievement)) {
-      setAchievements(prev => [...prev, achievement]);
-      updatePlayerStats({ achievements: [...achievements, achievement] });
-    }
-  }, [achievements, updatePlayerStats]);
-
-  const calculateComboEffects = useCallback((grid: GridCell[][]) => {
-    const combos: ComboEffect[] = [];
-    
-    // Verificar combos de cartas adjacentes
-    for (let row = 0; row < grid.length; row++) {
-      for (let col = 0; col < grid[row].length; col++) {
-        const cell = grid[row][col];
-        if (!cell.card) continue;
-
-        // Combo: Vinhedos em cadeia
-        if (cell.card.id === 'vineyard') {
-          const adjacentVineyards = [
-            grid[row - 1]?.[col], grid[row + 1]?.[col],
-            grid[row]?.[col - 1], grid[row]?.[col + 1]
-          ].filter(adj => adj?.card?.id === 'vineyard').length;
-          
-          if (adjacentVineyards > 0) {
-            combos.push({
-              type: 'vineyard_chain',
-              description: `Vinhedo em cadeia: +${adjacentVineyards} moedas`,
-              multiplier: adjacentVineyards,
-              conditions: ['vineyard_adjacent']
-            });
-          }
-        }
-
-        // Combo: Celeiro dobrando produção adjacente
-        if (cell.card.id === 'barn') {
-          const adjacentFarms = [
-            grid[row - 1]?.[col], grid[row + 1]?.[col],
-            grid[row]?.[col - 1], grid[row]?.[col + 1]
-          ].filter(adj => adj?.card?.type === 'farm').length;
-          
-          if (adjacentFarms > 0) {
-            combos.push({
-              type: 'double_food_adjacent',
-              description: `Celeiro dobrando ${adjacentFarms} fazendas adjacentes`,
-              multiplier: 2,
-              conditions: ['barn_adjacent_farms']
-            });
-          }
-        }
-
-        // Combo: Shopping Center boostando mercados
-        if (cell.card.id === 'shopping-mall') {
-          const adjacentMarkets = [
-            grid[row - 1]?.[col], grid[row + 1]?.[col],
-            grid[row]?.[col - 1], grid[row]?.[col + 1]
-          ].filter(adj => adj?.card?.id === 'market').length;
-          
-          if (adjacentMarkets > 0) {
-            combos.push({
-              type: 'boost_markets',
-              description: `Shopping dobrando ${adjacentMarkets} mercados adjacentes`,
-              multiplier: 2,
-              conditions: ['shopping_mall_adjacent_markets']
-            });
-          }
-        }
-      }
-    }
-
-    return combos;
-  }, []);
-
-  const applyCrisisEffects = useCallback((event: GameEvent) => {
-    setGameState(prev => {
-      let newResources = { ...prev.resources };
-      let newStats = { ...prev.playerStats };
-
-      switch (event.effect.crisisEffect) {
-        case 'reduce_farm_production':
-          // Reduz produção de fazendas em 50%
-          break;
-        case 'storm_effect':
-          // Reduz produção da cidade em 30%, aumenta fazendas
-          newResources.food += 1;
-          break;
-        case 'lose_population':
-          newResources.population = Math.max(0, newResources.population - 2);
-          newResources.coins += 5;
-          break;
-        case 'boost_city_production':
-          // Dobra produção da cidade
-          break;
-        case 'boost_farm_production':
-          // Dobra produção das fazendas
-          break;
-      }
-
-      return {
-        ...prev,
-        resources: newResources,
-        playerStats: newStats
-      };
-    });
-  }, []);
-
-  const rollDice = useCallback(() => {
-    const diceResult = Math.floor(Math.random() * 6) + 1;
-    
-    setGameState(prev => {
-      // Verificar se já rolou o dado neste turno
-      if (prev.lastDiceRoll !== undefined && prev.phase === 'action') {
-        console.log('Dice already rolled this turn');
-        return prev;
-      }
-      
-      let newResources = { ...prev.resources };
-      let productionCount = 0;
-      let activatedCards: Card[] = [];
-
-      // Ativar cartas baseadas no dado
-      [...prev.farmGrid.flat(), ...prev.cityGrid.flat()].forEach(cell => {
-        if (cell.card && cell.card.effect.trigger === 'dice' && 
-            cell.card.effect.diceNumbers?.includes(diceResult)) {
-          
-          activatedCards.push(cell.card);
-          
-          if (cell.card.effect.production) {
-            Object.entries(cell.card.effect.production).forEach(([resource, amount]) => {
-              newResources[resource as keyof Resources] += amount;
-              productionCount += amount;
-            });
-          }
-        }
-      });
-
-      // Aplicar combos
-      const farmCombos = calculateComboEffects(prev.farmGrid);
-      const cityCombos = calculateComboEffects(prev.cityGrid);
-      
-      // Aplicar efeitos de combo
-      [...farmCombos, ...cityCombos].forEach(combo => {
-        if (combo.type === 'vineyard_chain') {
-          newResources.coins += combo.multiplier;
-        }
-      });
-
-      // Atualizar estatísticas
-      const newStats = { ...prev.playerStats };
-      if (productionCount > 0) {
-        newStats.totalProduction += productionCount;
-        setStreak(prev => prev + 1);
-      } else {
-        setStreak(0);
-      }
-
-      // Verificar conquistas
-      if (newStats.totalProduction >= 100 && !achievements.includes('Produtor Experiente')) {
-        addAchievement('Produtor Experiente');
-      }
-
-      return {
-        ...prev,
-        resources: newResources,
-        playerStats: newStats,
-        comboEffects: [...farmCombos, ...cityCombos],
-        lastDiceRoll: diceResult,
-        activatedCards: activatedCards,
-        diceRollRequired: false,
-        canPlayActions: true
-      };
-    });
-  }, [calculateComboEffects, achievements, addAchievement]);
-
-  const playCard = useCallback((card: Card, row?: number, col?: number, type?: 'farm' | 'city') => {
-    console.log('playCard called:', { card: card.name, row, col, type });
-    setGameState(prev => {
-      // VALIDAÇÃO DE FASE - CRÍTICA!
-      if (card.type === 'action' && prev.phase !== 'action') {
-        console.log('Cannot play action card outside action phase. Current phase:', prev.phase);
-        return prev;
-      }
-      
-      if ((card.type === 'farm' || card.type === 'city') && prev.phase !== 'build') {
-        console.log('Cannot play construction card outside build phase. Current phase:', prev.phase);
-        return prev;
-      }
-      
-      if (card.type === 'landmark' && prev.phase !== 'build') {
-        console.log('Cannot play landmark outside build phase. Current phase:', prev.phase);
-        return prev;
-      }
-
-      let newResources = { ...prev.resources };
-      let newStats = { ...prev.playerStats };
-      let newHand = [...prev.hand];
-      let newGrid = type === 'farm' ? 
-        JSON.parse(JSON.stringify(prev.farmGrid)) : 
-        JSON.parse(JSON.stringify(prev.cityGrid));
-
-      // Verificar se tem recursos suficientes
-      const canAfford = Object.entries(card.cost).every(([resource, amount]) => 
-        newResources[resource as keyof Resources] >= amount
-      );
-
-      console.log('Can afford card:', canAfford, 'cost:', card.cost, 'resources:', newResources);
-
-      // Verificar recursos conforme documentação
-      const canPlay = canAfford;
-
-      if (!canPlay) {
-        console.log('Cannot afford card, returning previous state');
-        return prev;
-      }
-
-      // Deduzir custo
-      Object.entries(card.cost).forEach(([resource, amount]) => {
-        newResources[resource as keyof Resources] -= amount;
-      });
-
-      // Remover carta da mão
-      newHand = newHand.filter(c => c.id !== card.id);
-
-      if (type && row !== undefined && col !== undefined) {
-        console.log('Placing card on grid:', { type, row, col, cardName: card.name });
-        console.log('Grid before placement:', newGrid[row][col]);
-        
-        // Verificar se o tipo da carta corresponde ao grid
-        if (card.type !== type) {
-          console.log('Card type mismatch:', card.type, 'vs grid type:', type);
-          return prev;
-        }
-        
-        // Verificar se a célula está vazia
-        if (newGrid[row][col].type !== 'empty') {
-          console.log('Cell is not empty, cannot place card');
-          return prev;
-        }
-        
-        // Colocar carta no grid
-        newGrid[row][col] = {
-          id: `${type}-${row}-${col}`,
-          row,
-          col,
-          card,
-          type: type
-        };
-
-        console.log('Grid after placement:', newGrid[row][col]);
-        newStats.buildingsBuilt++;
-        newStats.reputation += 1; // +1 reputação por construção
-        console.log('Card placed successfully at', row, col);
-      } else if (card.type === 'action') {
-        console.log('Playing action card:', card.name);
-        
-        // Aplicar efeito de produção imediata
-        if (card.effect.production) {
-          Object.entries(card.effect.production).forEach(([resource, amount]) => {
-            newResources[resource as keyof Resources] += amount;
-          });
-        }
-
-        // Aplicar efeitos especiais de ação
-        if (card.effect.buyExtraCard) {
-          return {
-            ...prev,
-            resources: newResources,
-            hand: newHand,
-            playerStats: newStats,
-            cardsToBuyExtra: prev.cardsToBuyExtra + card.effect.buyExtraCard,
-            actionCardPlayed: true,
-            diceRollRequired: true,
-            canPlayActions: false
-          };
-        }
-        
-        if (card.effect.discardNextTurn) {
-          return {
-            ...prev,
-            resources: newResources,
-            hand: newHand,
-            playerStats: newStats,
-            cardsToDiscard: prev.cardsToDiscard + card.effect.discardNextTurn,
-            actionCardPlayed: true,
-            diceRollRequired: true,
-            canPlayActions: false
-          };
-        }
-        
-        if (card.effect.crisisProtection) {
-          return {
-            ...prev,
-            resources: newResources,
-            hand: newHand,
-            playerStats: newStats,
-            crisisProtection: true,
-            actionCardPlayed: true,
-            diceRollRequired: true,
-            canPlayActions: false
-          };
-        }
-      } else {
-        console.log('Missing placement parameters:', { type, row, col });
-      }
-
-      const newState = {
-        ...prev,
-        resources: newResources,
-        hand: newHand,
-        farmGrid: type === 'farm' ? newGrid : prev.farmGrid,
-        cityGrid: type === 'city' ? newGrid : prev.cityGrid,
-        playerStats: newStats,
-        actionCardPlayed: card.type === 'action' ? true : prev.actionCardPlayed,
-        diceRollRequired: card.type === 'action' ? true : prev.diceRollRequired,
-        canPlayActions: card.type === 'action' ? false : prev.canPlayActions
-      };
-
-      console.log('New state created:', {
-        handLength: newState.hand.length,
-        farmGridCells: newState.farmGrid.flat().filter((cell: GridCell) => cell.card).length,
-        cityGridCells: newState.cityGrid.flat().filter((cell: GridCell) => cell.card).length,
-        resources: newState.resources,
-        farmGrid: newState.farmGrid.map((row: GridCell[]) => row.map((cell: GridCell) => cell.card?.name || 'empty')),
-        cityGrid: newState.cityGrid.map((row: GridCell[]) => row.map((cell: GridCell) => cell.card?.name || 'empty'))
-      });
-      
-      console.log('Returning new state');
-      return newState;
-    });
-  }, []);
-
-  const selectCard = useCallback((card: Card) => {
-    setGameState(prev => ({ ...prev, selectedCard: card }));
-  }, []);
-
-  const selectCell = useCallback((row: number, col: number, type: 'farm' | 'city') => {
-    setGameState(prev => {
-      const grid = type === 'farm' ? prev.farmGrid : prev.cityGrid;
-      const cell = grid[row][col];
-      return { 
-        ...prev, 
-        selectedCell: cell 
-      };
-    });
-  }, []);
-
-  const nextPhase = useCallback(() => {
-    console.log('nextPhase called');
-    setGameState(prev => {
-      const phases: ('draw' | 'action' | 'build' | 'production' | 'end')[] = 
-        ['draw', 'action', 'build', 'production', 'end'];
-      
-      const currentIndex = phases.indexOf(prev.phase);
-      const nextIndex = (currentIndex + 1) % phases.length;
-      const nextPhase = phases[nextIndex];
-
-      console.log('Phase transition:', { 
-        currentPhase: prev.phase, 
-        nextPhase, 
-        currentIndex, 
-        nextIndex,
-        currentTurn: prev.turn
-      });
-
-      let newState = { ...prev, phase: nextPhase };
-
-      // Fase de compra
-      if (nextPhase === 'draw') {
-        // Comprar apenas 1 carta por turno (conforme documentação)
-        const totalCardsToDraw = 1 + prev.cardsToBuyExtra;
-        
-        console.log('Drawing cards:', { totalCardsToDraw });
-        
-        const newCards = getRandomCards(totalCardsToDraw, undefined, prev.turn);
-        newState.hand = [...prev.hand, ...newCards];
-        
-        // Reset cartas extras após usar
-        newState.cardsToBuyExtra = 0;
-        
-        console.log('Cards drawn:', newCards.length, 'New hand size:', newState.hand.length);
-        
-        // Limite de 6 cartas na mão - descartar automaticamente se exceder
-        if (newState.hand.length > 6) {
-          const excessCards = newState.hand.length - 6;
-          newState.hand = newState.hand.slice(excessCards);
-          console.log('Auto-discarded excess cards:', excessCards);
-        }
-      }
-
-      // Reset action card state when entering action phase
-      if (nextPhase === 'action') {
-        newState.actionCardPlayed = false;
-        newState.diceRollRequired = true;
-        newState.canPlayActions = true;
-        newState.lastDiceRoll = undefined;
-      }
-
-      // Fase de produção
-      if (nextPhase === 'production') {
-        let newResources = { ...prev.resources };
-        
-        // Produção por turno
-        [...prev.farmGrid.flat(), ...prev.cityGrid.flat()].forEach(cell => {
-          if (cell.card && cell.card.effect.trigger === 'turn' && cell.card.effect.production) {
-            Object.entries(cell.card.effect.production).forEach(([resource, amount]) => {
-              newResources[resource as keyof Resources] += amount;
-            });
-          }
-        });
-
-        // Aplicar combos de produção por turno
-        const farmCombos = calculateComboEffects(prev.farmGrid);
-        const cityCombos = calculateComboEffects(prev.cityGrid);
-        
-        [...farmCombos, ...cityCombos].forEach(combo => {
-          if (combo.type === 'boost_orchards') {
-            // Aumentar produção de pomares
-            prev.farmGrid.flat().forEach(cell => {
-              if (cell.card?.id === 'orchard') {
-                newResources.food += 1;
-              }
-            });
-          }
-        });
-
-        newState.resources = newResources;
-      }
-
-      // Fase de fim de turno
-      if (nextPhase === 'end') {
-        console.log('End phase reached, processing turn change');
-        
-        // Aplicar descarte obrigatório conforme documentação
-        const cardsToDiscard = Math.max(1, prev.cardsToDiscard); // Mínimo 1 carta
-        if (newState.hand.length > 0) {
-          const actualDiscard = Math.min(cardsToDiscard, newState.hand.length);
-          newState.hand = newState.hand.slice(actualDiscard);
-          console.log('Discarded cards at end of turn:', actualDiscard);
-        }
-        
-        // Reset contador de descarte
-        newState.cardsToDiscard = 0;
-        
-        // Reset all action states for next turn
-        newState.lastDiceRoll = undefined;
-        newState.actionCardPlayed = false;
-        newState.diceRollRequired = false;
-        newState.canPlayActions = true;
-        
-        // Gerar evento aleatório
-        const newEvent = getRandomEvent();
-        if (newEvent && !prev.crisisProtection) {
-          newState.activeEvents = [...prev.activeEvents, newEvent];
-          applyCrisisEffects(newEvent);
-        } else if (prev.crisisProtection) {
-          newState.crisisProtection = false;
-        }
-
-        // Limpar eventos expirados
-        newState.activeEvents = prev.activeEvents
-          .map(event => ({ ...event, duration: event.duration - 1 }))
-          .filter(event => event.duration > 0);
-
-        // Próximo turno
-        newState.turn = prev.turn + 1;
-        console.log('Turn incremented:', { from: prev.turn, to: newState.turn });
-        
-        // Atualizar estatísticas
-        const newStats = { ...prev.playerStats };
-        if (newEvent) {
-          newStats.crisisSurvived++;
-        }
-        newState.playerStats = newStats;
-      }
-
-      console.log('nextPhase returning new state:', { 
-        phase: newState.phase, 
-        turn: newState.turn,
-        handLength: newState.hand.length 
-      });
-      return newState;
-    });
-  }, [calculateComboEffects, applyCrisisEffects]);
-
-  const purchaseCard = useCallback((card: Card) => {
-    setGameState(prev => ({
-      ...prev,
-      hand: [...prev.hand, card]
-    }));
-  }, []);
+  const topBarProps = {
+    turn: game.turn,
+    turnMax: 20,
+    buildCount: builtCountThisTurn,
+    buildMax: 2,
+    phase: game.phase,
+    onNextPhase: victory || discardMode ? () => {} : () => {}, // TODO: conectar handler
+    discardMode,
+  };
+  const gridBoardProps = {
+    farmGrid: game.farmGrid,
+    cityGrid: game.cityGrid,
+    farmCount: game.farmGrid.flat().filter(cell => cell.card).length,
+    farmMax: game.farmGrid.length * (game.farmGrid[0]?.length || 0),
+    cityCount: game.cityGrid.flat().filter(cell => cell.card).length,
+    cityMax: game.cityGrid.length * (game.cityGrid[0]?.length || 0),
+    landmarkCount: game.playerStats.landmarks,
+    landmarkMax: 3,
+    onSelectFarm: victory ? () => {} : (x: number, y: number) => {}, // TODO: conectar handler
+    onSelectCity: victory ? () => {} : (x: number, y: number) => {}, // TODO: conectar handler
+    highlightFarm: selectedGrid === 'farm',
+    highlightCity: selectedGrid === 'city',
+  };
+  const deckAreaProps = {
+    deckCount: game.deck.length,
+    lastDrawn,
+  };
+  const handProps = {
+    hand: game.hand,
+    onSelectCard: victory ? () => {} : (card: Card) => {}, // TODO: conectar handler
+    selectedCardId: selectedCard?.id,
+    canPlayCard: (card: Card) => ({ playable: true }), // TODO: conectar lógica
+  };
+  const discardModal = discardMode ? <div>Modal de descarte aqui</div> : null;
 
   return {
-    gameState,
-    previousResources,
-    streak,
-    achievements,
-    rollDice,
-    playCard,
-    selectCard,
-    selectCell,
-    nextPhase,
-    purchaseCard
+    sidebarProps,
+    topBarProps,
+    gridBoardProps,
+    deckAreaProps,
+    handProps,
+    discardModal,
+    // ...outros handlers e estados se necessário
   };
-};
+} 

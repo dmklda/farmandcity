@@ -1,99 +1,174 @@
-import React from 'react';
-import { GridCell, Card as CardType } from '../types/game';
-import { Sparkles, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { GridCell } from '../types/gameState';
+import CardComponent from './CardComponent';
 
 interface GridProps {
   grid: GridCell[][];
-  type: 'farm' | 'city';
-  selectedCard?: CardType;
-  onCellClick: (row: number, col: number) => void;
-  draggedCard?: CardType;
-  onCardDrop?: (row: number, col: number) => void;
-  isDragActive?: boolean;
+  title: string;
+  onSelectCell?: (x: number, y: number) => void;
+  highlight?: boolean;
 }
 
-export const Grid: React.FC<GridProps> = ({ 
-  grid, 
-  type, 
-  selectedCard, 
-  onCellClick,
-  draggedCard,
-  onCardDrop
-}) => {
-  const canPlaceCard = (cell: GridCell) => {
-    const cardToCheck = draggedCard || selectedCard;
-    return cardToCheck && 
-           cardToCheck.type === type && 
-           cell.type === 'empty';
-  };
-
+const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => {
+  const [showDetail, setShowDetail] = useState<any>(null);
+  
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-xl p-6 border border-gray-200">
-      <h3 className="text-xl font-bold mb-4 flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${type === 'farm' ? 'bg-green-100' : 'bg-blue-100'}`}>
-          {type === 'farm' ? '🚜' : '🏙️'}
-        </div>
-        <span className={type === 'farm' ? 'text-green-700' : 'text-blue-700'}>
-          {type === 'farm' ? 'Fazenda' : 'Cidade'}
-        </span>
-      </h3>
-      
-      <div className="grid grid-cols-4 gap-3">
-        {grid.flat().map((cell) => (
-          <div
-            key={cell.id}
-            className={`
-              w-20 h-20 border-2 rounded-xl flex items-center justify-center
-              transition-all duration-300 cursor-pointer relative overflow-hidden
-              ${cell.type === 'empty' 
-                ? 'border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200' 
-                : 'border-solid border-transparent bg-gradient-to-br from-white to-gray-100 shadow-md'
-              }
-              ${canPlaceCard(cell) 
-                ? 'border-green-400 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 shadow-lg transform hover:scale-105' 
-                : ''
-              }
-              group
-            `}
-            onClick={() => {
-              if (canPlaceCard(cell) && onCardDrop) {
-                onCardDrop(cell.row, cell.col);
-              } else {
-                onCellClick(cell.row, cell.col);
-              }
-            }}
-          >
-              {/* Background animation for placeable cells */}
-              {canPlaceCard(cell) && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 animate-pulse" />
-              )}
-              
+    <div style={{ maxWidth: '100%', overflowX: 'auto', marginBottom: 16 }}>
+      <h2 style={{ color: '#fff', marginBottom: '12px' }}>{title}</h2>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${grid[0]?.length || 0}, minmax(60px, 80px))`,
+          gap: 6,
+          border: highlight ? '2px solid #3B82F6' : 'none',
+          borderRadius: 8,
+          padding: 6,
+          minWidth: grid[0]?.length ? `${grid[0].length * 66}px` : undefined,
+          maxWidth: 500,
+          background: '#23283a',
+        }}
+      >
+        {grid.flat().map((cell, idx) => {
+          const x = idx % (grid[0]?.length || 1);
+          const y = Math.floor(idx / (grid[0]?.length || 1));
+          const isPlayable = highlight && !cell.card && onSelectCell;
+          
+          return (
+            <div
+              key={idx}
+              style={{
+                width: '100%',
+                minWidth: 60,
+                maxWidth: 80,
+                height: 90,
+                border: '2px dashed #4a5568',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: cell.card ? '#2d3748' : '#1a202c',
+                cursor: isPlayable ? 'pointer' : cell.card ? 'pointer' : 'default',
+                position: 'relative',
+                transition: 'all 0.2s ease',
+                boxShadow: isPlayable ? '0 0 0 2px #3B82F655' : undefined,
+                overflow: 'hidden',
+              }}
+              onClick={() => cell.card ? setShowDetail(cell.card) : isPlayable && onSelectCell && onSelectCell(x, y)}
+              title={cell.card ? cell.card.name : isPlayable ? 'Clique para jogar carta aqui' : ''}
+              onMouseEnter={(e) => {
+                if (isPlayable) {
+                  e.currentTarget.style.border = '2px dashed #3B82F6';
+                  e.currentTarget.style.background = '#2d3748';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (isPlayable) {
+                  e.currentTarget.style.border = '2px dashed #4a5568';
+                  e.currentTarget.style.background = '#1a202c';
+                }
+              }}
+            >
               {cell.card ? (
-                <div className="w-16 h-16 rounded-lg border-2 border-gray-300 bg-gradient-to-br from-white to-gray-100 flex flex-col items-center justify-center text-xs font-bold text-gray-700 shadow-md hover:shadow-lg transition-all duration-200 relative group-hover:scale-110">
-                  <div className="text-lg mb-1">
-                    {cell.card.type === 'farm' ? '🌱' : '🏢'}
-                  </div>
-                  <div className="text-center leading-tight">
-                    {cell.card.name.split(' ')[0]}
-                  </div>
-                  {/* Sparkle effect for productive buildings */}
-                  {cell.card.effect.production && (
-                    <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400 animate-pulse" />
-                  )}
-                </div>
-              ) : canPlaceCard(cell) ? (
-                <div className="flex flex-col items-center justify-center text-green-500 group-hover:text-green-600 transition-colors duration-200">
-                  <Plus className="w-8 h-8 animate-bounce" />
-                  <span className="text-xs font-semibold mt-1">Construir</span>
-                </div>
+                <CardComponent
+                  card={cell.card}
+                  size="small"
+                  onClick={() => setShowDetail(cell.card)}
+                />
               ) : (
-                <div className="text-gray-400 text-xs font-medium opacity-60 group-hover:opacity-80 transition-opacity duration-200">
-                  Vazio
+                <div style={{ 
+                  color: '#718096', 
+                  fontSize: '12px', 
+                  textAlign: 'center',
+                  opacity: isPlayable ? 0.7 : 0.3
+                }}>
+                  {isPlayable ? 'Jogar' : ''}
                 </div>
               )}
             </div>
-          ))}
+          );
+        })}
+      </div>
+      
+      {/* Card detail modal */}
+      {showDetail && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.8)',
+          color: '#fff',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+          onClick={() => setShowDetail(null)}
+        >
+          <div style={{
+            background: '#23283a',
+            borderRadius: 16,
+            padding: 32,
+            minWidth: 320,
+            boxShadow: '0 4px 32px #0008',
+            border: '2px solid #fff',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 20,
+          }}>
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{showDetail.name}</div>
+            
+            {/* Large card visual */}
+            <CardComponent
+              card={showDetail}
+              size="large"
+            />
+            
+            {/* Card details */}
+            <div style={{ width: '100%', textAlign: 'left' }}>
+              <div style={{ fontSize: 16, marginBottom: 8 }}><b>Tipo:</b> {showDetail.type}</div>
+              <div style={{ fontSize: 16, marginBottom: 8 }}><b>Raridade:</b> {showDetail.rarity}</div>
+              <div style={{ fontSize: 16, marginBottom: 8 }}>
+                <b>Custo:</b> Moedas: {showDetail.cost.coins ?? 0}, Comida: {showDetail.cost.food ?? 0}, 
+                Materiais: {showDetail.cost.materials ?? 0}, População: {showDetail.cost.population ?? 0}
+              </div>
+              <div style={{ fontSize: 16, marginBottom: 8 }}>
+                <b>Efeito:</b> {showDetail.effect.description}
+              </div>
+            </div>
+            
+            <button 
+              style={{ 
+                position: 'absolute', 
+                top: 12, 
+                right: 16, 
+                background: 'none', 
+                color: '#fff', 
+                border: 'none', 
+                fontSize: 24, 
+                cursor: 'pointer',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                transition: 'background 0.2s'
+              }} 
+              onClick={() => setShowDetail(null)}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+            >
+              ×
+            </button>
+          </div>
         </div>
+      )}
     </div>
   );
 };
+
+export default Grid; 
