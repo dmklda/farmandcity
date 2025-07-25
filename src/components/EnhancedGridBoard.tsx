@@ -54,13 +54,13 @@ const GridSection: React.FC<GridSectionProps> = ({
   onClick
 }) => {
   const renderGrid = () => (
-    <div className="grid grid-cols-4 gap-1 p-2">
+    <div className="grid grid-cols-4 gap-0.5 p-1">
       {grid.flatMap((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell aspect-square min-h-[45px] flex items-center justify-center text-xs font-medium
+              grid-cell aspect-square min-h-[35px] flex items-center justify-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -68,13 +68,13 @@ const GridSection: React.FC<GridSectionProps> = ({
           >
             {cell.card ? (
               <div className="text-center">
-                <div className="text-sm mb-0.5">{cell.card.icon || '🏠'}</div>
+                <div className="text-xs mb-0.5">{cell.card.icon || '🏠'}</div>
                 <div className="text-xs text-text-muted truncate">
                   {cell.card.name}
                 </div>
               </div>
             ) : (
-              <Plus className="w-4 h-4 text-text-muted opacity-50" />
+              <Plus className="w-3 h-3 text-text-muted opacity-50" />
             )}
           </div>
         ))
@@ -149,12 +149,12 @@ const LandmarkSection: React.FC<{
     </div>
 
     <div className="p-2">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1">
         {Array.from({ length: landmarkMax }, (_, i) => (
           <div
             key={i}
             className={`
-              aspect-square rounded-lg border-2 border-dashed flex items-center justify-center
+              aspect-square rounded-md border-2 border-dashed flex items-center justify-center
               transition-all duration-300
               ${i < landmarkCount
                 ? 'border-secondary bg-secondary/20 text-secondary'
@@ -163,9 +163,9 @@ const LandmarkSection: React.FC<{
             `}
           >
             {i < landmarkCount ? (
-              <Crown className="w-6 h-6" />
+              <Crown className="w-4 h-4" />
             ) : (
-              <Plus className="w-4 h-4 opacity-50" />
+              <Plus className="w-3 h-3 opacity-50" />
             )}
           </div>
         ))}
@@ -202,15 +202,15 @@ const EventCardsSection: React.FC<{
       </div>
     </div>
 
-    <div className="p-2">
-      <div className="flex gap-2">
+    <div className="p-1">
+      <div className="flex gap-1">
         {Array.from({ length: eventMax }, (_, i) => {
           const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
           return (
             <div
               key={i}
               className={`
-                flex-1 min-h-[80px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                flex-1 min-h-[60px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
                 transition-all duration-300 cursor-pointer
                 ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
                 ${eventCard ? 'border-solid bg-surface-hover' : ''}
@@ -218,18 +218,18 @@ const EventCardsSection: React.FC<{
               onClick={() => onSelectEvent(i, 0)}
             >
               {eventCard ? (
-                <div className="text-center p-2">
-                  <div className="text-lg mb-1">⚡</div>
+                <div className="text-center p-1">
+                  <div className="text-sm mb-0.5">⚡</div>
                   <div className="text-xs text-text-primary font-medium line-clamp-2">
                     {eventCard.name}
                   </div>
-                  <div className="text-xs text-magic-color mt-1">
+                  <div className="text-xs text-magic-color mt-0.5">
                     Ativo
                   </div>
                 </div>
               ) : (
                 <div className="text-center">
-                  <Plus className="w-4 h-4 text-text-muted opacity-50 mb-1" />
+                  <Plus className="w-3 h-3 text-text-muted opacity-50 mb-0.5" />
                   <div className="text-xs text-text-muted">Evento</div>
                 </div>
               )}
@@ -239,7 +239,7 @@ const EventCardsSection: React.FC<{
       </div>
 
       {eventCount >= eventMax && (
-        <div className="mt-2 p-2 bg-magic-color/10 rounded-lg text-center">
+        <div className="mt-1 p-1.5 bg-magic-color/10 rounded-lg text-center">
           <div className="text-magic-color font-bold text-xs">
             🌟 Máximo de eventos ativos!
           </div>

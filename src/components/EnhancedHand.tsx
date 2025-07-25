@@ -214,7 +214,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
 
   return (
     <>
-      <div className="fixed bottom-0 left-80 right-0 bg-surface/95 backdrop-blur border-t border-border p-2 z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur border-t border-border p-2 z-30">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-2">
