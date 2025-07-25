@@ -830,7 +830,6 @@ const App: React.FC = () => {
         className="h-full overflow-y-auto overflow-x-hidden p-3"
         style={{
           paddingLeft: sidebarVisible ? '300px' : '24px',
-          paddingBottom: '200px',
           transition: 'padding-left 0.3s',
         }}
       >
