@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { GameState, GamePhase, GridCell } from './types/gameState';
-import { starterCards, baseDeck } from './data/cards';
-import { Resources } from './types/resources';
-import Hand from './components/Hand';
-import Grid from './components/Grid';
-import ResourceBar from './components/ResourceBar';
-import GameControls from './components/GameControls';
-import PlayerStatsBar from './components/PlayerStatsBar';
-import { Card } from './types/card';
-import Sidebar from './components/Sidebar';
-import TopBar from './components/TopBar';
-import DeckArea from './components/DeckArea';
-import GridBoard from './components/GridBoard';
-import CardComponent from './components/CardComponent';
+import { GameState, GamePhase, GridCell } from './types/gameState.js';
+import { starterCards, baseDeck } from './data/cards.js';
+import { Resources } from './types/resources.js';
+import Hand from './components/Hand.js';
+import Grid from './components/Grid.js';
+import ResourceBar from './components/ResourceBar.js';
+import GameControls from './components/GameControls.js';
+import PlayerStatsBar from './components/PlayerStatsBar.js';
+import { Card } from './types/card.js';
+import Sidebar from './components/Sidebar.js';
+import TopBar from './components/TopBar.js';
+import DeckArea from './components/DeckArea.js';
+import GridBoard from './components/GridBoard.js';
+import CardComponent from './components/CardComponent.js';
 
 function createEmptyGrid(rows: number, cols: number): GridCell[][] {
   return Array.from({ length: rows }, (_, y) =>
