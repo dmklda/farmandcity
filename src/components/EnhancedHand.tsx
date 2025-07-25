@@ -123,12 +123,16 @@ const EnhancedCardComponent: React.FC<{
         transition-all duration-300 ease-out group
         ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}
         ${isPlayable 
-          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110' 
+          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110 transform-gpu' 
           : 'opacity-60 cursor-not-allowed'
         }
         ${getCardTypeColor(card.type)}
         backdrop-blur-sm
       `}
+      style={{ 
+        transformOrigin: 'center bottom',
+        zIndex: isSelected ? 40 : 10
+      }}
       onClick={isPlayable ? onSelect : undefined}
     >
       {/* Card Content */}
