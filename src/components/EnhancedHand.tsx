@@ -119,7 +119,7 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative w-24 h-32 rounded-lg border-2 cursor-pointer
+        relative w-20 h-28 rounded-lg border-2 cursor-pointer
         transition-all duration-200 ease-out group
         ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}
         ${isPlayable 
@@ -239,7 +239,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
             </div>
 
             {/* Hand Cards - Center */}
-          <div className="flex items-end gap-2 flex-wrap justify-center">
+          <div className="flex items-end gap-2 max-w-[500px] overflow-x-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
             {hand.map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
