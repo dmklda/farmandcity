@@ -54,13 +54,13 @@ const GridSection: React.FC<GridSectionProps> = ({
   onClick
 }) => {
   const renderGrid = () => (
-    <div className="grid grid-cols-4 gap-0.5 p-1">
+    <div className="grid grid-cols-4 gap-0.5 p-0.5">
       {grid.flatMap((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell aspect-square min-h-[35px] flex items-center justify-center text-xs font-medium
+              grid-cell aspect-square min-h-[20px] flex items-center justify-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -68,13 +68,13 @@ const GridSection: React.FC<GridSectionProps> = ({
           >
             {cell.card ? (
               <div className="text-center">
-                <div className="text-xs mb-0.5">{cell.card.icon || '🏠'}</div>
-                <div className="text-xs text-text-muted truncate">
+                <div className="text-[8px] mb-0.5">{cell.card.icon || '🏠'}</div>
+                <div className="text-[8px] text-text-muted truncate">
                   {cell.card.name}
                 </div>
               </div>
             ) : (
-              <Plus className="w-3 h-3 text-text-muted opacity-50" />
+              <Plus className="w-2 h-2 text-text-muted opacity-50" />
             )}
           </div>
         ))
@@ -93,13 +93,13 @@ const GridSection: React.FC<GridSectionProps> = ({
       onClick={onClick}
     >
       {/* Header */}
-      <div className="p-2 border-b border-border bg-surface-card/50">
+      <div className="p-1 border-b border-border bg-surface-card/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="text-lg">{icon}</div>
-            <h3 className="font-bold text-text-primary text-sm">{title}</h3>
+          <div className="flex items-center gap-1">
+            <div className="text-sm">{icon}</div>
+            <h3 className="font-bold text-text-primary text-xs">{title}</h3>
           </div>
-          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+          <div className={`text-xs font-bold px-1 py-0.5 rounded-full ${
             count >= max ? 'bg-destructive/20 text-destructive' : 'bg-surface text-text-secondary'
           }`}>
             {count}/{max}
@@ -112,13 +112,13 @@ const GridSection: React.FC<GridSectionProps> = ({
 
       {/* Preview when not active */}
       {!isActive && (
-        <div className="p-3 text-center">
-          <div className="text-lg mb-1">{icon}</div>
-          <div className="text-xs text-text-secondary mb-1">
-            {count} de {max} construídos
+        <div className="p-2 text-center">
+          <div className="text-sm mb-0.5">{icon}</div>
+          <div className="text-xs text-text-secondary mb-0.5">
+            {count}/{max}
           </div>
           <div className="text-xs text-text-muted">
-            Clique para expandir
+            Clique
           </div>
         </div>
       )}
@@ -136,11 +136,11 @@ const LandmarkSection: React.FC<{
   landmarkMax: number;
 }> = ({ landmarkCount, landmarkMax }) => (
   <div className="surface-elevated border-2 border-secondary">
-    <div className="p-4 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
+    <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Crown className="w-4 h-4 text-secondary" />
-          <h3 className="font-bold text-text-primary text-sm">Marcos Históricos</h3>
+        <div className="flex items-center gap-1">
+          <Crown className="w-3 h-3 text-secondary" />
+          <h3 className="font-bold text-text-primary text-xs">Marcos</h3>
         </div>
         <div className="text-xs font-bold text-secondary">
           {landmarkCount}/{landmarkMax}
@@ -148,13 +148,13 @@ const LandmarkSection: React.FC<{
       </div>
     </div>
 
-    <div className="p-2">
-      <div className="grid grid-cols-3 gap-1">
+    <div className="p-1">
+      <div className="grid grid-cols-3 gap-0.5">
         {Array.from({ length: landmarkMax }, (_, i) => (
           <div
             key={i}
             className={`
-              aspect-square rounded-md border-2 border-dashed flex items-center justify-center
+              aspect-square rounded-md border-2 border-dashed flex items-center justify-center min-h-[20px]
               transition-all duration-300
               ${i < landmarkCount
                 ? 'border-secondary bg-secondary/20 text-secondary'
@@ -163,18 +163,18 @@ const LandmarkSection: React.FC<{
             `}
           >
             {i < landmarkCount ? (
-              <Crown className="w-4 h-4" />
+              <Crown className="w-2 h-2" />
             ) : (
-              <Plus className="w-3 h-3 opacity-50" />
+              <Plus className="w-2 h-2 opacity-50" />
             )}
           </div>
         ))}
       </div>
 
       {landmarkCount >= landmarkMax && (
-        <div className="mt-2 p-2 bg-secondary/10 rounded-lg text-center">
+        <div className="mt-1 p-1 bg-secondary/10 rounded-lg text-center">
           <div className="text-secondary font-bold text-xs">
-            🎉 Vitória por Marcos Históricos!
+            🎉 Vitória!
           </div>
         </div>
       )}
@@ -190,11 +190,11 @@ const EventCardsSection: React.FC<{
   highlight: boolean;
 }> = ({ eventGrid, eventCount, eventMax, onSelectEvent, highlight }) => (
   <div className="surface-elevated border-2 border-magic-color">
-    <div className="p-2 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
+    <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-magic-color" />
-          <h3 className="font-bold text-text-primary text-sm">Eventos Ativos</h3>
+        <div className="flex items-center gap-1">
+          <Zap className="w-3 h-3 text-magic-color" />
+          <h3 className="font-bold text-text-primary text-xs">Eventos</h3>
         </div>
         <div className="text-xs font-bold text-magic-color">
           {eventCount}/{eventMax}
@@ -203,14 +203,14 @@ const EventCardsSection: React.FC<{
     </div>
 
     <div className="p-1">
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         {Array.from({ length: eventMax }, (_, i) => {
           const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
           return (
             <div
               key={i}
               className={`
-                flex-1 min-h-[60px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                flex-1 min-h-[40px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
                 transition-all duration-300 cursor-pointer
                 ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
                 ${eventCard ? 'border-solid bg-surface-hover' : ''}
@@ -218,18 +218,18 @@ const EventCardsSection: React.FC<{
               onClick={() => onSelectEvent(i, 0)}
             >
               {eventCard ? (
-                <div className="text-center p-1">
-                  <div className="text-sm mb-0.5">⚡</div>
-                  <div className="text-xs text-text-primary font-medium line-clamp-2">
+                <div className="text-center p-0.5">
+                  <div className="text-xs mb-0.5">⚡</div>
+                  <div className="text-xs text-text-primary font-medium line-clamp-1">
                     {eventCard.name}
                   </div>
-                  <div className="text-xs text-magic-color mt-0.5">
+                  <div className="text-xs text-magic-color">
                     Ativo
                   </div>
                 </div>
               ) : (
                 <div className="text-center">
-                  <Plus className="w-3 h-3 text-text-muted opacity-50 mb-0.5" />
+                  <Plus className="w-2 h-2 text-text-muted opacity-50 mb-0.5" />
                   <div className="text-xs text-text-muted">Evento</div>
                 </div>
               )}
@@ -239,9 +239,9 @@ const EventCardsSection: React.FC<{
       </div>
 
       {eventCount >= eventMax && (
-        <div className="mt-1 p-1.5 bg-magic-color/10 rounded-lg text-center">
+        <div className="mt-0.5 p-1 bg-magic-color/10 rounded-lg text-center">
           <div className="text-magic-color font-bold text-xs">
-            🌟 Máximo de eventos ativos!
+            🌟 Máximo!
           </div>
         </div>
       )}
@@ -308,9 +308,9 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
       {/* Content */}
-      <div className="relative z-10 p-3">
+      <div className="relative z-10 p-2">
         {/* Tab Navigation */}
-        <div className="flex gap-1 mb-3 bg-surface-card/80 backdrop-blur rounded-lg p-1">
+        <div className="flex gap-0.5 mb-2 bg-surface-card/80 backdrop-blur rounded-lg p-0.5">
           {sections.map((section) => (
             <button
               key={section.id}
@@ -333,7 +333,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
           {/* Active Grid Section - Takes 2 columns */}
           <div className="lg:col-span-2">
             {sections.map((section) => (
@@ -354,7 +354,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
           </div>
 
           {/* Right Column - Events and Landmarks */}
-          <div className="lg:col-span-2 space-y-3">
+          <div className="lg:col-span-2 space-y-2">
             {/* Events Section - Fixed like field cards */}
             <EventCardsSection
               eventGrid={eventGrid}
@@ -371,9 +371,9 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
             />
             
             {/* Quick Stats */}
-            <div className="surface-elevated p-3">
-              <h4 className="font-bold text-text-primary mb-2 text-sm">Resumo</h4>
-              <div className="space-y-1 text-xs">
+            <div className="surface-elevated p-2">
+              <h4 className="font-bold text-text-primary mb-1 text-xs">Resumo</h4>
+              <div className="space-y-0.5 text-xs">
                 {sections.map((section) => (
                   <div key={section.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
