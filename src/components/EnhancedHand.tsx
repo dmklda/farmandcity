@@ -119,11 +119,11 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative w-20 h-28 rounded-lg border-2 cursor-pointer
-        transition-all duration-200 ease-out group
+        relative w-16 h-24 rounded-lg border-2 cursor-pointer
+        transition-all duration-300 ease-out group
         ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}
         ${isPlayable 
-          ? 'hover:scale-110 hover:-translate-y-3 hover:z-30 hover:shadow-xl' 
+          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110' 
           : 'opacity-60 cursor-not-allowed'
         }
         ${getCardTypeColor(card.type)}
@@ -230,7 +230,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
             {/* Deck Area - Left Side */}
             <div className="flex-shrink-0">
               <div 
-                className="w-20 h-28 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-all duration-300 hover:scale-105"
+                className="w-16 h-24 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-all duration-300 hover:scale-105"
                 title="Deck"
               >
                 <div className="text-sm text-primary">🂠</div>
@@ -239,7 +239,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
             </div>
 
             {/* Hand Cards - Center */}
-          <div className="flex items-end gap-2 max-w-[500px] overflow-x-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
+          <div className="flex items-end gap-1 flex-wrap justify-center">
             {hand.map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
