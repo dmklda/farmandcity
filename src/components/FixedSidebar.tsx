@@ -81,7 +81,7 @@ const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, hi
 
       {/* Sidebar */}
       <aside className={`
-        bg-surface border-r border-border relative z-30 h-screen transition-all duration-300
+        bg-surface border-r border-border z-30 h-screen transition-all duration-300 fixed left-0 top-0
         ${isVisible ? 'w-72' : 'w-0 overflow-hidden'}
       `}>
         <div className="p-2 h-full overflow-hidden flex flex-col">

@@ -69,7 +69,7 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   };
 
   return (
-    <header className="w-full bg-surface border-b border-border px-4 py-2 flex items-center justify-between relative z-40">
+    <header className="w-full bg-surface border-b border-border px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
       {/* Logo Section */}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1.5">

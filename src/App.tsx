@@ -800,109 +800,113 @@ const App: React.FC = () => {
 
   // Layout principal
   return (
-    <div className="flex min-h-screen bg-background w-full">
+    <div className="h-screen bg-background w-full overflow-hidden" style={{ paddingLeft: '0px', paddingTop: '64px' }}>
+      {/* Fixed Sidebar */}
       <FixedSidebar
         resources={sidebarResources}
         progress={sidebarProgress}
         victory={sidebarVictory}
         history={history}
       />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <EnhancedTopBar
-          turn={game.turn}
-          turnMax={20}
-          buildCount={builtCountThisTurn}
-          buildMax={2}
-          phase={game.phase}
-          onNextPhase={victory || discardMode ? () => {} : nextPhase}
-          discardMode={discardMode}
-          resources={game.resources}
+      
+      {/* Fixed TopBar */}
+      <EnhancedTopBar
+        turn={game.turn}
+        turnMax={20}
+        buildCount={builtCountThisTurn}
+        buildMax={2}
+        phase={game.phase}
+        onNextPhase={victory || discardMode ? () => {} : nextPhase}
+        discardMode={discardMode}
+        resources={game.resources}
+      />
+      
+      {/* Main Content Area - Scrollable */}
+      <div className="h-full overflow-y-auto overflow-x-hidden p-3" style={{ paddingLeft: '300px', paddingBottom: '200px' }}>
+        <EnhancedGridBoard
+          farmGrid={game.farmGrid}
+          cityGrid={game.cityGrid}
+          eventGrid={game.eventGrid}
+          farmCount={farmCount}
+          farmMax={farmMax}
+          cityCount={cityCount}
+          cityMax={cityMax}
+          eventCount={eventCount}
+          eventMax={eventMax}
+          landmarkCount={landmarkCount}
+          landmarkMax={landmarkMax}
+          onSelectFarm={victory ? () => {} : (x, y) => handleSelectCell('farm', x, y)}
+          onSelectCity={victory ? () => {} : (x, y) => handleSelectCell('city', x, y)}
+          onSelectEvent={victory ? () => {} : (x, y) => handleSelectCell('event', x, y)}
+          highlightFarm={selectedGrid === 'farm'}
+          highlightCity={selectedGrid === 'city'}
+          highlightEvent={selectedGrid === 'event'}
         />
-        {/* Área central para grids e deck */}
-        <div className="flex-1 p-3 flex flex-col gap-3 pb-40">
-          <EnhancedGridBoard
-            farmGrid={game.farmGrid}
-            cityGrid={game.cityGrid}
-            eventGrid={game.eventGrid}
-            farmCount={farmCount}
-            farmMax={farmMax}
-            cityCount={cityCount}
-            cityMax={cityMax}
-            eventCount={eventCount}
-            eventMax={eventMax}
-            landmarkCount={landmarkCount}
-            landmarkMax={landmarkMax}
-            onSelectFarm={victory ? () => {} : (x, y) => handleSelectCell('farm', x, y)}
-            onSelectCity={victory ? () => {} : (x, y) => handleSelectCell('city', x, y)}
-            onSelectEvent={victory ? () => {} : (x, y) => handleSelectCell('event', x, y)}
-            highlightFarm={selectedGrid === 'farm'}
-            highlightCity={selectedGrid === 'city'}
-            highlightEvent={selectedGrid === 'event'}
-          />
-          
-          <div className="flex justify-center">
-            <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
-          </div>
-        </div>
         
-        {/* Enhanced Hand (Fixed Bottom) */}
-        <EnhancedHand
-          hand={game.hand}
-          onSelectCard={victory ? () => {} : handleSelectCard}
-          selectedCardId={selectedCard?.id}
-          canPlayCard={canPlayCardUI}
-        />
-        {/* Modal de descarte manual */}
-        {discardMode && (
+        {/* Deck Area dentro da área scrollable */}
+        <div className="flex justify-center mt-4 pb-4">
+          <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
+        </div>
+      </div>
+      
+      {/* Fixed Hand at Bottom */}
+      <EnhancedHand
+        hand={game.hand}
+        onSelectCard={victory ? () => {} : handleSelectCard}
+        selectedCardId={selectedCard?.id}
+        canPlayCard={canPlayCardUI}
+      />
+      
+      {/* Modal de descarte manual */}
+      {discardMode && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.75)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.75)',
-            zIndex: 1000,
+            background: '#23283a',
+            borderRadius: 16,
+            padding: 32,
+            minWidth: 400,
+            boxShadow: '0 4px 32px #000a',
+            border: '2px solid #F59E0B',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: 20,
           }}>
-            <div style={{
-              background: '#23283a',
-              borderRadius: 16,
-              padding: 32,
-              minWidth: 400,
-              boxShadow: '0 4px 32px #000a',
-              border: '2px solid #F59E0B',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 20,
-            }}>
-              <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#fff' }}>Descarte obrigatório</div>
-              <div style={{ fontSize: 16, marginBottom: 16, color: '#fff' }}>Escolha uma carta para descartar:</div>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-                {game.hand.map((card) => (
-                  <div
-                    key={card.id}
-                    style={{
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease',
-                    }}
-                    onClick={() => handleManualDiscard(card)}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    <CardComponent
-                      card={card}
-                      size="medium"
-                    />
-                  </div>
-                ))}
-              </div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#fff' }}>Descarte obrigatório</div>
+            <div style={{ fontSize: 16, marginBottom: 16, color: '#fff' }}>Escolha uma carta para descartar:</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {game.hand.map((card) => (
+                <div
+                  key={card.id}
+                  style={{
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                  }}
+                  onClick={() => handleManualDiscard(card)}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <CardComponent
+                    card={card}
+                    size="medium"
+                  />
+                </div>
+              ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
