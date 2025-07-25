@@ -1,0 +1,55 @@
+/* Custom ReactFlow resize controls */
+.react-flow__resize-control {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid #3B82F6 !important;
+  background-color: #ffffff !important;
+  border-radius: 2px !important;
+}
+
+.react-flow__resize-control:hover {
+  background-color: #3B82F6 !important;
+  transform: scale(1.2);
+}
+
+.react-flow__resize-control.top {
+  top: -6px !important;
+}
+
+.react-flow__resize-control.bottom {
+  bottom: -6px !important;
+}
+
+.react-flow__resize-control.left {
+  left: -6px !important;
+}
+
+.react-flow__resize-control.right {
+  right: -6px !important;
+}
+
+.react-flow__resize-control.top.left {
+  top: -6px !important;
+  left: -6px !important;
+}
+
+.react-flow__resize-control.top.right {
+  top: -6px !important;
+  right: -6px !important;
+}
+
+.react-flow__resize-control.bottom.left {
+  bottom: -6px !important;
+  left: -6px !important;
+}
+
+.react-flow__resize-control.bottom.right {
+  bottom: -6px !important;
+  right: -6px !important;
+}
+
+/* Custom node hover effect to show resize controls better */
+.react-flow__node:hover .react-flow__resize-control {
+  opacity: 1 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

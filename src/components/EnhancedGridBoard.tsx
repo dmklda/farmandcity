@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { ReactFlow, Node, Background, Controls, useNodesState, useEdgesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import './flow-nodes/resize-controls.css';
 import backgroundImage from '../assets/grid-board-background.jpg';
 import FarmNode from './flow-nodes/FarmNode';
 import CityNode from './flow-nodes/CityNode';
