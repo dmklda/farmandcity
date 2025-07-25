@@ -81,9 +81,9 @@ export function useGameState() {
     farmGrid: game.farmGrid,
     cityGrid: game.cityGrid,
     farmCount: game.farmGrid.flat().filter(cell => cell.card).length,
-    farmMax: game.farmGrid.length * (game.farmGrid[0]?.length || 0),
+    farmMax: 12, // 3x4 grid
     cityCount: game.cityGrid.flat().filter(cell => cell.card).length,
-    cityMax: game.cityGrid.length * (game.cityGrid[0]?.length || 0),
+    cityMax: 6, // 2x3 grid
     landmarkCount: game.playerStats.landmarks,
     landmarkMax: 3,
     onSelectFarm: victory ? () => {} : (x: number, y: number) => {}, // TODO: conectar handler
