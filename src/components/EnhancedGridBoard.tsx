@@ -60,7 +60,7 @@ const GridSection: React.FC<GridSectionProps> = ({
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell aspect-square min-h-[20px] flex items-center justify-center text-xs font-medium
+              grid-cell aspect-square h-[15px] w-[15px] flex items-center justify-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -68,13 +68,10 @@ const GridSection: React.FC<GridSectionProps> = ({
           >
             {cell.card ? (
               <div className="text-center">
-                <div className="text-[8px] mb-0.5">{cell.card.icon || '🏠'}</div>
-                <div className="text-[8px] text-text-muted truncate">
-                  {cell.card.name}
-                </div>
+                <div className="text-[6px]">{cell.card.icon || '🏠'}</div>
               </div>
             ) : (
-              <Plus className="w-2 h-2 text-text-muted opacity-50" />
+              <Plus className="w-1.5 h-1.5 text-text-muted opacity-50" />
             )}
           </div>
         ))
