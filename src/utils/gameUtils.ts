@@ -54,8 +54,8 @@ export function getInitialState(deck: Card[]): GameState {
     phase: 'draw' as const,
     resources: { coins: 10, food: 10, materials: 10, population: 5 },
     playerStats: { reputation: 5, totalProduction: 0, buildings: 0, landmarks: 0 },
-    farmGrid: createEmptyGrid(2, 4),
-    cityGrid: createEmptyGrid(2, 4),
+    farmGrid: createEmptyGrid(3, 4), // 12 slots (3x4)
+    cityGrid: createEmptyGrid(2, 3), // 6 slots (2x3)
     eventGrid: createEmptyGrid(1, 2),
     hand,
     deck: remainingDeck,

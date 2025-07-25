@@ -60,7 +60,7 @@ const GridSection: React.FC<GridSectionProps> = ({
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell aspect-square min-h-[40px] flex items-center justify-center text-xs font-medium
+              grid-cell w-20 h-20 flex items-center justify-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -149,12 +149,12 @@ const LandmarkSection: React.FC<{
     </div>
 
     <div className="p-1">
-      <div className="grid grid-cols-5 gap-1">
-        {Array.from({ length: 5 }, (_, i) => (
+      <div className="grid grid-cols-3 gap-1">
+        {Array.from({ length: 3 }, (_, i) => (
           <div
             key={i}
             className={`
-              aspect-square rounded-md border-2 border-dashed flex items-center justify-center min-h-[20px]
+              w-20 h-20 rounded-md border-2 border-dashed flex items-center justify-center
               transition-all duration-300
               ${i < landmarkCount
                 ? 'border-secondary bg-secondary/20 text-secondary'

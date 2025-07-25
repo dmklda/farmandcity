@@ -214,47 +214,66 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur border-t border-border p-2 z-30">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-bold text-text-primary">Mão de Cartas</h3>
-            <div className="flex items-center gap-2 text-xs text-text-secondary">
-              <span>{hand.length} cartas</span>
-              <div className="flex items-center gap-1">
-                <div className="flex items-center gap-0.5">
-                  <Zap className="w-3 h-3 text-farm-color" />
-                  <span className="text-xs">Jogável</span>
-                </div>
-                <div className="flex items-center gap-0.5">
-                  <Lock className="w-3 h-3 text-text-muted" />
-                  <span className="text-xs">Bloqueada</span>
-                </div>
-              </div>
+      <div className="fixed bottom-0 left-0 right-0 bg-surface-card/95 backdrop-blur border-t border-border z-20">
+        <div className="flex items-end justify-center gap-4 p-4">
+          {/* Área de Descarte/Removidas - Esquerda */}
+          <div className="flex flex-col gap-2">
+            <div 
+              className="w-16 h-24 bg-destructive/20 border-2 border-dashed border-destructive/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-destructive/30 transition-colors"
+              title="Cartas Descartadas"
+            >
+              <div className="text-xs text-destructive">🗑️</div>
+              <div className="text-xs text-destructive font-medium">0</div>
+            </div>
+            <div 
+              className="w-16 h-24 bg-muted/20 border-2 border-dashed border-muted/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors"
+              title="Cartas Removidas"
+            >
+              <div className="text-xs text-muted">❌</div>
+              <div className="text-xs text-muted font-medium">0</div>
             </div>
           </div>
-          
-          {/* Cards */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-            {hand.map((card) => (
-              <EnhancedCardComponent
-                key={card.id}
-                card={card}
-                isSelected={selectedCardId === card.id}
-                isPlayable={(() => {
-                  const result = canPlayCard(card);
-                  return typeof result === 'object' ? result.playable : result;
-                })()}
-                onSelect={() => onSelectCard(card)}
-                onShowDetail={() => setDetailCard(card)}
-              />
+
+          {/* Mão de Cartas - Centro */}
+          <div className="flex items-end justify-center gap-1 min-h-[120px]">
+            {hand.map((card, index) => (
+              <div
+                key={`${card.id}-${index}`}
+                className="transition-all duration-200 hover:transform hover:-translate-y-8 hover:scale-110 hover:z-30 cursor-pointer"
+                style={{ 
+                  zIndex: hand.length - index,
+                  marginLeft: index > 0 ? '-12px' : '0'
+                }}
+              >
+                <EnhancedCardComponent
+                  card={card}
+                  isSelected={selectedCardId === card.id}
+                  isPlayable={(() => {
+                    const result = canPlayCard(card);
+                    return typeof result === 'object' ? result.playable : result;
+                  })()}
+                  onSelect={() => onSelectCard(card)}
+                  onShowDetail={() => setDetailCard(card)}
+                />
+              </div>
             ))}
             
             {hand.length === 0 && (
-              <div className="flex-1 flex items-center justify-center py-8 text-text-muted">
+              <div className="flex items-center justify-center py-8 text-text-muted">
                 <p>Nenhuma carta na mão</p>
               </div>
             )}
+          </div>
+
+          {/* Deck - Direita */}
+          <div className="flex flex-col gap-2">
+            <div 
+              className="w-16 h-24 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-colors"
+              title="Deck"
+            >
+              <div className="text-sm text-primary">🂠</div>
+              <div className="text-xs text-primary font-medium">23</div>
+            </div>
           </div>
         </div>
       </div>
