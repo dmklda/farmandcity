@@ -221,7 +221,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
     <>
       {/* Hand Container */}
       <div className={`fixed bottom-4 z-20 transition-all duration-300 ${
-        sidebarVisible ? 'left-1/2 transform -translate-x-1/2 translate-x-32' : 'left-1/2 transform -translate-x-1/2'
+        sidebarVisible ? 'left-1/2 transform -translate-x-1/2' : 'left-1/2 transform -translate-x-1/2'
       }`}>
         <div className="bg-surface-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-3">
           <div className="flex items-end gap-4">
