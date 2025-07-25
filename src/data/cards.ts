@@ -598,5 +598,149 @@ export const baseDeck: Card[] = [
     cost: { coins: 3, materials: 2 },
     effect: { description: "Ganhe 1 reputação ao jogar esta carta." },
     rarity: "booster"
+  },
+  // === CARTAS PARA COMPLETAR LACUNAS ===
+  // farm: legendary, ultra, secret
+  {
+    id: "farm-world-tree",
+    name: "Árvore do Mundo",
+    type: "farm",
+    cost: { coins: 20, food: 10, materials: 15, population: 5 },
+    effect: { description: "Produz 5 comida por turno e fornece +10 reputação permanente. Quando ativada por dado 6, todos os jogadores ganham 2 comida." },
+    rarity: "legendary"
+  },
+  {
+    id: "farm-crystal-greenhouse",
+    name: "Estufa de Cristal",
+    type: "farm",
+    cost: { coins: 8, food: 3, materials: 5 },
+    effect: { description: "Produz 3 comida quando ativada por qualquer dado. Se ativada 3 vezes no mesmo turno, produz 2 comidas extras." },
+    rarity: "ultra"
+  },
+  {
+    id: "farm-forbidden-grove",
+    name: "Bosque Proibido",
+    type: "farm",
+    cost: { coins: 6, food: 2, materials: 3 },
+    effect: { description: "Produz 2 comida e 1 material quando ativada por dado 3. Se você tiver menos de 5 comidas, produz o dobro." },
+    rarity: "secret"
+  },
+  // action: legendary, ultra, crisis
+  {
+    id: "action-divine-intervention",
+    name: "Intervenção Divina",
+    type: "action",
+    cost: { coins: 10, food: 5, materials: 5, population: 2 },
+    effect: { description: "Ganhe 5 de cada recurso e +3 reputação. Só pode ser jogada uma vez por partida." },
+    rarity: "legendary"
+  },
+  {
+    id: "action-temporal-shift",
+    name: "Mudança Temporal",
+    type: "action",
+    cost: { coins: 6, food: 3, materials: 2 },
+    effect: { description: "Jogue um turno extra após este. Durante esse turno, todas as suas cartas custam 1 recurso a menos." },
+    rarity: "ultra"
+  },
+  {
+    id: "action-desperate-measures",
+    name: "Medidas Desesperadas",
+    type: "action",
+    cost: { coins: 0 },
+    effect: { description: "Perca metade dos seus recursos arredondando para baixo, mas ganhe 3 cartas da sua mão." },
+    rarity: "crisis"
+  },
+  // defense: legendary, ultra, secret
+  {
+    id: "defense-aegis-of-eternity",
+    name: "Égide da Eternidade",
+    type: "defense",
+    cost: { coins: 12, food: 8, materials: 10, population: 3 },
+    effect: { description: "Torna você imune a todos os efeitos negativos por 3 turnos e fornece +2 reputação." },
+    rarity: "legendary"
+  },
+  {
+    id: "defense-quantum-shield",
+    name: "Escudo Quântico",
+    type: "defense",
+    cost: { coins: 5, materials: 4 },
+    effect: { description: "Anula os próximos 2 efeitos negativos. Para cada efeito anulado, ganhe 1 recurso à escolha." },
+    rarity: "ultra"
+  },
+  {
+    id: "defense-shadow-veil",
+    name: "Véu das Sombras",
+    type: "defense",
+    cost: { coins: 3, food: 2 },
+    effect: { description: "Torna uma carta sua invisível aos oponentes por 2 turnos. Ela não pode ser alvo de armadilhas ou magias." },
+    rarity: "secret"
+  },
+  // magic: common, crisis
+  {
+    id: "magic-basic-charm",
+    name: "Encanto Básico",
+    type: "magic",
+    cost: { coins: 1 },
+    effect: { description: "Ganhe 1 comida ou 1 material à escolha neste turno." },
+    rarity: "common"
+  },
+  {
+    id: "magic-chaos-storm",
+    name: "Tempestade do Caos",
+    type: "magic",
+    cost: { coins: 1, food: 1 },
+    effect: { description: "Todos os recursos são redistribuídos aleatoriamente entre todos os jogadores." },
+    rarity: "crisis"
+  },
+  // trap: legendary
+  {
+    id: "trap-labyrinth-of-souls",
+    name: "Labirinto das Almas",
+    type: "trap",
+    cost: { coins: 15, food: 8, materials: 12, population: 4 },
+    effect: { description: "Se o oponente tentar vencer por qualquer condição, ele deve pagar 5 de cada recurso ou a vitória é anulada." },
+    rarity: "legendary"
+  },
+  // event: common, ultra
+  {
+    id: "event-market-day",
+    name: "Dia de Feira",
+    type: "event",
+    cost: { coins: 1 },
+    effect: { description: "Todos os jogadores podem trocar recursos 1 por 1 neste turno." },
+    rarity: "common"
+  },
+  {
+    id: "event-cosmic-alignment",
+    name: "Alinhamento Cósmico",
+    type: "event",
+    cost: { coins: 5, food: 5, materials: 5, population: 2 },
+    effect: { description: "Todos os jogadores dobram a produção de todos os recursos por 2 turnos." },
+    rarity: "ultra"
+  },
+  // landmark: common, uncommon, crisis
+  {
+    id: "landmark-village-well",
+    name: "Poço da Aldeia",
+    type: "landmark",
+    cost: { coins: 3, materials: 2, population: 1 },
+    effect: { description: "Todas as suas cartas de fazenda produzem +1 comida permanentemente." },
+    rarity: "common"
+  },
+  {
+    id: "landmark-town-square",
+    name: "Praça da Cidade",
+    type: "landmark",
+    cost: { coins: 5, materials: 3, population: 2 },
+    effect: { description: "Permite jogar 1 carta de ação extra por turno e fornece +1 reputação." },
+    rarity: "uncommon"
+  },
+  {
+    id: "landmark-ruins-of-despair",
+    name: "Ruínas do Desespero",
+    type: "landmark",
+    cost: { coins: 8, materials: 6, population: 3 },
+    effect: { description: "Todos os jogadores perdem 2 de cada recurso quando esta carta é construída, mas você ganha +5 reputação." },
+    rarity: "crisis"
   }
-]; 
+];
