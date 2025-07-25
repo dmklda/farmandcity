@@ -35,9 +35,12 @@ export interface GameState {
   deck: Card[];
   farmGrid: GridCell[][];
   cityGrid: GridCell[][];
+  eventGrid: GridCell[][];
   turn: number;
   phase: GamePhase;
   activeEvents: GameEvent[];
   comboEffects: ComboEffect[];
   playerStats: PlayerStats;
-} 
+  magicUsedThisTurn: boolean;
+  builtCountThisTurn: number;
+}

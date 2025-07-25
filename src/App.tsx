@@ -89,11 +89,14 @@ function getInitialState(deck: Card[]): GameState {
     deck,
     farmGrid: createEmptyGrid(6, 6),
     cityGrid: createEmptyGrid(4, 4),
+    eventGrid: createEmptyGrid(2, 3),
     turn: 1,
     phase: 'draw' as GamePhase,
     activeEvents: [],
     comboEffects: [],
     playerStats: { reputation: 0, totalProduction: 0, buildings: 0, landmarks: 0 },
+    magicUsedThisTurn: false,
+    builtCountThisTurn: 0,
   };
 }
 
@@ -111,7 +114,7 @@ const App: React.FC = () => {
 
   const [game, setGame] = useState<GameState>(() => getInitialState(getActiveDeck()));
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  const [selectedGrid, setSelectedGrid] = useState<'farm' | 'city' | null>(null);
+  const [selectedGrid, setSelectedGrid] = useState<'farm' | 'city' | 'event' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [productionSummary, setProductionSummary] = useState<string | null>(null);
   const [actionSummary, setActionSummary] = useState<string | null>(null);
@@ -141,8 +144,10 @@ const App: React.FC = () => {
   // Contadores de ocupação
   const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
   const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
+  const eventCount = game.eventGrid.flat().filter(cell => cell.card).length;
   const farmMax = game.farmGrid.length * (game.farmGrid[0]?.length || 0);
   const cityMax = game.cityGrid.length * (game.cityGrid[0]?.length || 0);
+  const eventMax = game.eventGrid.length * (game.eventGrid[0]?.length || 0);
   const landmarkCount = game.playerStats.landmarks;
   const landmarkMax = 3;
 
@@ -259,6 +264,8 @@ const App: React.FC = () => {
       setBuiltThisTurn({ farm: false, city: false });
       setBuiltCountThisTurn(0);
       setActionThisTurn(false);
+      setMagicUsedThisTurn(false);
+      setGame(g => ({ ...g, magicUsedThisTurn: false, builtCountThisTurn: 0 }));
       if (game.hand.length < 6) {
         if (game.deck.length > 0) {
           setGame((g) => ({
@@ -288,7 +295,7 @@ const App: React.FC = () => {
 
   // NOVO: Handler de ativação de magia
   function handleActivateMagic(card: Card) {
-    if (magicUsedThisTurn) {
+    if (game.magicUsedThisTurn) {
       setError('Só pode usar 1 carta de magia por turno.');
       return;
     }
@@ -314,11 +321,11 @@ const App: React.FC = () => {
         population: g.resources.population - (card.cost.population ?? 0),
       },
       comboEffects: [...g.comboEffects, { description: card.effect.description }],
+      magicUsedThisTurn: true,
     }));
     setActionSummary(`Magia ativada: ${card.name} (${card.effect.description})`);
     addHistory(`✨ Usou magia: ${card.name}`);
     playSound('build');
-    setMagicUsedThisTurn(true);
     setSelectedCard(null);
     setSelectedGrid(null);
     setError(null);
@@ -542,7 +549,7 @@ const App: React.FC = () => {
   };
 
   // Handler de construção: até 2 construções por turno, qualquer grid
-  const handleSelectCell = (gridType: 'farm' | 'city', x: number, y: number) => {
+  const handleSelectCell = (gridType: 'farm' | 'city' | 'event', x: number, y: number) => {
     if (!selectedCard) return;
     if (selectedGrid !== gridType) {
       setError('Tipo de carta não corresponde ao grid.');
@@ -556,7 +563,7 @@ const App: React.FC = () => {
       setError('Só pode construir até 2 cartas por turno.');
       return;
     }
-    const grid = gridType === 'farm' ? game.farmGrid : game.cityGrid;
+    const grid = gridType === 'farm' ? game.farmGrid : gridType === 'city' ? game.cityGrid : game.eventGrid;
     if (grid[y][x].card) {
       setError('Espaço já ocupado.');
       return;
@@ -619,6 +626,7 @@ const App: React.FC = () => {
         resources: newResources,
         farmGrid: gridType === 'farm' ? newGrid : g.farmGrid,
         cityGrid: gridType === 'city' ? newGrid : g.cityGrid,
+        eventGrid: gridType === 'event' ? newGrid : g.eventGrid,
         playerStats: {
           ...g.playerStats,
           buildings: g.playerStats.buildings + 1,
@@ -633,23 +641,18 @@ const App: React.FC = () => {
     setBuiltCountThisTurn((prev) => prev + 1);
   };
 
-  // Handler de ação: só pode usar 1 carta de ação por turno
+  // Handler de seleção de carta: ações, magia, defesa ou construção
   const handleSelectCard = (card: Card) => {
-    if (card.type === 'action' && game.phase === 'action') {
-      if (actionThisTurn) {
-        setError('Só pode usar 1 carta de ação por turno.');
-        return;
-      }
+    const canPlay = canPlayCardUI(card);
+    
+    // Para cartas de efeito imediato (action, magic, defense)
+    if (card.type === 'action' && game.phase === 'action' && canPlay.playable) {
       const cost: Resources = {
         coins: card.cost.coins ?? 0,
         food: card.cost.food ?? 0,
         materials: card.cost.materials ?? 0,
         population: card.cost.population ?? 0,
       };
-      if (!canPlayCard(game.resources, cost)) {
-        setError('Recursos insuficientes para usar esta carta de ação.');
-        return;
-      }
       const effect = parseInstantEffect(card);
       let details: string[] = [];
       Object.entries(effect).forEach(([key, value]) => {
@@ -678,44 +681,69 @@ const App: React.FC = () => {
       setTimeout(() => setActionSummary(null), 1800);
       setActionThisTurn(true);
       return;
-    } else if (card.type === 'magic' && game.phase === 'action') {
+    } else if (card.type === 'magic' && game.phase === 'action' && canPlay.playable) {
       handleActivateMagic(card);
       return;
-    } else if (card.type === 'defense' && game.activeEvents.some(e => e.type === 'crisis')) {
+    } else if (card.type === 'defense' && canPlay.playable) {
       handleActivateDefense(card);
       return;
     }
+    
+    // Para cartas que não podem ser jogadas, exibir erro
+    if (!canPlay.playable) {
+      setError(canPlay.reason || 'Esta carta não pode ser jogada agora.');
+      return;
+    }
+    
+    // Para cartas de construção (farm, city, landmark, event, trap)
     setSelectedCard(card);
-    setSelectedGrid(card.type === 'farm' ? 'farm' : card.type === 'city' ? 'city' : null);
+    if (['farm', 'city', 'landmark'].includes(card.type)) {
+      setSelectedGrid(card.type === 'farm' ? 'farm' : 'city');
+    } else if (['event', 'trap'].includes(card.type)) {
+      setSelectedGrid('event');
+    } else {
+      setSelectedGrid(null);
+    }
     setError(null);
   };
 
   // Função para saber se uma carta pode ser jogada
   function canPlayCardUI(card: Card) {
+    const cost: Resources = {
+      coins: card.cost.coins ?? 0,
+      food: card.cost.food ?? 0,
+      materials: card.cost.materials ?? 0,
+      population: card.cost.population ?? 0,
+    };
+
     if (card.type === 'action') {
       if (game.phase !== 'action') return { playable: false, reason: 'Só pode usar cartas de ação na fase de ação' };
       if (actionThisTurn) return { playable: false, reason: 'Só pode usar 1 carta de ação por turno.' };
-      const cost: Resources = {
-        coins: card.cost.coins ?? 0,
-        food: card.cost.food ?? 0,
-        materials: card.cost.materials ?? 0,
-        population: card.cost.population ?? 0,
-      };
       if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
       return { playable: true };
     }
-    if (['farm', 'city', 'landmark'].includes(card.type)) {
+    
+    if (card.type === 'magic') {
+      if (game.phase !== 'action') return { playable: false, reason: 'Só pode usar cartas de magia na fase de ação' };
+      if (game.magicUsedThisTurn) return { playable: false, reason: 'Só pode usar 1 carta de magia por turno.' };
+      if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
+      return { playable: true };
+    }
+    
+    if (card.type === 'defense') {
+      const hasCrisis = game.activeEvents.some(e => e.type === 'crisis');
+      if (!hasCrisis) return { playable: false, reason: 'Só pode usar cartas de defesa durante crises' };
+      if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
+      return { playable: true };
+    }
+    
+    if (['farm', 'city', 'landmark', 'event', 'trap'].includes(card.type)) {
       if (game.phase !== 'build') return { playable: false, reason: 'Só pode construir na fase de construção' };
       if (builtCountThisTurn >= 2) return { playable: false, reason: 'Só pode construir até 2 cartas por turno.' };
-      const cost: Resources = {
-        coins: card.cost.coins ?? 0,
-        food: card.cost.food ?? 0,
-        materials: card.cost.materials ?? 0,
-        population: card.cost.population ?? 0,
-      };
       if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
       return { playable: true };
     }
+    
     return { playable: false, reason: 'Tipo de carta não jogável' };
   }
 
@@ -790,16 +818,21 @@ const App: React.FC = () => {
           <GridBoard
             farmGrid={game.farmGrid}
             cityGrid={game.cityGrid}
+            eventGrid={game.eventGrid}
             farmCount={farmCount}
             farmMax={farmMax}
             cityCount={cityCount}
             cityMax={cityMax}
+            eventCount={eventCount}
+            eventMax={eventMax}
             landmarkCount={landmarkCount}
             landmarkMax={landmarkMax}
             onSelectFarm={victory ? () => {} : (x, y) => handleSelectCell('farm', x, y)}
             onSelectCity={victory ? () => {} : (x, y) => handleSelectCell('city', x, y)}
+            onSelectEvent={victory ? () => {} : (x, y) => handleSelectCell('event', x, y)}
             highlightFarm={selectedGrid === 'farm'}
             highlightCity={selectedGrid === 'city'}
+            highlightEvent={selectedGrid === 'event'}
           />
           <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
         </div>

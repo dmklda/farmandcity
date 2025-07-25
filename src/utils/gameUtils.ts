@@ -56,9 +56,12 @@ export function getInitialState(deck: Card[]): GameState {
     playerStats: { reputation: 5, totalProduction: 0, buildings: 0, landmarks: 0 },
     farmGrid: createEmptyGrid(3, 3),
     cityGrid: createEmptyGrid(3, 3),
+    eventGrid: createEmptyGrid(2, 3),
     hand,
     deck: remainingDeck,
     activeEvents: [],
-    comboEffects: []
+    comboEffects: [],
+    magicUsedThisTurn: false,
+    builtCountThisTurn: 0
   };
 }
