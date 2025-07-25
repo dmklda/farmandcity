@@ -10,7 +10,7 @@ import PlayerStatsBar from './components/PlayerStatsBar.js';
 import { Card } from './types/card.js';
 import FixedSidebar from './components/FixedSidebar.js';
 import EnhancedTopBar from './components/EnhancedTopBar.js';
-import DeckArea from './components/DeckArea.js';
+
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
 
@@ -853,11 +853,6 @@ const App: React.FC = () => {
           highlightCity={selectedGrid === 'city'}
           highlightEvent={selectedGrid === 'event'}
         />
-        
-        {/* Deck Area dentro da área scrollable */}
-        <div className="flex justify-center mt-4 pb-4">
-          <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
-        </div>
       </div>
       
       {/* Fixed Hand at Bottom */}

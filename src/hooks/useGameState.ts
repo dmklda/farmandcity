@@ -91,10 +91,6 @@ export function useGameState() {
     highlightFarm: selectedGrid === 'farm',
     highlightCity: selectedGrid === 'city',
   };
-  const deckAreaProps = {
-    deckCount: game.deck.length,
-    lastDrawn,
-  };
   const handProps = {
     hand: game.hand,
     onSelectCard: victory ? () => {} : (card: Card) => {}, // TODO: conectar handler
@@ -107,7 +103,7 @@ export function useGameState() {
     sidebarProps,
     topBarProps,
     gridBoardProps,
-    deckAreaProps,
+    
     handProps,
     discardModal,
     // ...outros handlers e estados se necessário
