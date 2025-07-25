@@ -20,8 +20,6 @@ function createEmptyGrid(rows: number, cols: number): GridCell[][] {
   );
 }
 
-//comentario para teste
-
 function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
