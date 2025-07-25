@@ -120,10 +120,10 @@ const EnhancedCardComponent: React.FC<{
     <div
       className={`
         relative w-16 h-24 rounded-lg border-2 cursor-pointer
-        transition-all duration-300 ease-out group
-        ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}
+        transition-all duration-300 ease-out
+        ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface scale-110 -translate-y-2 z-40' : 'z-10'}
         ${isPlayable 
-          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110 transform-gpu' 
+          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110' 
           : 'opacity-60 cursor-not-allowed'
         }
         ${getCardTypeColor(card.type)}
@@ -131,7 +131,7 @@ const EnhancedCardComponent: React.FC<{
       `}
       style={{ 
         transformOrigin: 'center bottom',
-        zIndex: isSelected ? 40 : 10
+        willChange: 'transform'
       }}
       onClick={isPlayable ? onSelect : undefined}
     >
