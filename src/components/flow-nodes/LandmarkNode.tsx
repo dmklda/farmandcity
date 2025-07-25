@@ -13,7 +13,7 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
   return (
     <>
       <NodeResizer minWidth={200} minHeight={150} />
-      <div className="surface-elevated border-2 border-secondary w-full h-full">
+      <div className="surface-elevated border-2 border-secondary w-full h-full flex flex-col">
         <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <div className="grid grid-cols-[auto_auto] items-center gap-1">
@@ -26,13 +26,13 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
           </div>
         </div>
 
-        <div className="p-1">
-          <div className="grid grid-cols-3 gap-0.5">
+        <div className="p-1 flex-1">
+          <div className="grid grid-cols-3 gap-0.5 h-full">
             {Array.from({ length: 3 }, (_, i) => (
               <div
                 key={i}
                 className={`
-                  w-20 h-20 rounded-md border-2 border-dashed place-items-center
+                  aspect-square rounded-md border-2 border-dashed flex items-center justify-center
                   transition-all duration-300
                   ${i < landmarkCount
                     ? 'border-secondary bg-secondary/20 text-secondary'
@@ -40,7 +40,7 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
                   }
                 `}
               >
-                <div className="grid place-items-center">
+                <div className="flex items-center justify-center">
                   {i < landmarkCount ? (
                     <Crown className="w-2 h-2" />
                   ) : (

@@ -22,13 +22,13 @@ const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
   const renderGrid = () => {
     const cols = grid[0]?.length || 2;
     return (
-      <div className={`grid gap-0.5 p-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className={`grid gap-0.5 p-1 flex-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {grid.flatMap((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
               className={`
-                grid-cell w-20 h-20 place-items-center text-xs font-medium cursor-pointer
+                grid-cell aspect-square flex items-center justify-center text-xs font-medium cursor-pointer
                 ${highlight ? 'available' : ''}
                 ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
               `}
@@ -55,7 +55,7 @@ const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
     <>
       <NodeResizer minWidth={300} minHeight={200} />
       <div className={`
-        surface-elevated transition-all duration-300 relative overflow-hidden w-full h-full
+        surface-elevated transition-all duration-300 relative overflow-hidden w-full h-full flex flex-col
         ${highlight ? 'ring-2 ring-offset-2 ring-offset-background ring-farm-color' : ''}
       `}>
         {/* Header */}

@@ -22,7 +22,7 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
   return (
     <>
       <NodeResizer minWidth={250} minHeight={150} />
-      <div className="surface-elevated border-2 border-magic-color w-full h-full">
+      <div className="surface-elevated border-2 border-magic-color w-full h-full flex flex-col">
         <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <div className="grid grid-cols-[auto_auto] items-center gap-1">
@@ -35,15 +35,15 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
           </div>
         </div>
 
-        <div className="p-1">
-          <div className="grid auto-cols-fr grid-flow-col gap-0.5">
+        <div className="p-1 flex-1">
+          <div className="grid auto-cols-fr grid-flow-col gap-0.5 h-full">
             {Array.from({ length: eventMax }, (_, i) => {
               const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
               return (
                 <div
                   key={i}
                   className={`
-                    min-h-[40px] rounded-lg border-2 border-dashed grid grid-rows-[auto_auto_auto] place-items-center
+                    min-h-[40px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
                     transition-all duration-300 cursor-pointer
                     ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
                     ${eventCard ? 'border-solid bg-surface-hover' : ''}
