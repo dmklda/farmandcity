@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GridCell } from '../types/gameState';
 import CardComponent from './CardComponent';
 import { Card } from '../types/card';
-import CardDetailModal from './EnhancedHand';
+import { CardDetailModal } from './EnhancedHand';
 
 interface GridProps {
   grid: GridCell[][];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState, GamePhase, GridCell } from './types/gameState.js';
 import { starterCards, baseDeck } from './data/cards.js';
 import { Resources } from './types/resources.js';
@@ -10,6 +10,9 @@ import PlayerStatsBar from './components/PlayerStatsBar.js';
 import { Card } from './types/card.js';
 import FixedSidebar from './components/FixedSidebar.js';
 import EnhancedTopBar from './components/EnhancedTopBar.js';
+import AuthPage from './components/AuthPage.js';
+import { supabase } from './integrations/supabase/client.js';
+import type { User, Session } from '@supabase/supabase-js';
 
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
@@ -127,11 +130,47 @@ function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[
 }
 
 const App: React.FC = () => {
+  // Estados de autenticação
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
   // Todos os hooks devem estar aqui dentro!
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
   const [magicUsedThisTurn, setMagicUsedThisTurn] = useState(false);
   const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+
+  // Setup de autenticação
+  useEffect(() => {
+    // Configurar listener de mudanças de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // Verificar sessão existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Função para logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // Função para sucesso de auth
+  const handleAuthSuccess = () => {
+    // Usuário será atualizado automaticamente pelo listener
+  };
 
   // Deck inicial
   const getActiveDeck = () => {
@@ -834,9 +873,35 @@ const App: React.FC = () => {
 
   const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
 
-  // Layout principal
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Auth page for non-authenticated users
+  if (!user) {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  // Layout principal para usuários autenticados
   return (
     <div className="h-screen bg-background w-full overflow-hidden" style={{ paddingLeft: '0px', paddingTop: '64px' }}>
+      {/* User info and logout button */}
+      <div className="absolute top-2 right-4 z-50 flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          {user.email}
+        </span>
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1 text-xs bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded transition-colors"
+        >
+          Sair
+        </button>
+      </div>
       {/* Fixed Sidebar */}
       <FixedSidebar
         resources={sidebarResources}

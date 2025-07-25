@@ -14,7 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_history: {
+        Row: {
+          buildings_built: number
+          completed_at: string
+          final_score: number
+          game_duration_minutes: number | null
+          id: string
+          landmarks_built: number
+          player_id: string
+          resources_final: Json
+          turns_played: number
+        }
+        Insert: {
+          buildings_built?: number
+          completed_at?: string
+          final_score: number
+          game_duration_minutes?: number | null
+          id?: string
+          landmarks_built?: number
+          player_id: string
+          resources_final: Json
+          turns_played: number
+        }
+        Update: {
+          buildings_built?: number
+          completed_at?: string
+          final_score?: number
+          game_duration_minutes?: number | null
+          id?: string
+          landmarks_built?: number
+          player_id?: string
+          resources_final?: Json
+          turns_played?: number
+        }
+        Relationships: []
+      }
+      games: {
+        Row: {
+          created_at: string
+          game_state: Json
+          id: string
+          is_finished: boolean
+          phase: string
+          player_id: string
+          score: number
+          turn: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          game_state: Json
+          id?: string
+          is_finished?: boolean
+          phase?: string
+          player_id: string
+          score?: number
+          turn?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          game_state?: Json
+          id?: string
+          is_finished?: boolean
+          phase?: string
+          player_id?: string
+          score?: number
+          turn?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      player_cards: {
+        Row: {
+          card_id: string
+          id: string
+          player_id: string
+          quantity: number
+          unlocked_at: string
+        }
+        Insert: {
+          card_id: string
+          id?: string
+          player_id: string
+          quantity?: number
+          unlocked_at?: string
+        }
+        Update: {
+          card_id?: string
+          id?: string
+          player_id?: string
+          quantity?: number
+          unlocked_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
