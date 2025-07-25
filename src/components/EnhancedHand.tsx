@@ -118,9 +118,9 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative min-w-[160px] h-[220px] rounded-xl border-2 cursor-pointer
+        relative min-w-[120px] h-[160px] rounded-lg border-2 cursor-pointer
         transition-all duration-300 group
-        ${isSelected ? 'card-selected transform -translate-y-2' : ''}
+        ${isSelected ? 'card-selected transform -translate-y-1' : ''}
         ${isPlayable 
           ? 'card-interactive hover:shadow-glow' 
           : 'opacity-50 cursor-not-allowed hover:scale-100 hover:translate-y-0'
@@ -131,10 +131,10 @@ const EnhancedCardComponent: React.FC<{
       onClick={isPlayable ? onSelect : undefined}
     >
       {/* Card Content */}
-      <div className="p-3 h-full flex flex-col">
+      <div className="p-2 h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between mb-2">
-          <h4 className="text-sm font-bold text-text-primary line-clamp-2 flex-1">
+        <div className="flex items-start justify-between mb-1">
+          <h4 className="text-xs font-bold text-text-primary line-clamp-2 flex-1">
             {card.name}
           </h4>
           <button
@@ -144,38 +144,38 @@ const EnhancedCardComponent: React.FC<{
             }}
             className="p-1 rounded hover:bg-surface-hover transition-colors opacity-70 hover:opacity-100"
           >
-            <Eye className="w-4 h-4 text-text-secondary" />
+            <Eye className="w-3 h-3 text-text-secondary" />
           </button>
         </div>
 
         {/* Type & Rarity */}
-        <div className="flex items-center justify-between text-xs text-text-muted mb-3">
-          <span>{card.type}</span>
-          <span>{card.rarity}</span>
+        <div className="flex items-center justify-between text-xs text-text-muted mb-1">
+          <span className="text-xs">{card.type}</span>
+          <span className="text-xs">{card.rarity}</span>
         </div>
 
         {/* Costs */}
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-0.5 mb-1">
           {(card.cost.coins || 0) > 0 && (
-            <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">
+            <span className="text-xs bg-secondary/20 text-secondary px-1 py-0.5 rounded">
               💰{card.cost.coins}
             </span>
           )}
           {(card.cost.food || 0) > 0 && (
-            <span className="text-xs bg-farm-color/20 text-farm-color px-2 py-1 rounded">
+            <span className="text-xs bg-farm-color/20 text-farm-color px-1 py-0.5 rounded">
               🌾{card.cost.food}
             </span>
           )}
           {(card.cost.materials || 0) > 0 && (
-            <span className="text-xs bg-event-color/20 text-event-color px-2 py-1 rounded">
+            <span className="text-xs bg-event-color/20 text-event-color px-1 py-0.5 rounded">
               🏗️{card.cost.materials}
             </span>
           )}
         </div>
 
         {/* Effect Preview */}
-        <div className="flex-1 mb-2">
-          <p className="text-xs text-text-secondary line-clamp-3">
+        <div className="flex-1 mb-1">
+          <p className="text-xs text-text-secondary line-clamp-2">
             {card.effect.description}
           </p>
         </div>
@@ -184,13 +184,13 @@ const EnhancedCardComponent: React.FC<{
         <div className="flex items-center justify-center">
           {isPlayable ? (
             <div className="flex items-center gap-1 text-xs text-farm-color">
-              <Zap className="w-3 h-3" />
-              <span>Jogável</span>
+              <Zap className="w-2 h-2" />
+              <span className="text-xs">Jogável</span>
             </div>
           ) : (
             <div className="flex items-center gap-1 text-xs text-text-muted">
-              <Lock className="w-3 h-3" />
-              <span>Bloqueada</span>
+              <Lock className="w-2 h-2" />
+              <span className="text-xs">Bloqueada</span>
             </div>
           )}
         </div>
@@ -198,7 +198,7 @@ const EnhancedCardComponent: React.FC<{
 
       {/* Selection Glow */}
       {isSelected && (
-        <div className="absolute inset-0 rounded-xl bg-primary/20 pointer-events-none" />
+        <div className="absolute inset-0 rounded-lg bg-primary/20 pointer-events-none" />
       )}
     </div>
   );
@@ -214,28 +214,28 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
 
   return (
     <>
-      <div className="fixed bottom-0 left-16 right-0 bg-surface/95 backdrop-blur border-t border-border p-4 z-30">
+      <div className="fixed bottom-0 left-16 right-0 bg-surface/95 backdrop-blur border-t border-border p-2 z-30">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-text-primary">Mão de Cartas</h3>
-            <div className="flex items-center gap-3 text-sm text-text-secondary">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-text-primary">Mão de Cartas</h3>
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
               <span>{hand.length} cartas</span>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <Zap className="w-4 h-4 text-farm-color" />
-                  <span>Jogável</span>
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
+                  <Zap className="w-3 h-3 text-farm-color" />
+                  <span className="text-xs">Jogável</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Lock className="w-4 h-4 text-text-muted" />
-                  <span>Bloqueada</span>
+                <div className="flex items-center gap-0.5">
+                  <Lock className="w-3 h-3 text-text-muted" />
+                  <span className="text-xs">Bloqueada</span>
                 </div>
               </div>
             </div>
           </div>
           
           {/* Cards */}
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             {hand.map((card) => (
               <EnhancedCardComponent
                 key={card.id}

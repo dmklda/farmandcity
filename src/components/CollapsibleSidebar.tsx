@@ -101,11 +101,11 @@ const CollapsibleSidebar: React.FC<SidebarProps> = ({ resources, progress, victo
       </button>
 
       {isExpanded ? (
-        <div className="p-4 space-y-6 overflow-y-auto flex-1">
+        <div className="p-3 space-y-4 overflow-y-auto flex-1">
           {/* Progress Section */}
-          <div className="surface-elevated p-4 space-y-4">
-            <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary" />
+          <div className="surface-elevated p-3 space-y-3">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" />
               Progresso
             </h3>
             
@@ -135,9 +135,9 @@ const CollapsibleSidebar: React.FC<SidebarProps> = ({ resources, progress, victo
           </div>
 
           {/* Victory Conditions */}
-          <div className="surface-elevated p-4 space-y-3">
-            <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-secondary" />
+          <div className="surface-elevated p-3 space-y-2">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-secondary" />
               Condições de Vitória
             </h3>
             
@@ -165,13 +165,13 @@ const CollapsibleSidebar: React.FC<SidebarProps> = ({ resources, progress, victo
           </div>
 
           {/* History */}
-          <div className="surface-elevated p-4 flex-1 min-h-0">
-            <h3 className="text-lg font-bold text-text-primary flex items-center gap-2 mb-3">
-              <Clock className="w-5 h-5 text-magic-color" />
+          <div className="surface-elevated p-3 flex-1 min-h-0">
+            <h3 className="text-base font-bold text-text-primary flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-magic-color" />
               Histórico
             </h3>
             
-            <div className="space-y-2 overflow-y-auto max-h-60">
+            <div className="space-y-1 overflow-y-auto max-h-40">
               {history.length > 0 ? (
                 history.slice(-10).reverse().map((event, index) => (
                   <div 

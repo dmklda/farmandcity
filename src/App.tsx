@@ -819,7 +819,7 @@ const App: React.FC = () => {
           resources={game.resources}
         />
         {/* Área central para grids e deck */}
-        <div className="flex-1 p-6 flex flex-col gap-6 pb-60">
+        <div className="flex-1 p-3 flex flex-col gap-3 pb-40">
           <EnhancedGridBoard
             farmGrid={game.farmGrid}
             cityGrid={game.cityGrid}

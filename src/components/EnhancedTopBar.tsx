@@ -24,9 +24,9 @@ interface ResourceChipProps {
 }
 
 const ResourceChip: React.FC<ResourceChipProps> = ({ icon, value, label, color }) => (
-  <div className={`resource-chip group relative ${color}`}>
-    <span className="text-lg">{icon}</span>
-    <span className="font-bold text-text-primary">{value}</span>
+  <div className="resource-chip group relative text-xs px-2 py-1">
+    <span className="text-sm">{icon}</span>
+    <span className="font-bold text-text-primary text-sm">{value}</span>
     
     {/* Tooltip */}
     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-surface-card text-text-secondary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
@@ -42,7 +42,7 @@ interface GameInfoChipProps {
 }
 
 const GameInfoChip: React.FC<GameInfoChipProps> = ({ label, value, color }) => (
-  <div className={`px-3 py-1.5 rounded-lg font-medium text-sm border transition-colors ${color}`}>
+  <div className={`px-2 py-1 rounded-md font-medium text-xs border transition-colors ${color}`}>
     <span className="text-text-secondary">{label}:</span>
     <span className="ml-1 text-text-primary font-bold">{value}</span>
   </div>
@@ -69,17 +69,17 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   };
 
   return (
-    <header className="w-full bg-surface border-b border-border px-6 py-4 flex items-center justify-between relative z-40">
+    <header className="w-full bg-surface border-b border-border px-4 py-2 flex items-center justify-between relative z-40">
       {/* Logo Section */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">👑</span>
-          <h1 className="text-2xl font-bold text-text-primary">Famand</h1>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl">👑</span>
+          <h1 className="text-lg font-bold text-text-primary">Famand</h1>
         </div>
       </div>
       
       {/* Resources Section */}
-      <div className="flex items-center gap-4 bg-surface-card px-4 py-2 rounded-xl border border-border">
+      <div className="flex items-center gap-2 bg-surface-card px-3 py-1.5 rounded-lg border border-border">
         <ResourceChip 
           icon="💰" 
           value={resources.coins} 
@@ -107,9 +107,9 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
       </div>
       
       {/* Game Status & Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         {/* Game Info */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <GameInfoChip 
             label="Turno" 
             value={`${turn}/${turnMax}`}
@@ -132,7 +132,7 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
           onClick={onNextPhase}
           disabled={discardMode}
           className={`
-            btn-primary px-6 py-2.5 text-sm font-semibold rounded-lg flex items-center gap-2
+            btn-primary px-4 py-1.5 text-sm font-semibold rounded-md flex items-center gap-1.5
             ${discardMode ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}
             transition-all duration-200
           `}

@@ -54,13 +54,13 @@ const GridSection: React.FC<GridSectionProps> = ({
   onClick
 }) => {
   const renderGrid = () => (
-    <div className="grid grid-cols-4 gap-2 p-4">
+    <div className="grid grid-cols-4 gap-1 p-2">
       {grid.flatMap((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell aspect-square min-h-[60px] flex items-center justify-center text-xs font-medium
+              grid-cell aspect-square min-h-[45px] flex items-center justify-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -68,13 +68,13 @@ const GridSection: React.FC<GridSectionProps> = ({
           >
             {cell.card ? (
               <div className="text-center">
-                <div className="text-lg mb-1">{cell.card.icon || '🏠'}</div>
+                <div className="text-sm mb-0.5">{cell.card.icon || '🏠'}</div>
                 <div className="text-xs text-text-muted truncate">
                   {cell.card.name}
                 </div>
               </div>
             ) : (
-              <Plus className="w-6 h-6 text-text-muted opacity-50" />
+              <Plus className="w-4 h-4 text-text-muted opacity-50" />
             )}
           </div>
         ))
@@ -93,13 +93,13 @@ const GridSection: React.FC<GridSectionProps> = ({
       onClick={onClick}
     >
       {/* Header */}
-      <div className="p-4 border-b border-border bg-surface-card/50">
+      <div className="p-2 border-b border-border bg-surface-card/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="text-xl">{icon}</div>
-            <h3 className="font-bold text-text-primary">{title}</h3>
+          <div className="flex items-center gap-2">
+            <div className="text-lg">{icon}</div>
+            <h3 className="font-bold text-text-primary text-sm">{title}</h3>
           </div>
-          <div className={`text-sm font-bold px-3 py-1 rounded-full ${
+          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
             count >= max ? 'bg-destructive/20 text-destructive' : 'bg-surface text-text-secondary'
           }`}>
             {count}/{max}
@@ -112,9 +112,9 @@ const GridSection: React.FC<GridSectionProps> = ({
 
       {/* Preview when not active */}
       {!isActive && (
-        <div className="p-6 text-center">
-          <div className="text-2xl mb-2">{icon}</div>
-          <div className="text-sm text-text-secondary mb-2">
+        <div className="p-3 text-center">
+          <div className="text-lg mb-1">{icon}</div>
+          <div className="text-xs text-text-secondary mb-1">
             {count} de {max} construídos
           </div>
           <div className="text-xs text-text-muted">
@@ -138,18 +138,18 @@ const LandmarkSection: React.FC<{
   <div className="surface-elevated border-2 border-secondary">
     <div className="p-4 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Crown className="w-6 h-6 text-secondary" />
-          <h3 className="font-bold text-text-primary">Marcos Históricos</h3>
+        <div className="flex items-center gap-2">
+          <Crown className="w-4 h-4 text-secondary" />
+          <h3 className="font-bold text-text-primary text-sm">Marcos Históricos</h3>
         </div>
-        <div className="text-sm font-bold text-secondary">
+        <div className="text-xs font-bold text-secondary">
           {landmarkCount}/{landmarkMax}
         </div>
       </div>
     </div>
 
-    <div className="p-4">
-      <div className="grid grid-cols-3 gap-3">
+    <div className="p-2">
+      <div className="grid grid-cols-3 gap-2">
         {Array.from({ length: landmarkMax }, (_, i) => (
           <div
             key={i}
@@ -163,17 +163,17 @@ const LandmarkSection: React.FC<{
             `}
           >
             {i < landmarkCount ? (
-              <Crown className="w-8 h-8" />
+              <Crown className="w-6 h-6" />
             ) : (
-              <Plus className="w-6 h-6 opacity-50" />
+              <Plus className="w-4 h-4 opacity-50" />
             )}
           </div>
         ))}
       </div>
 
       {landmarkCount >= landmarkMax && (
-        <div className="mt-4 p-3 bg-secondary/10 rounded-lg text-center">
-          <div className="text-secondary font-bold text-sm">
+        <div className="mt-2 p-2 bg-secondary/10 rounded-lg text-center">
+          <div className="text-secondary font-bold text-xs">
             🎉 Vitória por Marcos Históricos!
           </div>
         </div>
@@ -253,15 +253,15 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
       {/* Content */}
-      <div className="relative z-10 p-6">
+      <div className="relative z-10 p-3">
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 bg-surface-card/80 backdrop-blur rounded-xl p-2">
+        <div className="flex gap-1 mb-3 bg-surface-card/80 backdrop-blur rounded-lg p-1">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200
+                flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-200 text-xs
                 ${activeSection === section.id
                   ? 'bg-primary text-white shadow-lg'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
@@ -269,8 +269,8 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
               `}
             >
               {section.icon}
-              <span>{section.title}</span>
-              <span className="text-xs bg-surface/50 px-2 py-0.5 rounded-full">
+              <span className="text-sm">{section.title}</span>
+              <span className="text-xs bg-surface/50 px-1.5 py-0.5 rounded-full">
                 {section.count}/{section.max}
               </span>
             </button>
@@ -278,7 +278,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Active Grid Section */}
           <div className="lg:col-span-2">
             {sections.map((section) => (
@@ -306,9 +306,9 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
             />
             
             {/* Quick Stats */}
-            <div className="mt-6 surface-elevated p-4">
-              <h4 className="font-bold text-text-primary mb-3">Resumo</h4>
-              <div className="space-y-2 text-sm">
+            <div className="mt-3 surface-elevated p-3">
+              <h4 className="font-bold text-text-primary mb-2 text-sm">Resumo</h4>
+              <div className="space-y-1 text-xs">
                 {sections.map((section) => (
                   <div key={section.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
