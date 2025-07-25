@@ -1,6 +1,8 @@
 import React from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Sprout, Plus } from 'lucide-react';
+import { CardDetailModal } from '../EnhancedHand';
+import { Card } from '../../types/card';
 
 interface GridCell {
   card?: any;
@@ -18,6 +20,7 @@ interface FarmNodeData {
 
 const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
   const { grid, count, max, onSelectCell, highlight } = data;
+  const [showDetail, setShowDetail] = React.useState<Card | null>(null);
 
   const renderGrid = () => {
     const cols = grid[0]?.length || 2;
@@ -32,7 +35,7 @@ const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
                 ${highlight ? 'available' : ''}
                 ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
               `}
-              onClick={() => onSelectCell(colIndex, rowIndex)}
+              onClick={() => cell.card ? setShowDetail(cell.card) : onSelectCell(colIndex, rowIndex)}
             >
               {cell.card ? (
                 <div className="text-center flex flex-col items-center">
@@ -75,6 +78,7 @@ const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
 
         {/* Grid Content */}
         {renderGrid()}
+        <CardDetailModal card={showDetail} isOpen={!!showDetail} onClose={() => setShowDetail(null)} />
 
         {/* Highlight overlay */}
         {highlight && (

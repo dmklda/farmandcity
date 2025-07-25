@@ -15,6 +15,18 @@ interface EnhancedTopBarProps {
     population: number;
   };
   onToggleSidebar?: () => void;
+  productionPerTurn: {
+    coins: number;
+    food: number;
+    materials: number;
+    population: number;
+  };
+  productionDetails: {
+    coins: string[];
+    food: string[];
+    materials: string[];
+    population: string[];
+  };
 }
 
 interface ResourceChipProps {
@@ -22,16 +34,26 @@ interface ResourceChipProps {
   value: number;
   label: string;
   color: string;
+  perTurn?: number;
+  details?: string[];
 }
 
-const ResourceChip: React.FC<ResourceChipProps> = ({ icon, value, label, color }) => (
+const ResourceChip: React.FC<ResourceChipProps> = ({ icon, value, label, color, perTurn = 0, details = [] }) => (
   <div className="resource-chip group relative text-xs px-2 py-1">
     <span className="text-sm">{icon}</span>
     <span className="font-bold text-text-primary text-sm">{value}</span>
-    
+    {perTurn > 0 && (
+      <span className="ml-1 text-xs text-green-400 font-bold">(+{perTurn})</span>
+    )}
     {/* Tooltip */}
-    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-surface-card text-text-secondary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-      {label}: {value}
+    <div className="fixed left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-surface-card text-text-secondary text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 min-w-[120px] max-w-[260px] shadow-xl border border-border">
+      <div className="font-bold text-text-primary mb-1">{label}: {value}{perTurn > 0 && <span className='text-green-400'> (+{perTurn}/turno)</span>}</div>
+      {perTurn > 0 && details && details.length > 0 && (
+        <ul className="text-xs text-text-secondary list-disc pl-4">
+          {details.map((d, i) => <li key={i}>{d}</li>)}
+        </ul>
+      )}
+      {perTurn === 0 && <div className="text-xs text-text-muted">Nenhum ganho por turno de cartas em campo.</div>}
     </div>
   </div>
 );
@@ -58,7 +80,9 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   onNextPhase, 
   discardMode,
   resources,
-  onToggleSidebar
+  onToggleSidebar,
+  productionPerTurn,
+  productionDetails
 }) => {
   const getPhaseColor = (phase: string) => {
     switch (phase.toLowerCase()) {
@@ -98,24 +122,32 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
           value={resources.coins} 
           label="Moedas"
           color="text-secondary" 
+          perTurn={productionPerTurn.coins}
+          details={productionDetails.coins}
         />
         <ResourceChip 
           icon="🌾" 
           value={resources.food} 
           label="Comida"
           color="text-farm-color" 
+          perTurn={productionPerTurn.food}
+          details={productionDetails.food}
         />
         <ResourceChip 
           icon="🏗️" 
           value={resources.materials} 
           label="Materiais"
           color="text-event-color" 
+          perTurn={productionPerTurn.materials}
+          details={productionDetails.materials}
         />
         <ResourceChip 
           icon="👥" 
           value={resources.population} 
           label="População"
           color="text-city-color" 
+          perTurn={productionPerTurn.population}
+          details={productionDetails.population}
         />
       </div>
       

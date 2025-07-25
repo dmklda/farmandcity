@@ -1,14 +1,17 @@
 import React from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Crown, Plus } from 'lucide-react';
+import { CardDetailModal } from '../EnhancedHand';
+import { Card } from '../../types/card';
 
 interface LandmarkNodeData {
   landmarkCount: number;
   landmarkMax: number;
 }
 
-const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
-  const { landmarkCount, landmarkMax } = data;
+const LandmarkNode: React.FC<{ data: LandmarkNodeData & {landmarks?: Card[]} }> = ({ data }) => {
+  const { landmarkCount, landmarkMax, landmarks = [] } = data;
+  const [showDetail, setShowDetail] = React.useState<Card | null>(null);
 
   return (
     <>
@@ -35,10 +38,11 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
                   aspect-square rounded-md border-2 border-dashed flex items-center justify-center
                   transition-all duration-300
                   ${i < landmarkCount
-                    ? 'border-secondary bg-secondary/20 text-secondary'
+                    ? 'border-secondary bg-secondary/20 text-secondary cursor-pointer'
                     : 'border-border bg-surface-card text-text-muted'
                   }
                 `}
+                onClick={() => i < landmarkCount && landmarks[i] ? setShowDetail(landmarks[i]) : undefined}
               >
                 <div className="flex items-center justify-center">
                   {i < landmarkCount ? (
@@ -50,6 +54,7 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
               </div>
             ))}
           </div>
+          <CardDetailModal card={showDetail} isOpen={!!showDetail} onClose={() => setShowDetail(null)} />
 
           {landmarkCount >= landmarkMax && (
             <div className="mt-1 p-1 bg-secondary/10 rounded-lg text-center">

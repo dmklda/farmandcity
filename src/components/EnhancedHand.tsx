@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Eye, Zap, Lock } from 'lucide-react';
 import { Card } from '../types/card';
 
@@ -18,6 +19,13 @@ interface CardDetailModalProps {
 
 const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose }) => {
   if (!isOpen || !card) return null;
+  // Garante que existe um elemento para o portal
+  let modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) {
+    modalRoot = document.createElement('div');
+    modalRoot.id = 'modal-root';
+    document.body.appendChild(modalRoot);
+  }
 
   const getCardTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -29,13 +37,13 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
     }
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       onClick={onClose}
     >
       <div 
-        className="surface-elevated max-w-md w-full p-6 animate-scale-in"
+        className="surface-elevated max-w-xl w-full p-8 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-4">
@@ -50,13 +58,11 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
                 ✕
               </button>
             </div>
-            
             <div className="flex items-center gap-4 text-sm">
               <span className="text-text-secondary">Tipo: {card.type}</span>
               <span className="text-text-secondary">Raridade: {card.rarity}</span>
             </div>
           </div>
-
           {/* Card Costs */}
           <div className="space-y-2">
             <h4 className="font-semibold text-text-primary">Custos:</h4>
@@ -75,7 +81,6 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
               )}
             </div>
           </div>
-
           {/* Card Effects */}
           <div className="space-y-2">
             <h4 className="font-semibold text-text-primary">Efeito:</h4>
@@ -83,7 +88,6 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
               {card.effect.description}
             </p>
           </div>
-
           {/* Activation */}
           {card.activation && (
             <div className="space-y-2">
@@ -95,7 +99,8 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    modalRoot
   );
 };
 
@@ -315,4 +320,5 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
   );
 };
 
+export { CardDetailModal };
 export default EnhancedHand;

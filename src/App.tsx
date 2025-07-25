@@ -100,6 +100,32 @@ function getInitialState(deck: Card[]): GameState {
   };
 }
 
+// Função para calcular produção por turno detalhada
+function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[][]) {
+  const prod: Resources = { coins: 0, food: 0, materials: 0, population: 0 };
+  const details: { coins: string[], food: string[], materials: string[], population: string[] } = {
+    coins: [], food: [], materials: [], population: []
+  };
+  const allCards = [
+    ...farmGrid.flat().map((cell) => cell.card).filter(Boolean),
+    ...cityGrid.flat().map((cell) => cell.card).filter(Boolean),
+  ] as Card[];
+  allCards.forEach((card) => {
+    // Só produção automática por turno
+    const effect = card.effect.description.toLowerCase();
+    if (/por turno/.test(effect) && !/dado/.test(effect)) {
+      const p = parseProduction(card);
+      Object.entries(p).forEach(([key, value]) => {
+        if (value && value > 0) {
+          prod[key as keyof Resources] += value;
+          details[key as keyof Resources].push(`${card.name}: +${value}`);
+        }
+      });
+    }
+  });
+  return { prod, details };
+}
+
 const App: React.FC = () => {
   // Todos os hooks devem estar aqui dentro!
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
@@ -644,6 +670,13 @@ const App: React.FC = () => {
 
   // Handler de seleção de carta: ações, magia, defesa ou construção
   const handleSelectCard = (card: Card) => {
+    // Se já está selecionada, desmarcar
+    if (selectedCard && selectedCard.id === card.id) {
+      setSelectedCard(null);
+      setSelectedGrid(null);
+      setError(null);
+      return;
+    }
     const canPlay = canPlayCardUI(card);
     
     // Para cartas de efeito imediato (action, magic, defense)
@@ -799,6 +832,8 @@ const App: React.FC = () => {
     turn: game.turn,
   };
 
+  const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
+
   // Layout principal
   return (
     <div className="h-screen bg-background w-full overflow-hidden" style={{ paddingLeft: '0px', paddingTop: '64px' }}>
@@ -822,6 +857,8 @@ const App: React.FC = () => {
         onNextPhase={victory || discardMode ? () => {} : nextPhase}
         discardMode={discardMode}
         resources={game.resources}
+        productionPerTurn={prodPerTurn}
+        productionDetails={prodDetails}
         onToggleSidebar={() => setSidebarVisible((v) => !v)}
       />
       

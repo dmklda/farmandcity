@@ -1,6 +1,8 @@
 import React from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Zap, Plus } from 'lucide-react';
+import { CardDetailModal } from '../EnhancedHand';
+import { Card } from '../../types/card';
 
 interface GridCell {
   card?: any;
@@ -18,6 +20,39 @@ interface EventNodeData {
 
 const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
   const { eventGrid, eventCount, eventMax, onSelectEvent, highlight } = data;
+  const [showDetail, setShowDetail] = React.useState<Card | null>(null);
+
+  const renderGrid = () => {
+    const cols = eventGrid[0]?.length || 2;
+    return (
+      <div className={`grid gap-0.5 p-1 flex-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {eventGrid.flatMap((row, rowIndex) =>
+          row.map((cell, colIndex) => (
+            <div
+              key={`${rowIndex}-${colIndex}`}
+              className={`
+                grid-cell aspect-square flex items-center justify-center text-xs font-medium cursor-pointer
+                ${highlight ? 'available' : ''}
+                ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
+              `}
+              onClick={() => cell.card ? setShowDetail(cell.card) : onSelectEvent(colIndex, rowIndex)}
+            >
+              {cell.card ? (
+                <div className="text-center flex flex-col items-center">
+                  <div className="mb-0.5">{cell.card.icon || '⚡'}</div>
+                  <div className="text-xs text-text-muted truncate max-w-full">
+                    {cell.card.name.slice(0, 6)}
+                  </div>
+                </div>
+              ) : (
+                <Plus className="w-1/3 h-1/3 text-text-muted opacity-50" />
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -36,40 +71,9 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
         </div>
 
         <div className="p-1 flex-1">
-          <div className="grid auto-cols-fr grid-flow-col gap-0.5 h-full">
-            {Array.from({ length: eventMax }, (_, i) => {
-              const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
-              return (
-                <div
-                  key={i}
-                  className={`
-                    flex-1 rounded-lg border-2 border-dashed flex flex-col items-center justify-center
-                    transition-all duration-300 cursor-pointer
-                    ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
-                    ${eventCard ? 'border-solid bg-surface-hover' : ''}
-                  `}
-                  onClick={() => onSelectEvent(i, 0)}
-                >
-                  {eventCard ? (
-                    <div className="text-center p-0.5 flex flex-col items-center justify-center h-full">
-                      <div className="mb-0.5">⚡</div>
-                      <div className="text-xs text-text-primary font-medium line-clamp-1 max-w-full">
-                        {eventCard.name}
-                      </div>
-                      <div className="text-xs text-magic-color">
-                        Ativo
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center flex flex-col items-center justify-center h-full">
-                      <Plus className="w-1/3 h-1/3 text-text-muted opacity-50 mb-0.5" />
-                      <div className="text-xs text-text-muted">Evento</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {/* Grid Content */}
+          {renderGrid()}
+          <CardDetailModal card={showDetail} isOpen={!!showDetail} onClose={() => setShowDetail(null)} />
 
           {eventCount >= eventMax && (
             <div className="mt-0.5 p-1 bg-magic-color/10 rounded-lg text-center">
