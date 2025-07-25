@@ -118,7 +118,7 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative min-w-[120px] h-[160px] rounded-lg border-2 cursor-pointer
+        relative min-w-[80px] h-[100px] rounded-lg border-2 cursor-pointer
         transition-all duration-300 group
         ${isSelected ? 'card-selected transform -translate-y-1' : ''}
         ${isPlayable 
@@ -131,10 +131,10 @@ const EnhancedCardComponent: React.FC<{
       onClick={isPlayable ? onSelect : undefined}
     >
       {/* Card Content */}
-      <div className="p-2 h-full flex flex-col">
+      <div className="p-1 h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between mb-1">
-          <h4 className="text-xs font-bold text-text-primary line-clamp-2 flex-1">
+        <div className="flex items-start justify-between mb-0.5">
+          <h4 className="text-[10px] font-bold text-text-primary line-clamp-1 flex-1">
             {card.name}
           </h4>
           <button
@@ -142,40 +142,40 @@ const EnhancedCardComponent: React.FC<{
               e.stopPropagation();
               onShowDetail();
             }}
-            className="p-1 rounded hover:bg-surface-hover transition-colors opacity-70 hover:opacity-100"
+            className="p-0.5 rounded hover:bg-surface-hover transition-colors opacity-70 hover:opacity-100"
           >
-            <Eye className="w-3 h-3 text-text-secondary" />
+            <Eye className="w-2 h-2 text-text-secondary" />
           </button>
         </div>
 
         {/* Type & Rarity */}
-        <div className="flex items-center justify-between text-xs text-text-muted mb-1">
-          <span className="text-xs">{card.type}</span>
-          <span className="text-xs">{card.rarity}</span>
+        <div className="flex items-center justify-between text-[8px] text-text-muted mb-0.5">
+          <span className="text-[8px]">{card.type}</span>
+          <span className="text-[8px]">{card.rarity}</span>
         </div>
 
         {/* Costs */}
-        <div className="flex flex-wrap gap-0.5 mb-1">
+        <div className="flex flex-wrap gap-0.5 mb-0.5">
           {(card.cost.coins || 0) > 0 && (
-            <span className="text-xs bg-secondary/20 text-secondary px-1 py-0.5 rounded">
+            <span className="text-[8px] bg-secondary/20 text-secondary px-0.5 py-0.5 rounded">
               💰{card.cost.coins}
             </span>
           )}
           {(card.cost.food || 0) > 0 && (
-            <span className="text-xs bg-farm-color/20 text-farm-color px-1 py-0.5 rounded">
+            <span className="text-[8px] bg-farm-color/20 text-farm-color px-0.5 py-0.5 rounded">
               🌾{card.cost.food}
             </span>
           )}
           {(card.cost.materials || 0) > 0 && (
-            <span className="text-xs bg-event-color/20 text-event-color px-1 py-0.5 rounded">
+            <span className="text-[8px] bg-event-color/20 text-event-color px-0.5 py-0.5 rounded">
               🏗️{card.cost.materials}
             </span>
           )}
         </div>
 
         {/* Effect Preview */}
-        <div className="flex-1 mb-1">
-          <p className="text-xs text-text-secondary line-clamp-2">
+        <div className="flex-1 mb-0.5">
+          <p className="text-[8px] text-text-secondary line-clamp-1">
             {card.effect.description}
           </p>
         </div>
@@ -183,14 +183,14 @@ const EnhancedCardComponent: React.FC<{
         {/* Playability Indicator */}
         <div className="flex items-center justify-center">
           {isPlayable ? (
-            <div className="flex items-center gap-1 text-xs text-farm-color">
-              <Zap className="w-2 h-2" />
-              <span className="text-xs">Jogável</span>
+            <div className="flex items-center gap-0.5 text-[8px] text-farm-color">
+              <Zap className="w-1.5 h-1.5" />
+              <span className="text-[8px]">OK</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-xs text-text-muted">
-              <Lock className="w-2 h-2" />
-              <span className="text-xs">Bloqueada</span>
+            <div className="flex items-center gap-0.5 text-[8px] text-text-muted">
+              <Lock className="w-1.5 h-1.5" />
+              <span className="text-[8px]">X</span>
             </div>
           )}
         </div>
