@@ -87,8 +87,8 @@ function getInitialState(deck: Card[]): GameState {
     resources: initialResources,
     hand: [...starterCards],
     deck,
-    farmGrid: createEmptyGrid(6, 6),
-    cityGrid: createEmptyGrid(4, 4),
+    farmGrid: createEmptyGrid(3, 4), // 3x4 = 12 slots
+    cityGrid: createEmptyGrid(2, 3), // 2x3 = 6 slots
     eventGrid: createEmptyGrid(2, 3),
     turn: 1,
     phase: 'draw' as GamePhase,

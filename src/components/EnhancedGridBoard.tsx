@@ -55,7 +55,6 @@ const GridSection: React.FC<GridSectionProps> = ({
 }) => {
   const renderGrid = () => {
     const cols = grid[0]?.length || 2; // Número de colunas baseado na primeira linha
-    console.log(`Grid dimensions: ${grid.length} rows x ${cols} cols = ${grid.length * cols} total cells`);
     return (
     <div className={`grid gap-1 p-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {grid.flatMap((row, rowIndex) =>
