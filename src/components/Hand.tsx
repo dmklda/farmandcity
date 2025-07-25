@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Eye } from 'lucide-react';
 import { Card } from '../types/card';
 import CardComponent from './CardComponent';
 
@@ -21,7 +22,7 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
           return (
             <div
               key={card.id}
-              onDoubleClick={() => setShowDetail(card)}
+              style={{ position: 'relative' }}
               title={playInfo.playable ? '' : playInfo.reason || 'Não pode jogar esta carta agora'}
             >
               <CardComponent
@@ -31,6 +32,35 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
                 playable={playInfo.playable}
                 size="small"
               />
+              {/* Ícone de olho para visualizar */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetail(card);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'white',
+                  zIndex: 10,
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.9)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)'}
+                title="Visualizar carta detalhada"
+              >
+                <Eye size={12} />
+              </button>
             </div>
           );
         })}
@@ -84,6 +114,9 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
               </div>
               <div style={{ fontSize: 16, marginBottom: 8 }}>
                 <b>Efeito:</b> {showDetail.effect.description}
+              </div>
+              <div style={{ fontSize: 16, marginBottom: 8 }}>
+                <b>Ativação:</b> {showDetail.activation}
               </div>
             </div>
             
