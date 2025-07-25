@@ -8,7 +8,7 @@ import ResourceBar from './components/ResourceBar.js';
 import GameControls from './components/GameControls.js';
 import PlayerStatsBar from './components/PlayerStatsBar.js';
 import { Card } from './types/card.js';
-import CollapsibleSidebar from './components/CollapsibleSidebar.js';
+import FixedSidebar from './components/FixedSidebar.js';
 import EnhancedTopBar from './components/EnhancedTopBar.js';
 import DeckArea from './components/DeckArea.js';
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
@@ -801,7 +801,7 @@ const App: React.FC = () => {
   // Layout principal
   return (
     <div className="flex min-h-screen bg-background w-full">
-      <CollapsibleSidebar
+      <FixedSidebar
         resources={sidebarResources}
         progress={sidebarProgress}
         victory={sidebarVictory}

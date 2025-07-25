@@ -182,6 +182,72 @@ const LandmarkSection: React.FC<{
   </div>
 );
 
+const EventCardsSection: React.FC<{
+  eventGrid: GridCell[][];
+  eventCount: number;
+  eventMax: number;
+  onSelectEvent: (x: number, y: number) => void;
+  highlight: boolean;
+}> = ({ eventGrid, eventCount, eventMax, onSelectEvent, highlight }) => (
+  <div className="surface-elevated border-2 border-magic-color">
+    <div className="p-2 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-magic-color" />
+          <h3 className="font-bold text-text-primary text-sm">Eventos Ativos</h3>
+        </div>
+        <div className="text-xs font-bold text-magic-color">
+          {eventCount}/{eventMax}
+        </div>
+      </div>
+    </div>
+
+    <div className="p-2">
+      <div className="flex gap-2">
+        {Array.from({ length: eventMax }, (_, i) => {
+          const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
+          return (
+            <div
+              key={i}
+              className={`
+                flex-1 min-h-[80px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                transition-all duration-300 cursor-pointer
+                ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
+                ${eventCard ? 'border-solid bg-surface-hover' : ''}
+              `}
+              onClick={() => onSelectEvent(i, 0)}
+            >
+              {eventCard ? (
+                <div className="text-center p-2">
+                  <div className="text-lg mb-1">⚡</div>
+                  <div className="text-xs text-text-primary font-medium line-clamp-2">
+                    {eventCard.name}
+                  </div>
+                  <div className="text-xs text-magic-color mt-1">
+                    Ativo
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Plus className="w-4 h-4 text-text-muted opacity-50 mb-1" />
+                  <div className="text-xs text-text-muted">Evento</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {eventCount >= eventMax && (
+        <div className="mt-2 p-2 bg-magic-color/10 rounded-lg text-center">
+          <div className="text-magic-color font-bold text-xs">
+            🌟 Máximo de eventos ativos!
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
 const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
   farmGrid,
   cityGrid,
@@ -201,7 +267,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
   highlightCity,
   highlightEvent
 }) => {
-  const [activeSection, setActiveSection] = useState<'farm' | 'city' | 'event'>('farm');
+  const [activeSection, setActiveSection] = useState<'farm' | 'city'>('farm');
 
   const sections = [
     {
@@ -225,17 +291,6 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
       onSelect: onSelectCity,
       highlight: highlightCity,
       color: 'ring-city-color'
-    },
-    {
-      id: 'event' as const,
-      title: 'Eventos',
-      icon: <Zap className="w-5 h-5" />,
-      grid: eventGrid,
-      count: eventCount,
-      max: eventMax,
-      onSelect: onSelectEvent,
-      highlight: highlightEvent,
-      color: 'ring-magic-color'
     }
   ];
 
@@ -278,8 +333,8 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {/* Active Grid Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+          {/* Active Grid Section - Takes 2 columns */}
           <div className="lg:col-span-2">
             {sections.map((section) => (
               <GridSection
@@ -298,15 +353,25 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
             ))}
           </div>
 
-          {/* Landmarks Section */}
-          <div className="lg:col-span-1">
+          {/* Right Column - Events and Landmarks */}
+          <div className="lg:col-span-2 space-y-3">
+            {/* Events Section - Fixed like field cards */}
+            <EventCardsSection
+              eventGrid={eventGrid}
+              eventCount={eventCount}
+              eventMax={eventMax}
+              onSelectEvent={onSelectEvent}
+              highlight={highlightEvent}
+            />
+
+            {/* Landmarks Section */}
             <LandmarkSection 
               landmarkCount={landmarkCount}
               landmarkMax={landmarkMax}
             />
             
             {/* Quick Stats */}
-            <div className="mt-3 surface-elevated p-3">
+            <div className="surface-elevated p-3">
               <h4 className="font-bold text-text-primary mb-2 text-sm">Resumo</h4>
               <div className="space-y-1 text-xs">
                 {sections.map((section) => (
@@ -320,6 +385,15 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
                     </span>
                   </div>
                 ))}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5" />
+                    <span className="text-text-secondary">Eventos</span>
+                  </div>
+                  <span className="text-text-primary font-medium">
+                    {eventCount}/{eventMax}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
