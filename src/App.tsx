@@ -12,6 +12,7 @@ import FixedSidebar from './components/FixedSidebar.js';
 import EnhancedTopBar from './components/EnhancedTopBar.js';
 import AuthPage from './components/AuthPage.js';
 import SavedGamesModal from './components/SavedGamesModal.js';
+import PlayerStatsModal from './components/PlayerStatsModal.js';
 import { supabase } from './integrations/supabase/client.js';
 import { GameStorageService } from './services/GameStorageService.js';
 import type { User, Session } from '@supabase/supabase-js';
@@ -188,6 +189,19 @@ const App: React.FC = () => {
     setSelectedGrid(null);
   };
 
+  // Função para finalizar jogo e salvar no histórico
+  const handleGameEnd = async (result: 'victory' | 'defeat') => {
+    if (!user) return;
+    
+    const gameDurationMinutes = Math.round((new Date().getTime() - gameStartTime.getTime()) / 60000);
+    
+    const saveResult = await GameStorageService.finishGame(game, gameDurationMinutes);
+    
+    if (!saveResult.success) {
+      console.error('Erro ao salvar jogo finalizado:', saveResult.error);
+    }
+  };
+
   // Deck inicial
   const getActiveDeck = () => {
     if (customDeck.length > 0) return customDeck.slice(0, DECK_LIMIT);
@@ -215,6 +229,7 @@ const App: React.FC = () => {
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
   const [showSavedGames, setShowSavedGames] = useState(false);
+  const [showPlayerStats, setShowPlayerStats] = useState(false);
   const [gameStartTime, setGameStartTime] = useState<Date>(new Date());
 
   // Detectar compra de carta para animação
@@ -253,12 +268,16 @@ const App: React.FC = () => {
     if (victory) return;
     if (game.playerStats.landmarks >= 3) {
       setVictory('Vitória: 3 marcos históricos concluídos!');
+      handleGameEnd('victory');
     } else if (game.playerStats.totalProduction >= 1000) {
       setVictory('Vitória: Produção total de 1000 recursos!');
+      handleGameEnd('victory');
     } else if (game.playerStats.reputation >= 10) {
       setVictory('Vitória: Reputação máxima alcançada!');
+      handleGameEnd('victory');
     } else if (game.turn >= 20) {
       setVictory('Vitória: Sobreviveu a 20 turnos!');
+      handleGameEnd('victory');
     }
   }, [game, victory]);
 
@@ -271,6 +290,7 @@ const App: React.FC = () => {
       setDefeat('Derrota: Sua população chegou a 0!');
       addHistory('❌ Derrota: população chegou a 0!');
       playSound('defeat');
+      handleGameEnd('defeat');
     }
   }, [game.resources.population, defeat, game.playerStats.reputation]);
 
@@ -919,6 +939,12 @@ const App: React.FC = () => {
       {/* User info and game controls */}
       <div className="absolute top-2 right-4 z-50 flex items-center gap-2">
         <button
+          onClick={() => setShowPlayerStats(true)}
+          className="px-3 py-1 text-xs bg-accent hover:bg-accent/80 text-accent-foreground rounded transition-colors"
+        >
+          📊 Stats
+        </button>
+        <button
           onClick={() => setShowSavedGames(true)}
           className="px-3 py-1 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded transition-colors"
         >
@@ -1054,6 +1080,12 @@ const App: React.FC = () => {
         onClose={() => setShowSavedGames(false)}
         onLoadGame={handleLoadGame}
         currentGameState={game}
+      />
+
+      {/* Modal de estatísticas do jogador */}
+      <PlayerStatsModal
+        isOpen={showPlayerStats}
+        onClose={() => setShowPlayerStats(false)}
       />
     </div>
   );
