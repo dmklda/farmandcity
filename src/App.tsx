@@ -695,11 +695,11 @@ const App: React.FC = () => {
       return;
     }
     
-    // Para cartas de construção (farm, city, landmark, event, trap)
+    // Para cartas de construção (farm, city, landmark, event)
     setSelectedCard(card);
     if (['farm', 'city', 'landmark'].includes(card.type)) {
       setSelectedGrid(card.type === 'farm' ? 'farm' : 'city');
-    } else if (['event', 'trap'].includes(card.type)) {
+    } else if (card.type === 'event') {
       setSelectedGrid('event');
     } else {
       setSelectedGrid(null);
@@ -737,7 +737,11 @@ const App: React.FC = () => {
       return { playable: true };
     }
     
-    if (['farm', 'city', 'landmark', 'event', 'trap'].includes(card.type)) {
+    if (card.type === 'trap') {
+      return { playable: false, reason: 'Cartas trap só estarão disponíveis no modo multiplayer' };
+    }
+    
+    if (['farm', 'city', 'landmark', 'event'].includes(card.type)) {
       if (game.phase !== 'build') return { playable: false, reason: 'Só pode construir na fase de construção' };
       if (builtCountThisTurn >= 2) return { playable: false, reason: 'Só pode construir até 2 cartas por turno.' };
       if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
