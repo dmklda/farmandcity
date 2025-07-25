@@ -220,8 +220,20 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
       {/* Hand Container */}
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
         <div className="bg-surface-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-3">
-          {/* Hand Cards */}
-          <div className="flex items-end gap-2 max-w-[600px] overflow-x-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
+          <div className="flex items-end gap-4">
+            {/* Deck Area - Left Side */}
+            <div className="flex-shrink-0">
+              <div 
+                className="w-16 h-24 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-all duration-300 hover:scale-105"
+                title="Deck"
+              >
+                <div className="text-sm text-primary">🂠</div>
+                <div className="text-xs text-primary font-medium">23</div>
+              </div>
+            </div>
+
+            {/* Hand Cards - Center */}
+          <div className="flex items-end gap-2 max-w-[500px] overflow-x-auto scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent">
             {hand.map((card, index) => (
               <div
                 key={`${card.id}-${index}`}
@@ -251,6 +263,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
                 </div>
               </div>
             )}
+            </div>
           </div>
 
           {/* Hand Info */}
