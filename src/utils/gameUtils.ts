@@ -3,8 +3,8 @@ import { Card } from '../types/card';
 import { Resources } from '../types/resources';
 
 export function createEmptyGrid(rows: number, cols: number): GridCell[][] {
-  return Array(rows).fill(null).map(() => 
-    Array(cols).fill(null).map(() => ({ card: null }))
+  return Array(rows).fill(null).map((_, y) => 
+    Array(cols).fill(null).map((_, x) => ({ card: null, x, y }))
   );
 }
 
@@ -53,11 +53,12 @@ export function getInitialState(deck: Card[]): GameState {
     turn: 1,
     phase: 'draw' as const,
     resources: { coins: 10, food: 10, materials: 10, population: 5 },
-    playerStats: { reputation: 5, totalProduction: 0, landmarks: 0 },
+    playerStats: { reputation: 5, totalProduction: 0, buildings: 0, landmarks: 0 },
     farmGrid: createEmptyGrid(3, 3),
     cityGrid: createEmptyGrid(3, 3),
     hand,
     deck: remainingDeck,
-    discardPile: []
+    activeEvents: [],
+    comboEffects: []
   };
 }

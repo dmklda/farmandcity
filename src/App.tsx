@@ -257,6 +257,7 @@ const App: React.FC = () => {
   React.useEffect(() => {
     if (game.phase === 'draw') {
       setBuiltThisTurn({ farm: false, city: false });
+      setBuiltCountThisTurn(0);
       setActionThisTurn(false);
       if (game.hand.length < 6) {
         if (game.deck.length > 0) {
