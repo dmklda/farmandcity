@@ -146,8 +146,8 @@ const App: React.FC = () => {
   const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
   const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
   const eventCount = game.eventGrid.flat().filter(cell => cell.card).length;
-  const farmMax = game.farmGrid.length * (game.farmGrid[0]?.length || 0);
-  const cityMax = game.cityGrid.length * (game.cityGrid[0]?.length || 0);
+  const farmMax = 12; // 3x4 grid fixo
+  const cityMax = 6; // 2x3 grid fixo
   const eventMax = game.eventGrid.length * (game.eventGrid[0]?.length || 0);
   const landmarkCount = game.playerStats.landmarks;
   const landmarkMax = 3;
