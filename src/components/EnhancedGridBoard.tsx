@@ -54,9 +54,9 @@ const GridSection: React.FC<GridSectionProps> = ({
   onClick
 }) => {
   const renderGrid = () => {
-    const cols = grid[0]?.length || 2; // Número de colunas baseado na primeira linha
+    const cols = grid[0]?.length || 2;
     return (
-    <div className={`grid gap-1 p-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+    <div className={`grid gap-0.5 p-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {grid.flatMap((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
@@ -152,7 +152,7 @@ const LandmarkSection: React.FC<{
     </div>
 
     <div className="p-1">
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-3 gap-0.5">
         {Array.from({ length: 3 }, (_, i) => (
           <div
             key={i}
@@ -311,7 +311,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
       {/* Content */}
-      <div className="relative z-10 p-2">
+      <div className="relative z-10 p-1">
         {/* Tab Navigation */}
         <div className="flex gap-0.5 mb-2 bg-surface-card/80 backdrop-blur rounded-lg p-0.5">
           {sections.map((section) => (
@@ -336,8 +336,8 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
-          {/* Active Grid Section - Takes 2 columns */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-1">
+          {/* Active Grid Section */}
           <div className="lg:col-span-2">
             {sections.map((section) => (
               <GridSection
@@ -357,7 +357,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
           </div>
 
           {/* Right Column - Events and Landmarks */}
-          <div className="lg:col-span-2 space-y-2">
+          <div className="space-y-1">
             {/* Events Section - Fixed like field cards */}
             <EventCardsSection
               eventGrid={eventGrid}
