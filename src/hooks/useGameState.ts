@@ -3,7 +3,7 @@ import { GameState, GamePhase, GridCell } from '../types/gameState';
 import { starterCards, baseDeck } from '../data/cards';
 import { Resources } from '../types/resources';
 import { Card } from '../types/card';
-import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../src/utils/gameUtils';
+import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../utils/gameUtils';
 
 const DECK_LIMIT = 28;
 const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end'];
@@ -101,7 +101,7 @@ export function useGameState() {
     selectedCardId: selectedCard?.id,
     canPlayCard: (card: Card) => ({ playable: true }), // TODO: conectar lógica
   };
-  const discardModal = discardMode ? <div>Modal de descarte aqui</div> : null;
+  const discardModal = discardMode ? "Modal de descarte aqui" : null;
 
   return {
     sidebarProps,
