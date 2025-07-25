@@ -53,8 +53,10 @@ const GridSection: React.FC<GridSectionProps> = ({
   isActive,
   onClick
 }) => {
-  const renderGrid = () => (
-    <div className={`grid ${grid.length === 2 ? 'grid-cols-4' : 'grid-cols-2'} gap-1 p-1`}>
+  const renderGrid = () => {
+    const cols = grid[0]?.length || 2; // Número de colunas baseado na primeira linha
+    return (
+    <div className={`grid gap-1 p-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {grid.flatMap((row, rowIndex) =>
         row.map((cell, colIndex) => (
           <div
@@ -80,7 +82,8 @@ const GridSection: React.FC<GridSectionProps> = ({
         ))
       )}
     </div>
-  );
+    );
+  };
 
   return (
     <div
