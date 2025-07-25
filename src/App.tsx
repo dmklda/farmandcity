@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { GameState, GamePhase, GridCell } from './types/gameState.js';
 import { starterCards, baseDeck } from './data/cards.js';
 import { Resources } from './types/resources.js';
-import Hand from './components/Hand.js';
+import EnhancedHand from './components/EnhancedHand.js';
 import Grid from './components/Grid.js';
 import ResourceBar from './components/ResourceBar.js';
 import GameControls from './components/GameControls.js';
 import PlayerStatsBar from './components/PlayerStatsBar.js';
 import { Card } from './types/card.js';
-import Sidebar from './components/Sidebar.js';
-import TopBar from './components/TopBar.js';
+import CollapsibleSidebar from './components/CollapsibleSidebar.js';
+import EnhancedTopBar from './components/EnhancedTopBar.js';
 import DeckArea from './components/DeckArea.js';
-import GridBoard from './components/GridBoard.js';
+import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
 
 function createEmptyGrid(rows: number, cols: number): GridCell[][] {
@@ -800,15 +800,15 @@ const App: React.FC = () => {
 
   // Layout principal
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#181c27' }}>
-      <Sidebar
+    <div className="flex min-h-screen bg-background w-full">
+      <CollapsibleSidebar
         resources={sidebarResources}
         progress={sidebarProgress}
         victory={sidebarVictory}
         history={history}
       />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <TopBar
+      <div className="flex-1 flex flex-col min-h-screen">
+        <EnhancedTopBar
           turn={game.turn}
           turnMax={20}
           buildCount={builtCountThisTurn}
@@ -816,10 +816,11 @@ const App: React.FC = () => {
           phase={game.phase}
           onNextPhase={victory || discardMode ? () => {} : nextPhase}
           discardMode={discardMode}
+          resources={game.resources}
         />
         {/* Área central para grids e deck */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '32px 0 80px 0', gap: 24 }}>
-          <GridBoard
+        <div className="flex-1 p-6 flex flex-col gap-6 pb-60">
+          <EnhancedGridBoard
             farmGrid={game.farmGrid}
             cityGrid={game.cityGrid}
             eventGrid={game.eventGrid}
@@ -838,17 +839,19 @@ const App: React.FC = () => {
             highlightCity={selectedGrid === 'city'}
             highlightEvent={selectedGrid === 'event'}
           />
-          <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
+          
+          <div className="flex justify-center">
+            <DeckArea deckCount={game.deck.length} lastDrawn={lastDrawn} />
+          </div>
         </div>
-        {/* Hand na parte inferior */}
-        <div style={{ position: 'fixed', left: 270, right: 0, bottom: 0, background: '#181c27', padding: '18px 0', zIndex: 20, borderTop: '2px solid #23283a', display: 'flex', justifyContent: 'center' }}>
-          <Hand
-            hand={game.hand}
-            onSelectCard={victory ? () => {} : handleSelectCard}
-            selectedCardId={selectedCard?.id}
-            canPlayCard={canPlayCardUI}
-          />
-        </div>
+        
+        {/* Enhanced Hand (Fixed Bottom) */}
+        <EnhancedHand
+          hand={game.hand}
+          onSelectCard={victory ? () => {} : handleSelectCard}
+          selectedCardId={selectedCard?.id}
+          canPlayCard={canPlayCardUI}
+        />
         {/* Modal de descarte manual */}
         {discardMode && (
           <div style={{
