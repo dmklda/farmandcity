@@ -106,12 +106,18 @@ const EnhancedCardComponent: React.FC<{
   onSelect: () => void;
   onShowDetail: () => void;
 }> = ({ card, isSelected, isPlayable, onSelect, onShowDetail }) => {
-  const getCardTypeColor = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'farm': return 'border-farm-color bg-farm-color/5';
-      case 'city': return 'border-city-color bg-city-color/5';
-      case 'magic': return 'border-magic-color bg-magic-color/5';
-      case 'event': return 'border-event-color bg-event-color/5';
+  const getCardTypeColor = (type: string, rarity?: string) => {
+    // Gradiente para raridades
+    if (rarity === 'legendary') return 'border-4 border-yellow-400 bg-gradient-to-r from-yellow-200/40 to-yellow-500/20';
+    if (rarity === 'ultra') return 'border-4 border-pink-400 bg-gradient-to-r from-pink-200/40 to-pink-500/20';
+    if (rarity === 'rare') return 'border-4 border-blue-400 bg-gradient-to-r from-blue-200/40 to-blue-500/20';
+    if (rarity === 'uncommon') return 'border-2 border-green-400 bg-gradient-to-r from-green-200/40 to-green-500/20';
+    // Tipo padrão
+    switch (type?.toLowerCase()) {
+      case 'farm': return 'border-farm-color bg-farm-color/10';
+      case 'city': return 'border-city-color bg-city-color/10';
+      case 'magic': return 'border-magic-color bg-magic-color/10';
+      case 'event': return 'border-event-color bg-event-color/10';
       default: return 'border-border bg-surface-card';
     }
   };
@@ -119,28 +125,30 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative w-16 h-24 rounded-lg border-2 cursor-pointer
-        transition-all duration-300 ease-out
-        ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface scale-110 -translate-y-2 z-40' : 'z-10'}
-        ${isPlayable 
-          ? 'hover:scale-125 hover:-translate-y-4 hover:z-50 hover:shadow-2xl hover:brightness-110' 
-          : 'opacity-60 cursor-not-allowed'
-        }
-        ${getCardTypeColor(card.type)}
-        backdrop-blur-sm
+        relative w-16 h-24 rounded-xl cursor-pointer
+        transition-all duration-300 ease-out will-change-transform
+        group
+        animate-fade-in-slide
+        ${isSelected ? 'ring-4 ring-primary ring-offset-2 ring-offset-surface scale-150 -translate-y-6 z-50 shadow-2xl brightness-110 shadow-cyan-400/60 border-4 border-cyan-300' : 'z-10'}
+        hover:scale-135 hover:-translate-y-4 hover:z-40 hover:shadow-xl hover:brightness-105 hover:shadow-cyan-300/40
+        ${!isPlayable ? 'opacity-60 cursor-not-allowed' : ''}
+        ${getCardTypeColor(card.type, card.rarity)}
+        bg-white/20 dark:bg-black/30 backdrop-blur-md
+        shadow-lg
       `}
       style={{ 
         transformOrigin: 'center bottom',
-        willChange: 'transform'
       }}
       onClick={isPlayable ? onSelect : undefined}
     >
+      {/* Glow/Glass overlay */}
+      <div className="absolute inset-0 rounded-xl pointer-events-none bg-gradient-to-br from-white/30 to-cyan-200/10 dark:from-black/20 dark:to-cyan-900/10 blur-[2px] opacity-60" />
       {/* Card Content */}
-      <div className="p-2 h-full flex flex-col justify-between">
+      <div className="p-2 h-full flex flex-col justify-between relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h4 className="text-[10px] font-bold text-text-primary line-clamp-2 leading-tight">
+            <h4 className="text-[10px] font-bold text-text-primary line-clamp-2 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]">
               {card.name}
             </h4>
           </div>
@@ -150,6 +158,8 @@ const EnhancedCardComponent: React.FC<{
               onShowDetail();
             }}
             className="ml-1 p-0.5 rounded hover:bg-surface-hover transition-colors opacity-60 hover:opacity-100"
+            title="Ver detalhes da carta"
+            aria-label="Ver detalhes da carta"
           >
             <Eye className="w-3 h-3 text-text-secondary" />
           </button>
@@ -229,7 +239,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
           ? 'left-1/2 transform -translate-x-1/2 md:left-[calc(50%+120px)] md:transform md:-translate-x-1/2' 
           : 'left-1/2 transform -translate-x-1/2'
       }`}>
-        <div className="bg-surface-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-3">
+        <div className="bg-gradient-to-br from-cyan-200/30 via-surface-card/90 to-purple-200/20 dark:from-cyan-900/30 dark:via-surface-card/90 dark:to-purple-900/20 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-3">
           <div className="flex items-end gap-4">
             {/* Deck Area - Left Side */}
             <div className="flex-shrink-0">

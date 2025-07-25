@@ -155,6 +155,14 @@ body {
   animation: card-draw 0.3s ease-out;
 }
 
+@keyframes fade-in-slide {
+  from { opacity: 0; transform: translateY(40px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in-slide {
+  animation: fade-in-slide 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
 /* Game-specific utility classes */
 .surface-elevated {
   background: hsl(var(--surface-card));
