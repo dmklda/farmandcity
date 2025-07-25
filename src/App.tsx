@@ -11,7 +11,9 @@ import { Card } from './types/card.js';
 import FixedSidebar from './components/FixedSidebar.js';
 import EnhancedTopBar from './components/EnhancedTopBar.js';
 import AuthPage from './components/AuthPage.js';
+import SavedGamesModal from './components/SavedGamesModal.js';
 import { supabase } from './integrations/supabase/client.js';
+import { GameStorageService } from './services/GameStorageService.js';
 import type { User, Session } from '@supabase/supabase-js';
 
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
@@ -172,6 +174,20 @@ const App: React.FC = () => {
     // Usuário será atualizado automaticamente pelo listener
   };
 
+  // Função para carregar jogo
+  const handleLoadGame = (gameState: GameState) => {
+    setGame(gameState);
+    setGameStartTime(new Date()); // Reset timer
+    setError(null);
+    setVictory(null);
+    setDefeat(null);
+    setDiscardMode(false);
+    setBuiltCountThisTurn(0);
+    setDiscardedThisTurn(false);
+    setSelectedCard(null);
+    setSelectedGrid(null);
+  };
+
   // Deck inicial
   const getActiveDeck = () => {
     if (customDeck.length > 0) return customDeck.slice(0, DECK_LIMIT);
@@ -198,6 +214,8 @@ const App: React.FC = () => {
   const [builtCountThisTurn, setBuiltCountThisTurn] = useState(0);
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
+  const [showSavedGames, setShowSavedGames] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState<Date>(new Date());
 
   // Detectar compra de carta para animação
   React.useEffect(() => {
@@ -461,6 +479,7 @@ const App: React.FC = () => {
     setHistory([]);
     setBuiltCountThisTurn(0);
     setDiscardedThisTurn(false);
+    setGameStartTime(new Date()); // Reset timer
   };
 
   // Corrigir nextPhase para bloquear avanço se discardMode ativo
@@ -843,6 +862,13 @@ const App: React.FC = () => {
     }
   }, [game.phase]);
 
+  // Auto-save a cada 3 turnos (apenas para usuários autenticados)
+  useEffect(() => {
+    if (user && game.turn > 1 && game.turn % 3 === 0 && game.phase === 'draw') {
+      GameStorageService.saveGame(game);
+    }
+  }, [user, game.turn, game.phase]);
+
   // Dados para Sidebar e TopBar
   const sidebarResources = {
     coins: game.resources.coins,
@@ -890,8 +916,14 @@ const App: React.FC = () => {
   // Layout principal para usuários autenticados
   return (
     <div className="h-screen bg-background w-full overflow-hidden" style={{ paddingLeft: '0px', paddingTop: '64px' }}>
-      {/* User info and logout button */}
+      {/* User info and game controls */}
       <div className="absolute top-2 right-4 z-50 flex items-center gap-2">
+        <button
+          onClick={() => setShowSavedGames(true)}
+          className="px-3 py-1 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded transition-colors"
+        >
+          💾 Jogos
+        </button>
         <span className="text-sm text-muted-foreground">
           {user.email}
         </span>
@@ -1015,6 +1047,14 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de jogos salvos */}
+      <SavedGamesModal
+        isOpen={showSavedGames}
+        onClose={() => setShowSavedGames(false)}
+        onLoadGame={handleLoadGame}
+        currentGameState={game}
+      />
     </div>
   );
 };
