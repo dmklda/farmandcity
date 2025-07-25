@@ -42,9 +42,9 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData }> = ({ data }) => {
               >
                 <div className="flex items-center justify-center">
                   {i < landmarkCount ? (
-                    <Crown className="w-2 h-2" />
+                    <Crown className="w-1/3 h-1/3" />
                   ) : (
-                    <Plus className="w-2 h-2 opacity-50" />
+                    <Plus className="w-1/3 h-1/3 opacity-50" />
                   )}
                 </div>
               </div>

@@ -43,7 +43,7 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
                 <div
                   key={i}
                   className={`
-                    min-h-[40px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                    flex-1 rounded-lg border-2 border-dashed flex flex-col items-center justify-center
                     transition-all duration-300 cursor-pointer
                     ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
                     ${eventCard ? 'border-solid bg-surface-hover' : ''}
@@ -51,9 +51,9 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
                   onClick={() => onSelectEvent(i, 0)}
                 >
                   {eventCard ? (
-                    <div className="text-center p-0.5">
-                      <div className="text-xs mb-0.5">⚡</div>
-                      <div className="text-xs text-text-primary font-medium line-clamp-1">
+                    <div className="text-center p-0.5 flex flex-col items-center justify-center h-full">
+                      <div className="mb-0.5">⚡</div>
+                      <div className="text-xs text-text-primary font-medium line-clamp-1 max-w-full">
                         {eventCard.name}
                       </div>
                       <div className="text-xs text-magic-color">
@@ -61,8 +61,8 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center">
-                      <Plus className="w-2 h-2 text-text-muted opacity-50 mb-0.5" />
+                    <div className="text-center flex flex-col items-center justify-center h-full">
+                      <Plus className="w-1/3 h-1/3 text-text-muted opacity-50 mb-0.5" />
                       <div className="text-xs text-text-muted">Evento</div>
                     </div>
                   )}

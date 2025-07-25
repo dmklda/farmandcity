@@ -35,14 +35,14 @@ const CityNode: React.FC<{ data: CityNodeData }> = ({ data }) => {
               onClick={() => onSelectCell(colIndex, rowIndex)}
             >
               {cell.card ? (
-                <div className="text-center">
-                  <div className="text-sm mb-0.5">{cell.card.icon || '🏢'}</div>
-                  <div className="text-xs text-text-muted truncate">
+                <div className="text-center flex flex-col items-center">
+                  <div className="mb-0.5">{cell.card.icon || '🏢'}</div>
+                  <div className="text-xs text-text-muted truncate max-w-full">
                     {cell.card.name.slice(0, 6)}
                   </div>
                 </div>
               ) : (
-                <Plus className="w-4 h-4 text-text-muted opacity-50" />
+                <Plus className="w-1/3 h-1/3 text-text-muted opacity-50" />
               )}
             </div>
           ))
