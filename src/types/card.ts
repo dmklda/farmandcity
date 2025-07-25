@@ -23,4 +23,5 @@ export interface Card {
   cost: ResourceCost;
   effect: CardEffect;
   rarity: CardRarity;
-} 
+  activation: string;
+}

@@ -9,6 +9,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Produz 1 comida por turno.' },
     rarity: 'common',
+    activation: 'Produção automática por turno.',
   },
   {
     id: 'starter-tent',
@@ -17,6 +18,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Fornece 1 população imediatamente.' },
     rarity: 'common',
+    activation: 'Efeito imediato ao construir.',
   },
   {
     id: 'starter-harvest',
@@ -25,6 +27,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Ganhe 1 comida instantaneamente.' },
     rarity: 'common',
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: 'starter-farm',
@@ -33,6 +36,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Produz 1 comida quando ativada por dado.' },
     rarity: 'common',
+    activation: 'Ativada por qualquer valor de dado.',
   },
   {
     id: 'starter-workshop',
@@ -41,6 +45,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Produz 1 material por turno.' },
     rarity: 'common',
+    activation: 'Produção automática por turno.',
   },
   {
     id: 'starter-shop',
@@ -49,6 +54,7 @@ export const starterCards: Card[] = [
     cost: { coins: 0 },
     effect: { description: 'Ganhe 1 moeda instantaneamente.' },
     rarity: 'common',
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
 ];
 
@@ -69,6 +75,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 2 },
     effect: { description: 'Produz 1 comida quando ativado por dado 1.' },
     rarity: 'common',
+    activation: 'Ativada quando dado mostrar 1.',
   },
   {
     id: 'farm-cattle',
@@ -77,6 +84,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 3 },
     effect: { description: 'Produz 2 comida quando ativado por dado 2.' },
     rarity: 'common',
+    activation: 'Ativada quando dado mostrar 2.',
   },
   {
     id: 'city-house',
@@ -85,6 +93,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 2, materials: 1 },
     effect: { description: 'Fornece 1 população imediatamente.' },
     rarity: 'common',
+    activation: 'Efeito imediato ao construir.',
   },
   {
     id: 'action-harvest',
@@ -93,6 +102,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 1 },
     effect: { description: 'Ganhe 2 comida instantaneamente.' },
     rarity: 'uncommon',
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: 'city-market',
@@ -101,6 +111,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 4, materials: 2 },
     effect: { description: 'Produz 2 moedas por turno.' },
     rarity: 'uncommon',
+    activation: 'Produção automática por turno.',
   },
   {
     id: 'defense-wall',
@@ -109,6 +120,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 3, materials: 4 },
     effect: { description: 'Protege contra eventos de crise por 2 turnos.' },
     rarity: 'uncommon',
+    activation: 'Jogada em resposta a eventos de crise.',
   },
   {
     id: 'magic-growth',
@@ -117,6 +129,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 2, food: 2 },
     effect: { description: 'Dobra a produção de comida neste turno.' },
     rarity: 'rare',
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: 'trap-pit',
@@ -125,6 +138,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 1, materials: 2 },
     effect: { description: 'Anula o efeito de uma carta de evento.' },
     rarity: 'ultra',
+    activation: 'Ativa automaticamente quando oponente joga carta de evento.',
   },
   {
     id: 'city-palace',
@@ -133,6 +147,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 8, materials: 6, population: 2 },
     effect: { description: 'Fornece 3 população e +2 reputação.' },
     rarity: 'secret',
+    activation: 'Efeito imediato ao construir.',
   },
   {
     id: 'farm-orchard',
@@ -141,6 +156,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 4, food: 1, materials: 2 },
     effect: { description: 'Produz 3 comida quando ativado por dado 5.' },
     rarity: 'rare',
+    activation: 'Ativada quando dado mostrar 5.',
   },
   {
     id: 'landmark-obelisk',
@@ -149,6 +165,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 10, materials: 10, population: 3, food: 5 },
     effect: { description: 'Garante 1 marco e +5 reputação.' },
     rarity: 'legendary',
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: 'event-festival',
@@ -157,6 +174,7 @@ export const baseDeck: Card[] = [
     cost: { coins: 2, food: 2 },
     effect: { description: 'Todos os jogadores ganham 2 comida.' },
     rarity: 'uncommon',
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "farm-beehive",
@@ -164,7 +182,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 3, materials: 1, food: 1 },
     effect: { description: "Produz 1 comida e 1 moeda quando ativado por dado 3." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Ativada quando dado mostrar 3.',
   },
   {
     id: "city-tower",
@@ -172,7 +191,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 4, materials: 2 },
     effect: { description: "Permite visualizar cartas do oponente por 2 turnos." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Efeito contínuo por 2 turnos após construção.',
   },
   {
     id: "action-trade",
@@ -180,7 +200,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 1 },
     effect: { description: "Troque 2 materiais por 2 comidas." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: "magic-rainfall",
@@ -188,7 +209,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 2, food: 1 },
     effect: { description: "Todas as fazendas produzem +1 comida neste turno." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "defense-barricade",
@@ -196,7 +218,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 2, materials: 2 },
     effect: { description: "Bloqueia o efeito de 1 carta de ação do inimigo." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Jogada em resposta a carta de ação inimiga.',
   },
   {
     id: "trap-net",
@@ -204,7 +227,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 1 },
     effect: { description: "Impede que o oponente jogue cartas de cidade neste turno." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Ativa automaticamente no início do turno do oponente.',
   },
   {
     id: "event-storm",
@@ -212,7 +236,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 0 },
     effect: { description: "Todas as fazendas deixam de produzir neste turno." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "landmark-garden",
@@ -220,7 +245,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 12, materials: 6, population: 2, food: 4 },
     effect: { description: "Fornece 5 reputação e +1 produção de comida permanente." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "farm-mushroom",
@@ -228,7 +254,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 2, food: 1 },
     effect: { description: "Produz 2 comidas quando ativado por dado 4." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Ativada quando dado mostrar 4.',
   },
   {
     id: "magic-portal",
@@ -236,7 +263,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 5, food: 2 },
     effect: { description: "Jogue novamente uma carta já utilizada neste turno." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "city-hospital",
@@ -244,7 +272,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 4, materials: 2, population: 1 },
     effect: { description: "Recupera 1 população perdida por evento." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Ativa automaticamente quando população é perdida por evento.',
   },
   {
     id: "farm-vineyard",
@@ -252,7 +281,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 3, materials: 1 },
     effect: { description: "Produz 1 comida e 1 reputação quando ativado por dado 6." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Ativada quando dado mostrar 6.',
   },
   {
     id: "trap-collapse",
@@ -260,7 +290,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 2, materials: 2 },
     effect: { description: "Desativa uma carta de cidade inimiga por 1 turno." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Ativa automaticamente quando oponente constrói cidade.',
   },
   {
     id: "action-hire",
@@ -268,7 +299,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 2 },
     effect: { description: "Ganhe 1 população instantaneamente." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: "event-invasion",
@@ -276,7 +308,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 0 },
     effect: { description: "Todos os jogadores perdem 1 moeda e 1 material." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "magic-sun-blessing",
@@ -284,7 +317,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 3 },
     effect: { description: "Todas as suas fazendas produzem +1 comida neste turno." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "defense-watchdog",
@@ -292,7 +326,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 1, food: 1 },
     effect: { description: "Pode ser jogada em resposta a uma armadilha para anular seus efeitos sobre você." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Jogada em resposta a armadilha inimiga.',
   },
   {
     id: "landmark-gate",
@@ -300,7 +335,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 6, materials: 4, population: 1 },
     effect: { description: "Fornece +2 reputação e defesa contra eventos." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "city-factory",
@@ -308,7 +344,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 5, materials: 1 },
     effect: { description: "Produz 2 materiais a cada 2 turnos." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Produção a cada 2 turnos.',
   },
   {
     id: "farm-ricefield",
@@ -316,7 +353,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 2 },
     effect: { description: "Produz 1 comida quando ativado por dado 1 ou 2." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Ativada quando dado mostrar 1 ou 2.',
   },
   // --- CARTAS GERADAS PARA COBRIR LACUNAS ---
   {
@@ -325,7 +363,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 2, food: 1, materials: 1 },
     effect: { description: "Produz 1 comida extra a cada 3 turnos. Se ativada por dado 6, produz 2 comidas." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Produção a cada 3 turnos. Bônus quando dado mostrar 6.',
   },
   {
     id: "farm-mystic-crop",
@@ -333,7 +372,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 5, food: 2, materials: 2 },
     effect: { description: "Produz 2 comida e 1 moeda quando ativada por dado 4. Se for o 10º turno, produz o dobro." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Ativada quando dado mostrar 4. Bônus no 10º turno.',
   },
   {
     id: "farm-plague",
@@ -341,7 +381,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: {},
     effect: { description: "Todas as fazendas produzem metade da comida por 2 turnos." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Efeito imediato por 2 turnos. Afeta todas as fazendas.',
   },
   {
     id: "farm-blessing-ritual",
@@ -349,7 +390,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 1, food: 1 },
     effect: { description: "Produz 1 comida extra para cada fazenda que você controla neste turno." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Produção imediata baseada em fazendas controladas.',
   },
   {
     id: "city-arcane-library",
@@ -357,7 +399,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 6, materials: 3, population: 1 },
     effect: { description: "Permite comprar 1 carta extra por turno enquanto estiver ativa." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Efeito contínuo enquanto em campo.',
   },
   {
     id: "city-refugee-camp",
@@ -365,7 +408,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 2, food: 2 },
     effect: { description: "Ganhe 2 população, mas perca 1 comida por turno enquanto estiver ativa." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Efeito imediato + custo contínuo por turno.',
   },
   {
     id: "city-grand-arena",
@@ -373,7 +417,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 10, materials: 6, population: 2 },
     effect: { description: "Fornece 2 população e +3 reputação. Permite jogar uma carta de ação extra por turno." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Efeito imediato + habilidade contínua.',
   },
   {
     id: "city-metropolis",
@@ -381,7 +426,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 12, materials: 8, population: 4 },
     effect: { description: "Fornece 5 população e +3 reputação imediatamente." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Efeito imediato ao construir.',
   },
   {
     id: "city-secret-market",
@@ -389,7 +435,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 4, materials: 2 },
     effect: { description: "No início do seu turno, ganhe 1 moeda extra se tiver menos de 3 moedas." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Ativa automaticamente no início do turno se condição for atendida.',
   },
   {
     id: "city-festival-booster",
@@ -397,7 +444,8 @@ export const baseDeck: Card[] = [
     type: "city",
     cost: { coins: 2, food: 1 },
     effect: { description: "Ganhe 1 população e 1 moeda ao jogar esta carta." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Efeito imediato ao construir.',
   },
   {
     id: "action-quick-loan",
@@ -405,7 +453,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 0 },
     effect: { description: "Ganhe 2 moedas, mas perca 1 moeda no próximo turno." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Fase de ação. Efeito imediato + penalidade no próximo turno.',
   },
   {
     id: "action-heroic-effort",
@@ -413,7 +462,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 2, food: 1 },
     effect: { description: "Ganhe 1 material e 1 comida instantaneamente." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: "action-shadow-bribe",
@@ -421,7 +471,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 4 },
     effect: { description: "Escolha um oponente. Ele perde 2 moedas e você ganha 2 moedas." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: "defense-iron-shield",
@@ -429,7 +480,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 2, materials: 2 },
     effect: { description: "Anula o próximo efeito negativo de evento ou armadilha." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Jogada em resposta a evento negativo ou armadilha.',
   },
   {
     id: "defense-crisis-bunker",
@@ -437,7 +489,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 3, materials: 3 },
     effect: { description: "Protege toda sua população contra o próximo evento de crise." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Jogada em resposta a evento de crise.',
   },
   {
     id: "defense-magic-barrier",
@@ -445,7 +498,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 2, materials: 1 },
     effect: { description: "Anula o efeito de uma carta de magia inimiga neste turno." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Jogada em resposta a carta de magia inimiga.',
   },
   {
     id: "magic-ritual-eternal-harvest",
@@ -453,7 +507,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 6, food: 4, materials: 2 },
     effect: { description: "Durante este turno, todas as suas fazendas produzem o dobro de comida e você ganha +2 reputação." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "magic-arcane-surge",
@@ -461,7 +516,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 4, food: 2 },
     effect: { description: "Durante este turno, jogue até 2 cartas de magia." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "magic-shadow-scroll",
@@ -469,7 +525,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 3, food: 1 },
     effect: { description: "Copie o efeito de uma carta de ação jogada neste turno." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "magic-secret-invocation",
@@ -477,7 +534,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 5, food: 2, materials: 1 },
     effect: { description: "Jogue uma carta de magia do seu descarte sem pagar o custo." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "event-ancient-curse",
@@ -485,7 +543,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 1, food: 1 },
     effect: { description: "Todos os jogadores perdem 1 população." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "event-heroic-age",
@@ -493,7 +552,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 3, food: 2, materials: 2 },
     effect: { description: "Todos os jogadores ganham 1 reputação e 1 população." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "event-secret-eclipse",
@@ -501,7 +561,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 2, food: 2, materials: 2 },
     effect: { description: "Todos os jogadores pulam a fase de produção neste turno." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "event-booster-migration",
@@ -509,7 +570,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 1, food: 1 },
     effect: { description: "Todos os jogadores podem trocar 1 recurso à escolha por outro." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "trap-thorn-trap",
@@ -517,7 +579,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { materials: 1 },
     effect: { description: "Se o oponente tentar ativar uma fazenda, ele perde 1 comida." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Ativa automaticamente quando oponente ativar fazenda.',
   },
   {
     id: "trap-mana-leak",
@@ -525,7 +588,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 2 },
     effect: { description: "Se o oponente jogar uma carta de magia, ele perde 2 moedas." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Ativa automaticamente quando oponente jogar magia.',
   },
   {
     id: "trap-collapse-rare",
@@ -533,7 +597,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 3, materials: 3 },
     effect: { description: "Desativa uma carta de cidade inimiga por 2 turnos." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Ativa automaticamente quando oponente construir cidade.',
   },
   {
     id: "trap-ultimate-net",
@@ -541,7 +606,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 3, materials: 2 },
     effect: { description: "Se o oponente jogar uma carta de evento, anule-a e ele perde 1 reputação." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Ativa automaticamente quando oponente jogar evento.',
   },
   {
     id: "trap-secret-ambush",
@@ -549,7 +615,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 2, materials: 1 },
     effect: { description: "Se o oponente ativar uma carta de ação, ele perde 1 material e 1 moeda." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Ativa automaticamente quando oponente jogar ação.',
   },
   {
     id: "trap-crisis-collapse",
@@ -557,7 +624,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: {},
     effect: { description: "Se o oponente construir uma cidade, ele perde 2 materiais." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Ativa automaticamente quando oponente construir cidade.',
   },
   {
     id: "trap-booster-mirror",
@@ -565,7 +633,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 1 },
     effect: { description: "Se o oponente jogar uma carta de defesa, você copia o efeito dela." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Ativa automaticamente quando oponente jogar defesa.',
   },
   {
     id: "landmark-clocktower",
@@ -573,7 +642,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 7, materials: 5, population: 1 },
     effect: { description: "Reduz em 1 o custo de todas as cartas de cidade que você jogar." },
-    rarity: "rare"
+    rarity: "rare",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "landmark-ultra-bridge",
@@ -581,7 +651,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 15, materials: 10, population: 2 },
     effect: { description: "Permite jogar 2 cartas de cidade extras por turno." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "landmark-secret-vault",
@@ -589,7 +660,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 8, materials: 4, population: 1 },
     effect: { description: "No início de cada turno, ganhe 1 moeda e 1 material." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Ativa automaticamente no início de cada turno.',
   },
   {
     id: "landmark-booster-statue",
@@ -597,7 +669,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 3, materials: 2 },
     effect: { description: "Ganhe 1 reputação ao jogar esta carta." },
-    rarity: "booster"
+    rarity: "booster",
+    activation: 'Efeito imediato ao construir.',
   },
   // === CARTAS PARA COMPLETAR LACUNAS ===
   // farm: legendary, ultra, secret
@@ -607,7 +680,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 20, food: 10, materials: 15, population: 5 },
     effect: { description: "Produz 5 comida por turno e fornece +10 reputação permanente. Quando ativada por dado 6, todos os jogadores ganham 2 comida." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Produção automática por turno. Bônus quando dado mostrar 6.',
   },
   {
     id: "farm-crystal-greenhouse",
@@ -615,7 +689,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 8, food: 3, materials: 5 },
     effect: { description: "Produz 3 comida quando ativada por qualquer dado. Se ativada 3 vezes no mesmo turno, produz 2 comidas extras." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Ativada por qualquer valor de dado. Bônus por múltiplas ativações.',
   },
   {
     id: "farm-forbidden-grove",
@@ -623,7 +698,8 @@ export const baseDeck: Card[] = [
     type: "farm",
     cost: { coins: 6, food: 2, materials: 3 },
     effect: { description: "Produz 2 comida e 1 material quando ativada por dado 3. Se você tiver menos de 5 comidas, produz o dobro." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Ativada quando dado mostrar 3. Bônus se recurso for baixo.',
   },
   // action: legendary, ultra, crisis
   {
@@ -632,7 +708,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 10, food: 5, materials: 5, population: 2 },
     effect: { description: "Ganhe 5 de cada recurso e +3 reputação. Só pode ser jogada uma vez por partida." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Fase de ação. Limitada a 1 por partida.',
   },
   {
     id: "action-temporal-shift",
@@ -640,7 +717,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 6, food: 3, materials: 2 },
     effect: { description: "Jogue um turno extra após este. Durante esse turno, todas as suas cartas custam 1 recurso a menos." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   {
     id: "action-desperate-measures",
@@ -648,7 +726,8 @@ export const baseDeck: Card[] = [
     type: "action",
     cost: { coins: 0 },
     effect: { description: "Perca metade dos seus recursos arredondando para baixo, mas ganhe 3 cartas da sua mão." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
   },
   // defense: legendary, ultra, secret
   {
@@ -657,7 +736,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 12, food: 8, materials: 10, population: 3 },
     effect: { description: "Torna você imune a todos os efeitos negativos por 3 turnos e fornece +2 reputação." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Jogada em resposta a qualquer efeito negativo.',
   },
   {
     id: "defense-quantum-shield",
@@ -665,7 +745,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 5, materials: 4 },
     effect: { description: "Anula os próximos 2 efeitos negativos. Para cada efeito anulado, ganhe 1 recurso à escolha." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Jogada em resposta a efeito negativo.',
   },
   {
     id: "defense-shadow-veil",
@@ -673,7 +754,8 @@ export const baseDeck: Card[] = [
     type: "defense",
     cost: { coins: 3, food: 2 },
     effect: { description: "Torna uma carta sua invisível aos oponentes por 2 turnos. Ela não pode ser alvo de armadilhas ou magias." },
-    rarity: "secret"
+    rarity: "secret",
+    activation: 'Jogada preventivamente ou em resposta a ameaça.',
   },
   // magic: common, crisis
   {
@@ -682,7 +764,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 2, food: 1 },
     effect: { description: "Transforme até 3 recursos de um tipo em recursos de outro tipo à sua escolha." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   {
     id: "magic-chaos-storm",
@@ -690,7 +773,8 @@ export const baseDeck: Card[] = [
     type: "magic",
     cost: { coins: 1, food: 1 },
     effect: { description: "Todos os recursos são redistribuídos aleatoriamente entre todos os jogadores." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Fase de ação. Limitada a 1 por turno.',
   },
   // trap: legendary
   {
@@ -699,7 +783,8 @@ export const baseDeck: Card[] = [
     type: "trap",
     cost: { coins: 15, food: 8, materials: 12, population: 4 },
     effect: { description: "Se o oponente tentar vencer por qualquer condição, ele deve pagar 5 de cada recurso ou a vitória é anulada." },
-    rarity: "legendary"
+    rarity: "legendary",
+    activation: 'Ativa automaticamente em tentativa de vitória do oponente.',
   },
   // event: common, ultra
   {
@@ -708,7 +793,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 1 },
     effect: { description: "Todos os jogadores podem trocar recursos 1 por 1 neste turno." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Efeito imediato. Afeta todos os jogadores.',
   },
   {
     id: "event-cosmic-alignment",
@@ -716,7 +802,8 @@ export const baseDeck: Card[] = [
     type: "event",
     cost: { coins: 5, food: 5, materials: 5, population: 2 },
     effect: { description: "Todos os jogadores dobram a produção de todos os recursos por 2 turnos." },
-    rarity: "ultra"
+    rarity: "ultra",
+    activation: 'Efeito imediato por 2 turnos. Afeta todos os jogadores.',
   },
   // landmark: common, uncommon, crisis
   {
@@ -725,7 +812,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 3, materials: 2, population: 1 },
     effect: { description: "Todas as suas cartas de fazenda produzem +1 comida permanentemente." },
-    rarity: "common"
+    rarity: "common",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "landmark-town-square",
@@ -733,7 +821,8 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 5, materials: 3, population: 2 },
     effect: { description: "Permite jogar 1 carta de ação extra por turno e fornece +1 reputação." },
-    rarity: "uncommon"
+    rarity: "uncommon",
+    activation: 'Efeito permanente após construção.',
   },
   {
     id: "landmark-ruins-of-despair",
@@ -741,6 +830,7 @@ export const baseDeck: Card[] = [
     type: "landmark",
     cost: { coins: 8, materials: 6, population: 3 },
     effect: { description: "Todos os jogadores perdem 2 de cada recurso quando esta carta é construída, mas você ganha +5 reputação." },
-    rarity: "crisis"
+    rarity: "crisis",
+    activation: 'Efeito imediato ao construir. Afeta todos os jogadores.',
   }
 ];
