@@ -291,14 +291,14 @@ export const baseDeck: Card[] = [
     name: "Cão de Guarda",
     type: "defense",
     cost: { coins: 1, food: 1 },
-    effect: { description: "Impede que uma armadilha afete uma carta sua." },
+    effect: { description: "Pode ser jogada em resposta a uma armadilha para anular seus efeitos sobre você." },
     rarity: "common"
   },
   {
     id: "landmark-gate",
     name: "Portão da Cidade",
     type: "landmark",
-    cost: { coins: 6, materials: 4 },
+    cost: { coins: 6, materials: 4, population: 1 },
     effect: { description: "Fornece +2 reputação e defesa contra eventos." },
     rarity: "legendary"
   },
@@ -344,8 +344,8 @@ export const baseDeck: Card[] = [
     rarity: "crisis"
   },
   {
-    id: "farm-harvest-festival",
-    name: "Festival da Colheita",
+    id: "farm-blessing-ritual",
+    name: "Ritual de Bênção",
     type: "farm",
     cost: { coins: 1, food: 1 },
     effect: { description: "Produz 1 comida extra para cada fazenda que você controla neste turno." },
@@ -677,11 +677,11 @@ export const baseDeck: Card[] = [
   },
   // magic: common, crisis
   {
-    id: "magic-basic-charm",
-    name: "Encanto Básico",
+    id: "magic-resource-transmutation",
+    name: "Transmutação de Recursos",
     type: "magic",
-    cost: { coins: 1 },
-    effect: { description: "Ganhe 1 comida ou 1 material à escolha neste turno." },
+    cost: { coins: 2, food: 1 },
+    effect: { description: "Transforme até 3 recursos de um tipo em recursos de outro tipo à sua escolha." },
     rarity: "common"
   },
   {
