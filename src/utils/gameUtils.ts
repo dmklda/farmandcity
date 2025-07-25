@@ -56,7 +56,7 @@ export function getInitialState(deck: Card[]): GameState {
     playerStats: { reputation: 5, totalProduction: 0, buildings: 0, landmarks: 0 },
     farmGrid: createEmptyGrid(3, 4), // 3 linhas x 4 colunas = 12 slots
     cityGrid: createEmptyGrid(2, 3), // 2 linhas x 3 colunas = 6 slots
-    eventGrid: createEmptyGrid(1, 2),
+    eventGrid: createEmptyGrid(2, 3), // 2 linhas x 3 colunas = 6 slots
     hand,
     deck: remainingDeck,
     activeEvents: [],
