@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      booster_packs: {
+        Row: {
+          cards_count: number | null
+          created_at: string | null
+          description: string | null
+          guaranteed_rarity: Database["public"]["Enums"]["card_rarity"] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price_coins: number
+        }
+        Insert: {
+          cards_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          guaranteed_rarity?: Database["public"]["Enums"]["card_rarity"] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_coins: number
+        }
+        Update: {
+          cards_count?: number | null
+          created_at?: string | null
+          description?: string | null
+          guaranteed_rarity?: Database["public"]["Enums"]["card_rarity"] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_coins?: number
+        }
+        Relationships: []
+      }
+      cards: {
+        Row: {
+          art_url: string | null
+          cost_coins: number | null
+          cost_food: number | null
+          cost_materials: number | null
+          cost_population: number | null
+          created_at: string | null
+          created_by: string | null
+          effect: string
+          effect_logic: string | null
+          frame_url: string | null
+          id: string
+          is_active: boolean | null
+          is_reactive: boolean | null
+          name: string
+          phase: Database["public"]["Enums"]["game_phase"]
+          rarity: Database["public"]["Enums"]["card_rarity"]
+          slug: string
+          tags: string[] | null
+          type: Database["public"]["Enums"]["card_type"]
+          updated_at: string | null
+          use_per_turn: number | null
+        }
+        Insert: {
+          art_url?: string | null
+          cost_coins?: number | null
+          cost_food?: number | null
+          cost_materials?: number | null
+          cost_population?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          effect: string
+          effect_logic?: string | null
+          frame_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_reactive?: boolean | null
+          name: string
+          phase: Database["public"]["Enums"]["game_phase"]
+          rarity: Database["public"]["Enums"]["card_rarity"]
+          slug: string
+          tags?: string[] | null
+          type: Database["public"]["Enums"]["card_type"]
+          updated_at?: string | null
+          use_per_turn?: number | null
+        }
+        Update: {
+          art_url?: string | null
+          cost_coins?: number | null
+          cost_food?: number | null
+          cost_materials?: number | null
+          cost_population?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          effect?: string
+          effect_logic?: string | null
+          frame_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_reactive?: boolean | null
+          name?: string
+          phase?: Database["public"]["Enums"]["game_phase"]
+          rarity?: Database["public"]["Enums"]["card_rarity"]
+          slug?: string
+          tags?: string[] | null
+          type?: Database["public"]["Enums"]["card_type"]
+          updated_at?: string | null
+          use_per_turn?: number | null
+        }
+        Relationships: []
+      }
       game_history: {
         Row: {
           buildings_built: number
@@ -50,6 +155,41 @@ export type Database = {
         }
         Relationships: []
       }
+      game_stats: {
+        Row: {
+          card_id: string | null
+          id: string
+          last_used: string | null
+          times_used: number | null
+          user_id: string | null
+          wins_with_card: number | null
+        }
+        Insert: {
+          card_id?: string | null
+          id?: string
+          last_used?: string | null
+          times_used?: number | null
+          user_id?: string | null
+          wins_with_card?: number | null
+        }
+        Update: {
+          card_id?: string | null
+          id?: string
+          last_used?: string | null
+          times_used?: number | null
+          user_id?: string | null
+          wins_with_card?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_stats_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           created_at: string
@@ -85,6 +225,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pack_purchases: {
+        Row: {
+          cards_received: Json | null
+          id: string
+          pack_id: string | null
+          purchased_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cards_received?: Json | null
+          id?: string
+          pack_id?: string | null
+          purchased_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cards_received?: Json | null
+          id?: string
+          pack_id?: string | null
+          purchased_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_purchases_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "booster_packs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       player_cards: {
         Row: {
@@ -148,7 +320,25 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      card_rarity:
+        | "common"
+        | "uncommon"
+        | "rare"
+        | "ultra"
+        | "secret"
+        | "legendary"
+        | "crisis"
+        | "booster"
+      card_type:
+        | "farm"
+        | "city"
+        | "action"
+        | "magic"
+        | "defense"
+        | "trap"
+        | "event"
+        | "landmark"
+      game_phase: "draw" | "action" | "reaction"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -275,6 +465,28 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      card_rarity: [
+        "common",
+        "uncommon",
+        "rare",
+        "ultra",
+        "secret",
+        "legendary",
+        "crisis",
+        "booster",
+      ],
+      card_type: [
+        "farm",
+        "city",
+        "action",
+        "magic",
+        "defense",
+        "trap",
+        "event",
+        "landmark",
+      ],
+      game_phase: ["draw", "action", "reaction"],
+    },
   },
 } as const
