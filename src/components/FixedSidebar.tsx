@@ -29,6 +29,8 @@ interface SidebarProps {
     turn: number;
   };
   history: string[];
+  isVisible: boolean;
+  setIsVisible: (visible: boolean) => void;
 }
 
 interface ProgressBarProps {
@@ -61,24 +63,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ label, current, max, icon, co
   );
 };
 
-const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, history }) => {
-  const [isVisible, setIsVisible] = useState(true);
+const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, history, isVisible, setIsVisible }) => {
 
   return (
     <>
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsVisible(!isVisible)}
-        className="fixed top-16 left-2 z-50 bg-surface-card border border-border rounded-full p-2 hover:bg-surface-hover transition-colors"
-        title={isVisible ? 'Esconder sidebar' : 'Mostrar sidebar'}
-      >
-        {isVisible ? (
-          <ChevronLeft className="w-4 h-4 text-text-secondary" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-text-secondary" />
-        )}
-      </button>
-
       {/* Sidebar */}
       <aside className={`
         bg-surface border-r border-border z-30 h-screen transition-all duration-300 fixed left-0 top-0

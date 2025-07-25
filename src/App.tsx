@@ -105,6 +105,7 @@ const App: React.FC = () => {
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
   const [magicUsedThisTurn, setMagicUsedThisTurn] = useState(false);
   const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   // Deck inicial
   const getActiveDeck = () => {
@@ -807,6 +808,8 @@ const App: React.FC = () => {
         progress={sidebarProgress}
         victory={sidebarVictory}
         history={history}
+        isVisible={sidebarVisible}
+        setIsVisible={setSidebarVisible}
       />
       
       {/* Fixed TopBar */}
@@ -819,10 +822,18 @@ const App: React.FC = () => {
         onNextPhase={victory || discardMode ? () => {} : nextPhase}
         discardMode={discardMode}
         resources={game.resources}
+        onToggleSidebar={() => setSidebarVisible((v) => !v)}
       />
       
       {/* Main Content Area - Scrollable */}
-      <div className="h-full overflow-y-auto overflow-x-hidden p-3" style={{ paddingLeft: '300px', paddingBottom: '200px' }}>
+      <div
+        className="h-full overflow-y-auto overflow-x-hidden p-3"
+        style={{
+          paddingLeft: sidebarVisible ? '300px' : '24px',
+          paddingBottom: '200px',
+          transition: 'padding-left 0.3s',
+        }}
+      >
         <EnhancedGridBoard
           farmGrid={game.farmGrid}
           cityGrid={game.cityGrid}

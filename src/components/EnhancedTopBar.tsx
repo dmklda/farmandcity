@@ -14,6 +14,7 @@ interface EnhancedTopBarProps {
     materials: number;
     population: number;
   };
+  onToggleSidebar?: () => void;
 }
 
 interface ResourceChipProps {
@@ -56,7 +57,8 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   phase, 
   onNextPhase, 
   discardMode,
-  resources 
+  resources,
+  onToggleSidebar
 }) => {
   const getPhaseColor = (phase: string) => {
     switch (phase.toLowerCase()) {
@@ -72,6 +74,17 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
     <header className="w-full bg-surface border-b border-border px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-40">
       {/* Logo Section */}
       <div className="flex items-center gap-2">
+        {/* Hamburger Button */}
+        <button
+          className="mr-2 flex flex-col justify-center items-center w-8 h-8 rounded hover:bg-surface-hover transition-colors focus:outline-none"
+          aria-label="Alternar sidebar"
+          onClick={onToggleSidebar}
+          type="button"
+        >
+          <span className="block w-5 h-0.5 bg-text-primary mb-1 rounded"></span>
+          <span className="block w-5 h-0.5 bg-text-primary mb-1 rounded"></span>
+          <span className="block w-5 h-0.5 bg-text-primary rounded"></span>
+        </button>
         <div className="flex items-center gap-1.5">
           <span className="text-xl">👑</span>
           <h1 className="text-lg font-bold text-text-primary">Famand</h1>
