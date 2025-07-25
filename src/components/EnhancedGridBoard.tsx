@@ -62,7 +62,7 @@ const GridSection: React.FC<GridSectionProps> = ({
           <div
             key={`${rowIndex}-${colIndex}`}
             className={`
-              grid-cell w-20 h-20 flex items-center justify-center text-xs font-medium
+              grid-cell w-20 h-20 place-items-center text-xs font-medium
               ${highlight ? 'available' : ''}
               ${cell.card ? 'bg-surface-hover border-solid' : ''}
             `}
@@ -97,8 +97,8 @@ const GridSection: React.FC<GridSectionProps> = ({
     >
       {/* Header */}
       <div className="p-1 border-b border-border bg-surface-card/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center p-1">
+          <div className="grid grid-cols-[auto_auto] items-center gap-1">
             <div className="text-sm">{icon}</div>
             <h3 className="font-bold text-text-primary text-xs">{title}</h3>
           </div>
@@ -115,7 +115,7 @@ const GridSection: React.FC<GridSectionProps> = ({
 
       {/* Preview when not active */}
       {!isActive && (
-        <div className="p-2 text-center">
+        <div className="p-2 text-center grid place-items-center">
           <div className="text-sm mb-0.5">{icon}</div>
           <div className="text-xs text-text-secondary mb-0.5">
             {count}/{max}
@@ -140,8 +140,8 @@ const LandmarkSection: React.FC<{
 }> = ({ landmarkCount, landmarkMax }) => (
   <div className="surface-elevated border-2 border-secondary">
     <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center p-1">
+        <div className="grid grid-cols-[auto_auto] items-center gap-1">
           <Crown className="w-3 h-3 text-secondary" />
           <h3 className="font-bold text-text-primary text-xs">Marcos</h3>
         </div>
@@ -157,7 +157,7 @@ const LandmarkSection: React.FC<{
           <div
             key={i}
             className={`
-              w-20 h-20 rounded-md border-2 border-dashed flex items-center justify-center
+              w-20 h-20 rounded-md border-2 border-dashed place-items-center
               transition-all duration-300
               ${i < landmarkCount
                 ? 'border-secondary bg-secondary/20 text-secondary'
@@ -194,8 +194,8 @@ const EventCardsSection: React.FC<{
 }> = ({ eventGrid, eventCount, eventMax, onSelectEvent, highlight }) => (
   <div className="surface-elevated border-2 border-magic-color">
     <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center p-1">
+        <div className="grid grid-cols-[auto_auto] items-center gap-1">
           <Zap className="w-3 h-3 text-magic-color" />
           <h3 className="font-bold text-text-primary text-xs">Eventos</h3>
         </div>
@@ -206,14 +206,14 @@ const EventCardsSection: React.FC<{
     </div>
 
     <div className="p-1">
-      <div className="flex gap-0.5">
+      <div className="grid auto-cols-fr grid-flow-col gap-0.5">
         {Array.from({ length: eventMax }, (_, i) => {
           const eventCard = eventGrid[0] && eventGrid[0][i]?.card;
           return (
             <div
               key={i}
               className={`
-                flex-1 min-h-[40px] rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                min-h-[40px] rounded-lg border-2 border-dashed grid grid-rows-[auto_auto_auto] place-items-center
                 transition-all duration-300 cursor-pointer
                 ${highlight ? 'border-magic-color bg-magic-color/10' : 'border-border bg-surface-card'}
                 ${eventCard ? 'border-solid bg-surface-hover' : ''}
@@ -313,13 +313,13 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
       {/* Content */}
       <div className="relative z-10 p-1">
         {/* Tab Navigation */}
-        <div className="flex gap-0.5 mb-2 bg-surface-card/80 backdrop-blur rounded-lg p-0.5">
+        <div className="grid auto-cols-fr grid-flow-col gap-0.5 mb-2 bg-surface-card/80 backdrop-blur rounded-lg p-0.5">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
               className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-200 text-xs
+                grid grid-cols-[auto_auto_auto] items-center gap-1.5 px-3 py-1.5 rounded-md font-medium transition-all duration-200 text-xs
                 ${activeSection === section.id
                   ? 'bg-primary text-white shadow-lg'
                   : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'
