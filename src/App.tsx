@@ -860,6 +860,7 @@ const App: React.FC = () => {
         onSelectCard={victory ? () => {} : handleSelectCard}
         selectedCardId={selectedCard?.id}
         canPlayCard={canPlayCardUI}
+        sidebarVisible={sidebarVisible}
       />
       
       {/* Modal de descarte manual */}

@@ -7,6 +7,7 @@ interface EnhancedHandProps {
   onSelectCard: (card: Card) => void;
   selectedCardId?: string;
   canPlayCard?: (card: Card) => { playable: boolean; reason?: string };
+  sidebarVisible?: boolean;
 }
 
 interface CardDetailModalProps {
@@ -118,11 +119,11 @@ const EnhancedCardComponent: React.FC<{
   return (
     <div
       className={`
-        relative w-16 h-24 rounded-lg border-2 cursor-pointer
+        relative w-20 h-28 rounded-lg border-2 cursor-pointer
         transition-all duration-200 ease-out group
         ${isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : ''}
         ${isPlayable 
-          ? 'hover:scale-110 hover:-translate-y-2 hover:z-30 hover:shadow-lg' 
+          ? 'hover:scale-110 hover:-translate-y-3 hover:z-30 hover:shadow-xl' 
           : 'opacity-60 cursor-not-allowed'
         }
         ${getCardTypeColor(card.type)}
@@ -131,11 +132,11 @@ const EnhancedCardComponent: React.FC<{
       onClick={isPlayable ? onSelect : undefined}
     >
       {/* Card Content */}
-      <div className="p-1.5 h-full flex flex-col justify-between">
+      <div className="p-2 h-full flex flex-col justify-between">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h4 className="text-[9px] font-bold text-text-primary line-clamp-2 leading-tight">
+            <h4 className="text-[10px] font-bold text-text-primary line-clamp-2 leading-tight">
               {card.name}
             </h4>
           </div>
@@ -146,7 +147,7 @@ const EnhancedCardComponent: React.FC<{
             }}
             className="ml-1 p-0.5 rounded hover:bg-surface-hover transition-colors opacity-60 hover:opacity-100"
           >
-            <Eye className="w-2.5 h-2.5 text-text-secondary" />
+            <Eye className="w-3 h-3 text-text-secondary" />
           </button>
         </div>
 
@@ -211,20 +212,23 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
   hand, 
   onSelectCard, 
   selectedCardId, 
-  canPlayCard = () => ({ playable: true }) 
+  canPlayCard = () => ({ playable: true }),
+  sidebarVisible = false
 }) => {
   const [detailCard, setDetailCard] = useState<Card | null>(null);
 
   return (
     <>
       {/* Hand Container */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+      <div className={`fixed bottom-4 z-20 transition-all duration-300 ${
+        sidebarVisible ? 'left-1/2 transform -translate-x-1/2 translate-x-32' : 'left-1/2 transform -translate-x-1/2'
+      }`}>
         <div className="bg-surface-card/90 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-3">
           <div className="flex items-end gap-4">
             {/* Deck Area - Left Side */}
             <div className="flex-shrink-0">
               <div 
-                className="w-16 h-24 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-all duration-300 hover:scale-105"
+                className="w-20 h-28 bg-primary/20 border-2 border-primary rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-primary/30 transition-all duration-300 hover:scale-105"
                 title="Deck"
               >
                 <div className="text-sm text-primary">🂠</div>
