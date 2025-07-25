@@ -336,9 +336,9 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         </div>
 
         {/* Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-1">
-          {/* Active Grid Section */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-2 gap-1">
+          {/* Grids - Lado esquerdo */}
+          <div>
             {sections.map((section) => (
               <GridSection
                 key={section.id}
@@ -356,9 +356,9 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
             ))}
           </div>
 
-          {/* Right Column - Events and Landmarks */}
+          {/* Eventos e Marcos - Lado direito */}
           <div className="space-y-1">
-            {/* Events Section - Fixed like field cards */}
+            {/* Events Section */}
             <EventCardsSection
               eventGrid={eventGrid}
               eventCount={eventCount}
@@ -372,33 +372,6 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
               landmarkCount={landmarkCount}
               landmarkMax={landmarkMax}
             />
-            
-            {/* Quick Stats */}
-            <div className="surface-elevated p-2">
-              <h4 className="font-bold text-text-primary mb-1 text-xs">Resumo</h4>
-              <div className="space-y-0.5 text-xs">
-                {sections.map((section) => (
-                  <div key={section.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {section.icon}
-                      <span className="text-text-secondary">{section.title}</span>
-                    </div>
-                    <span className="text-text-primary font-medium">
-                      {section.count}/{section.max}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5" />
-                    <span className="text-text-secondary">Eventos</span>
-                  </div>
-                  <span className="text-text-primary font-medium">
-                    {eventCount}/{eventMax}
-                  </span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
