@@ -528,6 +528,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      get_starter_card_id: {
+        Args: { card_slug: string }
+        Returns: string
+      }
       log_system_event: {
         Args: {
           p_event_type: string
