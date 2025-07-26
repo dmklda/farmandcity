@@ -4,17 +4,39 @@ import { starterCards, baseDeck } from '../data/cards';
 import { Resources } from '../types/resources';
 import { Card } from '../types/card';
 import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../utils/gameUtils';
+import { useCards } from './useCards';
+import { useGameSettings } from './useGameSettings';
 
 const DECK_LIMIT = 28;
 const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end'];
 
 export function useGameState() {
+  // Hooks para dados do Supabase
+  const { cards: supabaseCards, loading: cardsLoading } = useCards();
+  const { settings: gameSettings, loading: settingsLoading } = useGameSettings();
+
   // --- ESTADO PRINCIPAL ---
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
   const [magicUsedThisTurn, setMagicUsedThisTurn] = useState(false);
   const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
-  const getActiveDeck = () => (customDeck.length > 0 ? customDeck.slice(0, DECK_LIMIT) : shuffle(baseDeck).slice(0, DECK_LIMIT));
-  const [game, setGame] = useState<GameState>(() => getInitialState(getActiveDeck()));
+  
+  const getActiveDeck = () => {
+    if (customDeck.length > 0) {
+      return customDeck.slice(0, DECK_LIMIT);
+    }
+    // Usar cartas do Supabase se disponíveis, senão usar o deck base
+    const deckToUse = supabaseCards.length > 0 ? supabaseCards : baseDeck;
+    return shuffle(deckToUse).slice(0, DECK_LIMIT);
+  };
+
+  const [game, setGame] = useState<GameState>(() => {
+    const initialState = getInitialState(getActiveDeck());
+    // Usar configurações do Supabase se disponíveis
+    if (gameSettings && !settingsLoading) {
+      initialState.resources = gameSettings.defaultStartingResources;
+    }
+    return initialState;
+  });
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [selectedGrid, setSelectedGrid] = useState<'farm' | 'city' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +56,28 @@ export function useGameState() {
   const [builtCountThisTurn, setBuiltCountThisTurn] = useState(0);
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
+
+  // Atualizar recursos quando as configurações carregarem
+  useEffect(() => {
+    if (!settingsLoading && gameSettings && !cardsLoading) {
+      setGame(prev => ({
+        ...prev,
+        resources: gameSettings.defaultStartingResources
+      }));
+    }
+  }, [settingsLoading, gameSettings, cardsLoading]);
+
+  // Atualizar deck quando as cartas do Supabase carregarem
+  useEffect(() => {
+    if (!cardsLoading && supabaseCards.length > 0) {
+      const newDeck = shuffle(supabaseCards).slice(0, DECK_LIMIT);
+      setGame(prev => ({
+        ...prev,
+        deck: newDeck,
+        hand: newDeck.slice(0, 5) // Dar 5 cartas iniciais
+      }));
+    }
+  }, [cardsLoading, supabaseCards]);
 
   // --- EFFECTS E HANDLERS (resumido para exemplo) ---
   // ... (copiar todos os useEffect e handlers do App.tsx para cá)

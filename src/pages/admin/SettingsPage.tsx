@@ -64,9 +64,35 @@ export const SettingsPage: React.FC = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      // Em produção, carregar do Supabase
-      // const { data, error } = await supabase.from('game_settings').select('*').single();
-      // if (data) setSettings(data);
+      
+      const { data, error } = await supabase
+        .from('game_settings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data && data.setting_value) {
+        const settingValue = data.setting_value as any;
+        setSettings({
+          gameName: settingValue.gameName || 'Famand',
+          version: settingValue.version || '1.0.0',
+          maintenanceMode: settingValue.maintenanceMode || false,
+          allowNewRegistrations: settingValue.allowNewRegistrations || true,
+          maxPlayersPerGame: settingValue.maxPlayersPerGame || 1,
+          defaultStartingResources: settingValue.defaultStartingResources || {
+            coins: 5,
+            food: 3,
+            materials: 2,
+            population: 3
+          },
+          gameRules: settingValue.gameRules || 'Regras padrão do jogo Famand...',
+          contactEmail: settingValue.contactEmail || 'support@famand.com',
+          supportDiscord: settingValue.supportDiscord || 'https://discord.gg/famand'
+        });
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
@@ -77,9 +103,19 @@ export const SettingsPage: React.FC = () => {
   const saveSettings = async () => {
     try {
       setSaving(true);
-      // Em produção, salvar no Supabase
-      // const { error } = await supabase.from('game_settings').upsert(settings);
-      // if (error) throw error;
+      
+      const { data, error } = await supabase
+        .from('game_settings')
+        .upsert({
+          setting_key: 'global_config',
+          setting_value: settings as any,
+          description: 'Configurações globais do jogo',
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
       
       toast.success('Configurações salvas com sucesso!');
     } catch (error) {

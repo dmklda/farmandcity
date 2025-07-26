@@ -136,8 +136,35 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   };
 
   const handleImportCards = () => {
-    // TODO: Implementar importação em massa
-    toast.info('Funcionalidade de importação em desenvolvimento');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const cardsData = JSON.parse(text);
+        
+        if (!Array.isArray(cardsData)) {
+          throw new Error('Arquivo deve conter um array de cartas');
+        }
+
+        const { data, error } = await supabase
+          .from('cards')
+          .insert(cardsData);
+
+        if (error) throw error;
+
+        await fetchCards();
+        toast.success(`${cardsData.length} cartas importadas com sucesso!`);
+      } catch (error) {
+        console.error('Error importing cards:', error);
+        toast.error('Erro ao importar cartas');
+      }
+    };
+    input.click();
   };
 
   const handleExportCards = () => {

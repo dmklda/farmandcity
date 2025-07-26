@@ -16,6 +16,7 @@ import {
   PieChart,
   LineChart
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ReportData {
   period: string;
@@ -45,39 +46,45 @@ export const ReportsPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Simular dados de relatórios (em produção, buscar do Supabase)
-      const mockData: ReportData[] = [
+      // Buscar dados reais do Supabase
+      const [usersCount, gamesCount, purchasesData, statsData] = await Promise.all([
+        supabase.from('profiles').select('*', { count: 'exact' }),
+        supabase.from('games').select('*', { count: 'exact' }),
+        supabase.from('pack_purchases').select('*, booster_packs(price_coins)'),
+        supabase.from('game_stats').select('*, cards(name)').order('times_used', { ascending: false }).limit(3)
+      ]);
+
+      const newUsersThisWeek = usersCount.data?.filter(user => {
+        const createdAt = new Date(user.created_at);
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return createdAt >= weekAgo;
+      }).length || 0;
+
+      const totalRevenue = purchasesData.data?.reduce((sum, purchase) => {
+        return sum + (purchase.booster_packs?.price_coins || 0);
+      }, 0) || 0;
+
+      const topCards = statsData.data?.map(stat => ({
+        name: stat.cards?.name || 'Carta Desconhecida',
+        usage: stat.times_used || 0,
+        wins: stat.wins_with_card || 0
+      })) || [];
+
+      const reportData: ReportData[] = [
         {
           period: 'Última Semana',
-          newUsers: 45,
-          activeUsers: 234,
-          totalGames: 1234,
-          revenue: 1250,
-          topCards: [
-            { name: 'Campo de Trigo', usage: 156, wins: 89 },
-            { name: 'Mercado', usage: 134, wins: 67 },
-            { name: 'Oficina', usage: 98, wins: 45 }
-          ],
+          newUsers: newUsersThisWeek,
+          activeUsers: usersCount.count || 0,
+          totalGames: gamesCount.count || 0,
+          revenue: totalRevenue,
+          topCards: topCards,
           userRetention: 78.5,
           averageGameTime: 12.5
-        },
-        {
-          period: 'Semana Anterior',
-          newUsers: 38,
-          activeUsers: 198,
-          totalGames: 987,
-          revenue: 890,
-          topCards: [
-            { name: 'Campo de Trigo', usage: 142, wins: 76 },
-            { name: 'Mercado', usage: 118, wins: 59 },
-            { name: 'Oficina', usage: 87, wins: 41 }
-          ],
-          userRetention: 72.3,
-          averageGameTime: 11.8
         }
       ];
 
-      setReports(mockData);
+      setReports(reportData);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -86,15 +93,53 @@ export const ReportsPage: React.FC = () => {
   };
 
   const generateReport = async (type: string) => {
-    // Simular geração de relatório
-    console.log(`Generating ${type} report...`);
-    // Em produção, chamar API para gerar relatório
+    try {
+      const { data, error } = await supabase
+        .from('reports_generated')
+        .insert({
+          report_type: type,
+          report_name: `Relatório ${type} - ${new Date().toLocaleDateString()}`,
+          generated_by: (await supabase.auth.getUser()).data.user?.id,
+          parameters: { period: selectedPeriod }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success('Relatório sendo gerado! Será notificado quando estiver pronto.');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast.error('Erro ao gerar relatório');
+    }
   };
 
   const exportReport = async (format: 'pdf' | 'csv' | 'excel') => {
-    // Simular exportação
-    console.log(`Exporting report as ${format}...`);
-    // Em produção, gerar e baixar arquivo
+    try {
+      const currentReport = reports[0];
+      if (!currentReport) return;
+
+      let content = '';
+      if (format === 'csv') {
+        content = `Período,Novos Usuários,Usuários Ativos,Total Jogos,Receita\n`;
+        content += `${currentReport.period},${currentReport.newUsers},${currentReport.activeUsers},${currentReport.totalGames},${currentReport.revenue}\n`;
+      } else {
+        content = JSON.stringify(currentReport, null, 2);
+      }
+
+      const blob = new Blob([content], { type: format === 'csv' ? 'text/csv' : 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio-${currentReport.period.toLowerCase().replace(/\s+/g, '-')}.${format === 'csv' ? 'csv' : 'json'}`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Relatório exportado como ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast.error('Erro ao exportar relatório');
+    }
   };
 
   if (loading) {
