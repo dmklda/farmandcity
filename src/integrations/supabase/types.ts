@@ -345,6 +345,36 @@ export type Database = {
         }
         Relationships: []
       }
+      player_decks: {
+        Row: {
+          card_ids: string[]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          player_id: string
+          updated_at: string
+        }
+        Insert: {
+          card_ids?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          player_id: string
+          updated_at?: string
+        }
+        Update: {
+          card_ids?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          player_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

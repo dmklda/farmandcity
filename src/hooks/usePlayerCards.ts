@@ -25,10 +25,13 @@ export const usePlayerCards = () => {
       setError(null);
 
       // Buscar cartas que o jogador possui
+      const user = await supabase.auth.getUser();
+      if (!user.data.user?.id) throw new Error('Usuário não autenticado');
+      
       const { data: playerCardsData, error: playerCardsError } = await supabase
         .from('player_cards')
         .select('*')
-        .eq('player_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('player_id', user.data.user.id);
 
       if (playerCardsError) throw playerCardsError;
 

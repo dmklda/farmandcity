@@ -4,7 +4,7 @@ import { starterCards, baseDeck } from '../data/cards';
 import { Resources } from '../types/resources';
 import { Card } from '../types/card';
 import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../utils/gameUtils';
-import { useCards } from './useCards';
+import { usePlayerCards } from './usePlayerCards';
 import { useGameSettings } from './useGameSettings';
 
 const DECK_LIMIT = 28;
@@ -12,7 +12,7 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 
 export function useGameState() {
   // Hooks para dados do Supabase
-  const { cards: supabaseCards, loading: cardsLoading } = useCards();
+  const { playerCards, loading: cardsLoading } = usePlayerCards();
   const { settings: gameSettings, loading: settingsLoading } = useGameSettings();
 
   // --- ESTADO PRINCIPAL ---
@@ -24,8 +24,8 @@ export function useGameState() {
     if (customDeck.length > 0) {
       return customDeck.slice(0, DECK_LIMIT);
     }
-    // Usar cartas do Supabase se disponíveis, senão usar o deck base
-    const deckToUse = supabaseCards.length > 0 ? supabaseCards : baseDeck;
+    // Usar cartas do jogador se disponíveis, senão usar o deck base
+    const deckToUse = playerCards.length > 0 ? playerCards : baseDeck;
     return shuffle(deckToUse).slice(0, DECK_LIMIT);
   };
 
@@ -67,17 +67,17 @@ export function useGameState() {
     }
   }, [settingsLoading, gameSettings, cardsLoading]);
 
-  // Atualizar deck quando as cartas do Supabase carregarem
+  // Atualizar deck quando as cartas do jogador carregarem
   useEffect(() => {
-    if (!cardsLoading && supabaseCards.length > 0) {
-      const newDeck = shuffle(supabaseCards).slice(0, DECK_LIMIT);
+    if (!cardsLoading && playerCards.length > 0) {
+      const newDeck = shuffle(playerCards).slice(0, DECK_LIMIT);
       setGame(prev => ({
         ...prev,
         deck: newDeck,
         hand: newDeck.slice(0, 5) // Dar 5 cartas iniciais
       }));
     }
-  }, [cardsLoading, supabaseCards]);
+  }, [cardsLoading, playerCards]);
 
   // --- EFFECTS E HANDLERS (resumido para exemplo) ---
   // ... (copiar todos os useEffect e handlers do App.tsx para cá)
