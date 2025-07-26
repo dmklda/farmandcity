@@ -5,6 +5,7 @@ import { Resources } from '../types/resources';
 import { Card } from '../types/card';
 import { createEmptyGrid, shuffle, parseProduction, parseInstantEffect, parseDiceProduction, getInitialState } from '../utils/gameUtils';
 import { usePlayerCards } from './usePlayerCards';
+import { usePlayerDecks } from './usePlayerDecks';
 import { useGameSettings } from './useGameSettings';
 
 const DECK_LIMIT = 28;
@@ -13,6 +14,7 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 export function useGameState() {
   // Hooks para dados do Supabase
   const { playerCards, loading: cardsLoading } = usePlayerCards();
+  const { activeDeck, loading: decksLoading } = usePlayerDecks();
   const { settings: gameSettings, loading: settingsLoading } = useGameSettings();
 
   // --- ESTADO PRINCIPAL ---
@@ -24,7 +26,11 @@ export function useGameState() {
     if (customDeck.length > 0) {
       return customDeck.slice(0, DECK_LIMIT);
     }
-    // Usar cartas do jogador se disponíveis, senão usar o deck base
+    // Usar deck ativo se disponível, senão usar cartas do jogador
+    if (activeDeck && activeDeck.cards.length > 0) {
+      return activeDeck.cards.slice(0, DECK_LIMIT);
+    }
+    // Fallback para cartas do jogador ou deck base
     const deckToUse = playerCards.length > 0 ? playerCards : baseDeck;
     return shuffle(deckToUse).slice(0, DECK_LIMIT);
   };
@@ -59,25 +65,27 @@ export function useGameState() {
 
   // Atualizar recursos quando as configurações carregarem
   useEffect(() => {
-    if (!settingsLoading && gameSettings && !cardsLoading) {
+    if (!settingsLoading && gameSettings && !cardsLoading && !decksLoading) {
       setGame(prev => ({
         ...prev,
         resources: gameSettings.defaultStartingResources
       }));
     }
-  }, [settingsLoading, gameSettings, cardsLoading]);
+  }, [settingsLoading, gameSettings, cardsLoading, decksLoading]);
 
-  // Atualizar deck quando as cartas do jogador carregarem
+  // Atualizar deck quando cartas ou deck ativo carregarem
   useEffect(() => {
-    if (!cardsLoading && playerCards.length > 0) {
-      const newDeck = shuffle(playerCards).slice(0, DECK_LIMIT);
-      setGame(prev => ({
-        ...prev,
-        deck: newDeck,
-        hand: newDeck.slice(0, 5) // Dar 5 cartas iniciais
-      }));
+    if (!cardsLoading && !decksLoading) {
+      const newDeck = getActiveDeck();
+      if (newDeck.length > 0) {
+        setGame(prev => ({
+          ...prev,
+          deck: shuffle(newDeck),
+          hand: shuffle(newDeck).slice(0, 5) // Dar 5 cartas iniciais
+        }));
+      }
     }
-  }, [cardsLoading, playerCards]);
+  }, [cardsLoading, decksLoading, activeDeck, playerCards]);
 
   // --- EFFECTS E HANDLERS (resumido para exemplo) ---
   // ... (copiar todos os useEffect e handlers do App.tsx para cá)
@@ -139,7 +147,19 @@ export function useGameState() {
     hand: game.hand,
     onSelectCard: victory ? () => {} : (card: Card) => {}, // TODO: conectar handler
     selectedCardId: selectedCard?.id,
-    canPlayCard: (card: Card) => ({ playable: true }), // TODO: conectar lógica
+    canPlayCard: (card: Card) => {
+      // Verificar se a carta está no deck ativo do usuário
+      if (!activeDeck) return { playable: false, reason: 'Nenhum deck ativo' };
+      
+      const cardInDeck = activeDeck.cards.some(deckCard => 
+        deckCard.id.startsWith(card.id.split('_')[0]) // Comparar ID base
+      );
+      
+      if (!cardInDeck) return { playable: false, reason: 'Carta não está no deck ativo' };
+      
+      // TODO: Adicionar outras validações (recursos, fase do jogo, etc.)
+      return { playable: true };
+    },
   };
   const discardModal = discardMode ? "Modal de descarte aqui" : null;
 
