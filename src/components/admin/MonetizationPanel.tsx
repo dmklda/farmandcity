@@ -35,8 +35,7 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
         .from('pack_purchases')
         .select(`
           *,
-          booster_packs (name, price_coins),
-          profiles (display_name)
+          booster_packs (name, price_coins)
         `)
         .order('purchased_at', { ascending: false })
         .limit(10);

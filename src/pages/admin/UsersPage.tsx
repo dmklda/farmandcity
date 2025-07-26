@@ -47,32 +47,28 @@ export const UsersPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Buscar usuários do Supabase Auth
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
-
-      // Buscar dados adicionais dos perfis
+      // Buscar apenas dados dos perfis já que não temos acesso a auth.admin
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
-      // Combinar dados
-      const enrichedUsers = authUsers.users.map((user: any) => {
-        const profile = profiles?.find((p: any) => p.user_id === user.id);
-        return {
-          ...user,
-          email: user.email || '',
-          stats: {
-            games_played: 0,
-            total_score: 0,
-            reputation: 0,
-            achievements: 0
-          }
-        };
-      });
+      // Mapear profiles para o formato esperado
+      const enrichedUsers = (profiles || []).map((profile: any) => ({
+        id: profile.user_id,
+        email: profile.username || 'N/A',
+        created_at: profile.created_at,
+        email_confirmed_at: profile.created_at,
+        last_sign_in_at: profile.updated_at,
+        stats: {
+          games_played: 0,
+          total_score: 0,
+          reputation: 0,
+          achievements: 0
+        }
+      }));
 
       setUsers(enrichedUsers);
     } catch (error) {
