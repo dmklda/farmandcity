@@ -33,8 +33,8 @@ export const SystemLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [severityFilter, setSeverityFilter] = useState<string>('');
-  const [eventTypeFilter, setEventTypeFilter] = useState<string>('');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
@@ -60,11 +60,11 @@ export const SystemLogsPage: React.FC = () => {
         query = query.or(`event_description.ilike.%${searchTerm}%,event_type.ilike.%${searchTerm}%`);
       }
 
-      if (severityFilter) {
+      if (severityFilter && severityFilter !== 'all') {
         query = query.eq('severity', severityFilter);
       }
 
-      if (eventTypeFilter) {
+      if (eventTypeFilter && eventTypeFilter !== 'all') {
         query = query.eq('event_type', eventTypeFilter);
       }
 
@@ -182,7 +182,7 @@ export const SystemLogsPage: React.FC = () => {
                   <SelectValue placeholder="Filtrar por severidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as severidades</SelectItem>
+                  <SelectItem value="all">Todas as severidades</SelectItem>
                   <SelectItem value="info">Info</SelectItem>
                   <SelectItem value="warning">Warning</SelectItem>
                   <SelectItem value="error">Error</SelectItem>
@@ -196,7 +196,7 @@ export const SystemLogsPage: React.FC = () => {
                   <SelectValue placeholder="Filtrar por tipo de evento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os tipos</SelectItem>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
                   <SelectItem value="auth">Autenticação</SelectItem>
                   <SelectItem value="admin">Administração</SelectItem>
                   <SelectItem value="game">Jogo</SelectItem>

@@ -42,7 +42,7 @@ export const BoosterPacksPage: React.FC = () => {
     description: '',
     price_coins: 0,
     cards_count: 5,
-    guaranteed_rarity: '',
+    guaranteed_rarity: 'none',
     is_active: true
   });
 
@@ -81,7 +81,7 @@ export const BoosterPacksPage: React.FC = () => {
           .from('booster_packs')
           .update({
             ...formData,
-            guaranteed_rarity: (formData.guaranteed_rarity as any) || null
+            guaranteed_rarity: formData.guaranteed_rarity === 'none' ? null : (formData.guaranteed_rarity as any) || null
           })
           .eq('id', editingPack.id);
         
@@ -91,7 +91,7 @@ export const BoosterPacksPage: React.FC = () => {
           .from('booster_packs')
           .insert([{
             ...formData,
-            guaranteed_rarity: (formData.guaranteed_rarity as any) || null
+            guaranteed_rarity: formData.guaranteed_rarity === 'none' ? null : (formData.guaranteed_rarity as any) || null
           }]);
         
         if (error) throw error;
@@ -105,7 +105,7 @@ export const BoosterPacksPage: React.FC = () => {
         description: '',
         price_coins: 0,
         cards_count: 5,
-        guaranteed_rarity: '',
+        guaranteed_rarity: 'none',
         is_active: true
       });
     } catch (error) {
@@ -120,7 +120,7 @@ export const BoosterPacksPage: React.FC = () => {
       description: pack.description || '',
       price_coins: pack.price_coins,
       cards_count: pack.cards_count,
-      guaranteed_rarity: pack.guaranteed_rarity || '',
+      guaranteed_rarity: pack.guaranteed_rarity || 'none',
       is_active: pack.is_active
     });
     setShowForm(true);
@@ -250,7 +250,7 @@ export const BoosterPacksPage: React.FC = () => {
                       <SelectValue placeholder="Selecione uma raridade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma</SelectItem>
+                      <SelectItem value="none">Nenhuma</SelectItem>
                       <SelectItem value="common">Comum</SelectItem>
                       <SelectItem value="uncommon">Incomum</SelectItem>
                       <SelectItem value="rare">Rara</SelectItem>
@@ -285,7 +285,7 @@ export const BoosterPacksPage: React.FC = () => {
                       description: '',
                       price_coins: 0,
                       cards_count: 5,
-                      guaranteed_rarity: '',
+                      guaranteed_rarity: 'none',
                       is_active: true
                     });
                   }}
