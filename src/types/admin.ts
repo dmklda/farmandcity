@@ -13,17 +13,17 @@ export interface AdminCard {
   cost_materials: number;
   cost_population: number;
   effect: string;
-  effect_logic?: string | null;
+  effect_logic?: string;
   phase: GamePhase;
   use_per_turn: number;
   is_reactive: boolean;
-  art_url?: string | null;
-  frame_url?: string | null;
+  art_url?: string;
+  frame_url?: string;
   is_active: boolean;
-  tags?: string[] | null;
+  tags?: string[];
   created_at: string;
   updated_at: string;
-  created_by?: string | null;
+  created_by?: string;
 }
 
 export interface BoosterPack {
