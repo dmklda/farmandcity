@@ -19,7 +19,6 @@ import type { User, Session } from '@supabase/supabase-js';
 
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
-import { AdminDashboard } from './components/admin/AdminDashboard.js';
 
 function createEmptyGrid(rows: number, cols: number): GridCell[][] {
   return Array.from({ length: rows }, (_, y) =>
@@ -138,9 +137,6 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Estado de roteamento simples
-  const [currentRoute, setCurrentRoute] = useState(window.location.pathname);
 
   // Todos os hooks devem estar aqui dentro!
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
@@ -168,21 +164,6 @@ const App: React.FC = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Setup de roteamento simples
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentRoute(window.location.pathname);
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Função para navegar
-  const navigate = (path: string) => {
-    window.history.pushState({}, '', path);
-    setCurrentRoute(path);
-  };
 
   // Função para logout
   const handleLogout = async () => {
@@ -952,28 +933,11 @@ const App: React.FC = () => {
     return <AuthPage onAuthSuccess={handleAuthSuccess} />;
   }
 
-  // Admin panel route
-  if (currentRoute === '/admin') {
-    return <AdminDashboard />;
-  }
-
-  // Auth route (redirect to login)
-  if (currentRoute === '/auth') {
-    navigate('/');
-    return null;
-  }
-
   // Layout principal para usuários autenticados
   return (
     <div className="h-screen bg-background w-full overflow-hidden" style={{ paddingLeft: '0px', paddingTop: '64px' }}>
       {/* User info and game controls */}
       <div className="absolute top-2 right-4 z-50 flex items-center gap-2">
-        <button
-          onClick={() => navigate('/admin')}
-          className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
-        >
-          ⚙️ Admin
-        </button>
         <button
           onClick={() => setShowPlayerStats(true)}
           className="px-3 py-1 text-xs bg-accent hover:bg-accent/80 text-accent-foreground rounded transition-colors"

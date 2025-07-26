@@ -4,7 +4,9 @@ import { AdminCard, CardType, CardRarity } from '../../types/admin';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Plus, Edit, Copy, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Copy, Trash2, Search, Filter, Upload, Download } from 'lucide-react';
+import { CardEditor } from './CardEditor';
+import { toast } from 'sonner';
 
 interface CardManagerProps {
   onStatsUpdate: () => void;
@@ -17,6 +19,8 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   const [filterType, setFilterType] = useState<CardType | 'all'>('all');
   const [filterRarity, setFilterRarity] = useState<CardRarity | 'all'>('all');
   const [filterActive, setFilterActive] = useState<boolean | 'all'>('all');
+  const [editingCard, setEditingCard] = useState<AdminCard | null>(null);
+  const [showEditor, setShowEditor] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -78,6 +82,88 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
+  const handleCreateCard = () => {
+    setEditingCard(null);
+    setShowEditor(true);
+  };
+
+  const handleEditCard = (card: AdminCard) => {
+    setEditingCard(card);
+    setShowEditor(true);
+  };
+
+  const handleDuplicateCard = (card: AdminCard) => {
+    setEditingCard({
+      ...card,
+      id: undefined,
+      name: `${card.name} (Cópia)`,
+      slug: undefined,
+      created_at: undefined,
+      updated_at: undefined
+    });
+    setShowEditor(true);
+  };
+
+  const handleSaveCard = async (card: AdminCard) => {
+    await fetchCards();
+    setShowEditor(false);
+    setEditingCard(null);
+    toast.success('Carta salva com sucesso!');
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditor(false);
+    setEditingCard(null);
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (confirm('Tem certeza que deseja excluir esta carta?')) {
+      try {
+        const { error } = await supabase
+          .from('cards')
+          .delete()
+          .eq('id', cardId);
+
+        if (error) throw error;
+
+        await fetchCards();
+        toast.success('Carta excluída com sucesso!');
+      } catch (error) {
+        console.error('Error deleting card:', error);
+        toast.error('Erro ao excluir carta');
+      }
+    }
+  };
+
+  const handleImportCards = () => {
+    // TODO: Implementar importação em massa
+    toast.info('Funcionalidade de importação em desenvolvimento');
+  };
+
+  const handleExportCards = () => {
+    // TODO: Implementar exportação
+    const dataStr = JSON.stringify(cards, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'cards-export.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Cartas exportadas com sucesso!');
+  };
+
+  if (showEditor) {
+    return (
+      <CardEditor
+        card={editingCard}
+        onSave={handleSaveCard}
+        onCancel={handleCancelEdit}
+        onDuplicate={handleDuplicateCard}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -96,10 +182,20 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
             Crie, edite e gerencie todas as cartas do jogo
           </p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Carta
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleImportCards} className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Importar
+          </Button>
+          <Button onClick={handleExportCards} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar
+          </Button>
+          <Button onClick={handleCreateCard} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nova Carta
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -183,13 +279,13 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
                   <p className="text-sm text-muted-foreground mt-1">#{card.slug}</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" className="p-2">
+                  <Button onClick={() => handleEditCard(card)} className="p-2">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-2">
+                  <Button onClick={() => handleDuplicateCard(card)} className="p-2">
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-2 text-red-600">
+                  <Button onClick={() => handleDeleteCard(card.id)} className="p-2 text-red-600">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

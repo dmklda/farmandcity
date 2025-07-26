@@ -4,6 +4,7 @@ import { CardManager } from './CardManager';
 import { UserStatsPanel } from './UserStatsPanel';
 import { GameStatsPanel } from './GameStatsPanel';
 import { MonetizationPanel } from './MonetizationPanel';
+import { AdvancedStatsPanel } from './AdvancedStatsPanel';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -151,10 +152,11 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs defaultValue="cards" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="cards">Gerenciar Cartas</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
+            <TabsTrigger value="advanced-stats">Estatísticas Avançadas</TabsTrigger>
             <TabsTrigger value="monetization">Monetização</TabsTrigger>
           </TabsList>
 
@@ -168,6 +170,10 @@ export const AdminDashboard: React.FC = () => {
 
           <TabsContent value="stats" className="mt-6">
             <GameStatsPanel />
+          </TabsContent>
+
+          <TabsContent value="advanced-stats" className="mt-6">
+            <AdvancedStatsPanel />
           </TabsContent>
 
           <TabsContent value="monetization" className="mt-6">
