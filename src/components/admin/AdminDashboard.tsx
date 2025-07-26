@@ -9,10 +9,11 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Users, FileText, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, FileText, TrendingUp, DollarSign, LogOut, User } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export const AdminDashboard: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading, signOut, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCards: 0,
@@ -22,15 +23,8 @@ export const AdminDashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    checkUser();
     fetchDashboardStats();
   }, []);
-
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    setIsLoading(false);
-  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -67,7 +61,7 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Carregando...</div>
@@ -75,7 +69,7 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-96">
@@ -84,7 +78,7 @@ export const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="mb-4">Você precisa estar logado para acessar o painel administrativo.</p>
-            <Button onClick={() => window.location.href = '/auth'} className="w-full">
+            <Button onClick={() => window.location.href = '/admin'} className="w-full">
               Fazer Login
             </Button>
           </CardContent>
@@ -102,9 +96,16 @@ export const AdminDashboard: React.FC = () => {
               <h1 className="text-3xl font-bold">Painel Administrativo - Famand</h1>
               <p className="text-muted-foreground">Gerencie cartas, usuários e estatísticas do jogo</p>
             </div>
-            <Badge variant="secondary" className="text-sm">
-              Logado como: {user.email}
-            </Badge>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <User className="h-4 w-4" />
+                <span>{user?.email}</span>
+              </div>
+              <Button variant="outline" onClick={signOut} className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            </div>
           </div>
 
           {/* Dashboard Stats */}

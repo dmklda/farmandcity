@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, GamePhase, GridCell } from './types/gameState.js';
 import { starterCards, baseDeck } from './data/cards.js';
+import { useCards } from './hooks/useCards';
 import { Resources } from './types/resources.js';
 import EnhancedHand from './components/EnhancedHand.js';
 import Grid from './components/Grid.js';
@@ -19,6 +20,7 @@ import type { User, Session } from '@supabase/supabase-js';
 
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
+import { CardsStatus } from './components/CardsStatus.js';
 
 function createEmptyGrid(rows: number, cols: number): GridCell[][] {
   return Array.from({ length: rows }, (_, y) =>
@@ -137,6 +139,9 @@ const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Carregar cartas do Supabase
+  const { cards: supabaseCards, loading: cardsLoading } = useCards();
 
   // Todos os hooks devem estar aqui dentro!
   const [customDeck, setCustomDeck] = useState<Card[]>([]);
@@ -205,7 +210,9 @@ const App: React.FC = () => {
   // Deck inicial
   const getActiveDeck = () => {
     if (customDeck.length > 0) return customDeck.slice(0, DECK_LIMIT);
-    return shuffle(baseDeck).slice(0, DECK_LIMIT);
+    // Combinar cartas do Supabase com o deck base
+    const allCards = [...baseDeck, ...supabaseCards];
+    return shuffle(allCards).slice(0, DECK_LIMIT);
   };
 
   const [game, setGame] = useState<GameState>(() => getInitialState(getActiveDeck()));
@@ -1087,6 +1094,9 @@ const App: React.FC = () => {
         isOpen={showPlayerStats}
         onClose={() => setShowPlayerStats(false)}
       />
+
+      {/* Status de carregamento das cartas */}
+      <CardsStatus />
     </div>
   );
 };
