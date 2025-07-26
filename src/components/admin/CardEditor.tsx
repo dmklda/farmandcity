@@ -148,8 +148,14 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
       const cardData = {
         ...formData,
-        slug: formData.slug || formData.name?.toLowerCase().replace(/\s+/g, '-'),
-        updated_at: new Date().toISOString()
+        slug: formData.slug || formData.name?.toLowerCase().replace(/\s+/g, '-') || 'default-slug',
+        updated_at: new Date().toISOString(),
+        // Ensure required fields are not undefined
+        name: formData.name || '',
+        effect: formData.effect || '',
+        phase: formData.phase || 'draw',
+        rarity: formData.rarity || 'common',
+        type: formData.type || 'farm'
       };
 
       if (isEditing) {
@@ -163,7 +169,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
       } else {
         const { error } = await supabase
           .from('cards')
-          .insert([cardData]);
+          .insert(cardData);
 
         if (error) throw error;
         toast.success('Carta criada com sucesso!');
@@ -182,11 +188,11 @@ export const CardEditor: React.FC<CardEditorProps> = ({
     if (card && onDuplicate) {
       const duplicatedCard = {
         ...card,
-        id: undefined,
+        id: crypto.randomUUID(),
         name: `${card.name} (Cópia)`,
-        slug: undefined,
-        created_at: undefined,
-        updated_at: undefined
+        slug: `${card.slug}-copy-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       onDuplicate(duplicatedCard);
     }

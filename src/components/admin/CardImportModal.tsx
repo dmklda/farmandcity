@@ -149,14 +149,20 @@ export const CardImportModal: React.FC<CardImportModalProps> = ({
         try {
           const cardData = {
             ...card,
-            slug: card.slug || card.name?.toLowerCase().replace(/\s+/g, '-'),
+            slug: card.slug || card.name?.toLowerCase().replace(/\s+/g, '-') || 'default-slug',
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            // Ensure required fields are not undefined
+            name: card.name || '',
+            effect: card.effect || '',
+            phase: card.phase || 'draw',
+            rarity: card.rarity || 'common',
+            type: card.type || 'farm'
           };
 
           const { error } = await supabase
             .from('cards')
-            .insert([cardData]);
+            .insert(cardData);
 
           if (error) {
             importResults.push({

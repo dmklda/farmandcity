@@ -21,7 +21,7 @@ export const AdminPage: React.FC = () => {
       case 'dashboard':
         return <AdminDashboard />;
       case 'cards':
-        return <CardManager />;
+        return <CardManager onStatsUpdate={() => {}} />;
       case 'users':
         return <UsersPage />;
       case 'stats':
@@ -29,7 +29,7 @@ export const AdminPage: React.FC = () => {
       case 'advanced-stats':
         return <AdvancedStatsPanel />;
       case 'monetization':
-        return <MonetizationPanel />;
+        return <MonetizationPanel onStatsUpdate={() => {}} />;
       case 'booster-packs':
         return <BoosterPacksPage />;
       case 'reports':

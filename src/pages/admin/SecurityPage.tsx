@@ -82,8 +82,14 @@ export const SecurityPage: React.FC = () => {
 
       if (eventsError) throw eventsError;
 
-      setAdminRoles(rolesData || []);
-      setSecurityEvents(eventsData || []);
+      setAdminRoles((rolesData || []).map((role: any) => ({
+        ...role,
+        role: role.role as any
+      })));
+      setSecurityEvents((eventsData || []).map((event: any) => ({
+        ...event,
+        ip_address: event.ip_address as string | null
+      })));
     } catch (error) {
       console.error('Error fetching security data:', error);
     } finally {

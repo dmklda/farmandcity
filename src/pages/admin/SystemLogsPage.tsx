@@ -73,10 +73,16 @@ export const SystemLogsPage: React.FC = () => {
       if (error) throw error;
 
       if (reset) {
-        setLogs(data || []);
+        setLogs((data || []).map((log: any) => ({
+          ...log,
+          ip_address: log.ip_address as string | null
+        })));
         setPage(0);
       } else {
-        setLogs(prev => [...prev, ...(data || [])]);
+        setLogs(prev => [...prev, ...(data || []).map((log: any) => ({
+          ...log,
+          ip_address: log.ip_address as string | null
+        }))]);
       }
 
       setHasMore((data || []).length === pageSize);

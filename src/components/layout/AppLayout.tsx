@@ -22,7 +22,7 @@ export const AppLayout: React.FC = () => {
         {/* Admin Routes */}
         <Route path="/admin" element={
           <AdminAuthGuard>
-            <AdminLayout />
+            <AdminPage />
           </AdminAuthGuard>
         }>
           <Route index element={<AdminPage />} />

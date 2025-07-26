@@ -60,11 +60,12 @@ export const UsersPage: React.FC = () => {
       if (profilesError) throw profilesError;
 
       // Combinar dados
-      const enrichedUsers = authUsers.users.map(user => {
-        const profile = profiles?.find(p => p.id === user.id);
+      const enrichedUsers = authUsers.users.map((user: any) => {
+        const profile = profiles?.find((p: any) => p.user_id === user.id);
         return {
           ...user,
-          stats: profile?.stats || {
+          email: user.email || '',
+          stats: {
             games_played: 0,
             total_score: 0,
             reputation: 0,

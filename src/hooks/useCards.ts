@@ -26,15 +26,15 @@ export const useCards = () => {
       if (error) throw error;
 
       // Converter AdminCard para Card (formato do jogo)
-      const gameCards: Card[] = (data || []).map((adminCard: AdminCard): Card => ({
+      const gameCards: Card[] = (data || []).map((adminCard: any): Card => ({
         id: adminCard.id,
         name: adminCard.name,
         type: adminCard.type,
         cost: {
-          coins: adminCard.cost_coins,
-          food: adminCard.cost_food,
-          materials: adminCard.cost_materials,
-          population: adminCard.cost_population,
+          coins: adminCard.cost_coins || 0,
+          food: adminCard.cost_food || 0,
+          materials: adminCard.cost_materials || 0,
+          population: adminCard.cost_population || 0,
         },
         effect: {
           description: adminCard.effect,
@@ -52,10 +52,10 @@ export const useCards = () => {
     }
   };
 
-  const getActivationDescription = (adminCard: AdminCard): string => {
+  const getActivationDescription = (adminCard: any): string => {
     const phase = adminCard.phase;
-    const usePerTurn = adminCard.use_per_turn;
-    const isReactive = adminCard.is_reactive;
+    const usePerTurn = adminCard.use_per_turn || 1;
+    const isReactive = adminCard.is_reactive || false;
 
     let description = '';
 

@@ -95,12 +95,12 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   const handleDuplicateCard = (card: AdminCard) => {
     setEditingCard({
       ...card,
-      id: undefined,
+      id: crypto.randomUUID(),
       name: `${card.name} (Cópia)`,
-      slug: undefined,
-      created_at: undefined,
-      updated_at: undefined
-    });
+      slug: `${card.slug}-copy-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as AdminCard);
     setShowEditor(true);
   };
 

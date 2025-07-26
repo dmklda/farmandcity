@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { cn } from '../../lib/utils';
 
 interface BoosterPack {
   id: string;
@@ -26,7 +27,7 @@ interface BoosterPack {
   description: string;
   price_coins: number;
   cards_count: number;
-  guaranteed_rarity: string;
+  guaranteed_rarity: string | null;
   is_active: boolean;
   created_at: string;
 }
@@ -57,7 +58,14 @@ export const BoosterPacksPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPacks(data || []);
+      setPacks((data || []).map(pack => ({
+        ...pack,
+        description: pack.description || '',
+        cards_count: pack.cards_count || 5,
+        guaranteed_rarity: pack.guaranteed_rarity || null,
+        is_active: pack.is_active !== false,
+        created_at: pack.created_at || new Date().toISOString()
+      })));
     } catch (error) {
       console.error('Error fetching packs:', error);
     } finally {
@@ -71,14 +79,20 @@ export const BoosterPacksPage: React.FC = () => {
       if (editingPack) {
         const { error } = await supabase
           .from('booster_packs')
-          .update(formData)
+          .update({
+            ...formData,
+            guaranteed_rarity: (formData.guaranteed_rarity as any) || null
+          })
           .eq('id', editingPack.id);
         
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('booster_packs')
-          .insert([formData]);
+          .insert([{
+            ...formData,
+            guaranteed_rarity: (formData.guaranteed_rarity as any) || null
+          }]);
         
         if (error) throw error;
       }
