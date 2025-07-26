@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Plus, Edit, Copy, Trash2, Search, Filter, Upload, Download } from 'lucide-react';
 import { CardEditor } from './CardEditor';
+import { CardImportModal } from './CardImportModal';
 import { toast } from 'sonner';
 
 interface CardManagerProps {
@@ -21,6 +22,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   const [filterActive, setFilterActive] = useState<boolean | 'all'>('all');
   const [editingCard, setEditingCard] = useState<AdminCard | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchCards();
@@ -95,11 +97,11 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   const handleDuplicateCard = (card: AdminCard) => {
     setEditingCard({
       ...card,
-      id: undefined,
+      id: '',
       name: `${card.name} (Cópia)`,
-      slug: undefined,
-      created_at: undefined,
-      updated_at: undefined
+      slug: '',
+      created_at: '',
+      updated_at: ''
     });
     setShowEditor(true);
   };
@@ -136,8 +138,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   };
 
   const handleImportCards = () => {
-    // TODO: Implementar importação em massa
-    toast.info('Funcionalidade de importação em desenvolvimento');
+    setShowImportModal(true);
   };
 
   const handleExportCards = () => {
@@ -353,6 +354,12 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
           </p>
         </div>
       )}
+
+      <CardImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={fetchCards}
+      />
     </div>
   );
 };

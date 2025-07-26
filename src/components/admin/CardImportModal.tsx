@@ -147,16 +147,36 @@ export const CardImportModal: React.FC<CardImportModalProps> = ({
         }
 
         try {
+          // Ensure required fields are present
+          if (!card.name || !card.effect || !card.type || !card.rarity) {
+            importResults.push({
+              success: false,
+              card,
+              error: 'Campos obrigatórios faltando'
+            });
+            continue;
+          }
+
           const cardData = {
-            ...card,
-            slug: card.slug || card.name?.toLowerCase().replace(/\s+/g, '-'),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            name: card.name,
+            effect: card.effect,
+            type: card.type,
+            rarity: card.rarity,
+            cost_coins: card.cost_coins || 0,
+            cost_food: card.cost_food || 0,
+            cost_materials: card.cost_materials || 0,
+            cost_population: card.cost_population || 0,
+            use_per_turn: card.use_per_turn || 1,
+            is_reactive: card.is_reactive || false,
+            is_active: card.is_active ?? true,
+            effect_logic: card.effect_logic || null,
+            art_url: card.art_url || null,
+            tags: card.tags || null
           };
 
           const { error } = await supabase
             .from('cards')
-            .insert([cardData]);
+            .insert(cardData);
 
           if (error) {
             importResults.push({
