@@ -494,6 +494,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_system_event: {
         Args: {
           p_event_type: string
