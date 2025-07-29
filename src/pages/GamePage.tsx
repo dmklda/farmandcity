@@ -14,6 +14,7 @@ import { useGameState } from '../hooks/useGameState';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
 import { useAppContext } from '../contexts/AppContext';
 import { Card } from '../types/card';
+import { MedievalNotificationSystem, useMedievalNotifications } from '../components/MedievalNotificationSystem';
 
 const GamePage: React.FC = () => {
   // Estados de autenticação
@@ -31,6 +32,7 @@ const GamePage: React.FC = () => {
   const gameState = useGameState();
   const { activeDeck, decks, loading: decksLoading } = usePlayerDecks();
   const { setCurrentView } = useAppContext();
+  const { notify } = useMedievalNotifications();
 
   // Função para iniciar novo jogo
   const handleNewGame = () => {
@@ -126,6 +128,55 @@ const GamePage: React.FC = () => {
       activeDeckCards: activeDeck?.cards?.length
     });
   }, [loading, user, gameState.loading, decksLoading, activeDeck]);
+
+  // Sistema de Notificações Medievais
+  useEffect(() => {
+    if (gameState.error) {
+      notify('error', 'Erro no Jogo', gameState.error, undefined, 6000);
+    }
+  }, [gameState.error, notify]);
+
+  useEffect(() => {
+    if (gameState.highlight) {
+      notify('info', 'Informação', gameState.highlight, undefined, 4000);
+    }
+  }, [gameState.highlight, notify]);
+
+  useEffect(() => {
+    if (gameState.productionSummary) {
+      notify('production', 'Produção Ativada', gameState.productionSummary, undefined, 5000);
+    }
+  }, [gameState.productionSummary, notify]);
+
+  useEffect(() => {
+    if (gameState.actionSummary) {
+      notify('action', 'Ação Executada', gameState.actionSummary, undefined, 4000);
+    }
+  }, [gameState.actionSummary, notify]);
+
+  useEffect(() => {
+    if (gameState.diceResult) {
+      notify('dice', 'Dados Lançados', `Você rolou ${gameState.diceResult}!`, { diceValue: gameState.diceResult }, 4000);
+    }
+  }, [gameState.diceResult, notify]);
+
+  useEffect(() => {
+    if (gameState.diceProductionSummary) {
+      notify('production', 'Produção do Dado', gameState.diceProductionSummary, undefined, 5000);
+    }
+  }, [gameState.diceProductionSummary, notify]);
+
+  useEffect(() => {
+    if (gameState.pendingDefense) {
+      notify('error', 'Crise Detectada!', `Use carta de defesa: ${gameState.pendingDefense.name}`, undefined, 8000);
+    }
+  }, [gameState.pendingDefense, notify]);
+
+  useEffect(() => {
+    if (gameState.victory) {
+      notify('victory', 'Vitória Conquistada!', gameState.victory, undefined, 10000);
+    }
+  }, [gameState.victory, notify]);
 
   // Loading state
   if (loading || gameState.loading || decksLoading) {
@@ -535,89 +586,8 @@ const GamePage: React.FC = () => {
         </div>
       )}
 
-      {/* Sistema de notificação de erros */}
-      {gameState.error && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg shadow-lg">
-            {gameState.error}
-          </div>
-        </div>
-      )}
-
-      {/* Highlight/Feedback visual */}
-      {gameState.highlight && (
-        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg">
-            {gameState.highlight}
-          </div>
-        </div>
-      )}
-
-      {/* Sistema de resumo de produção */}
-      {gameState.productionSummary && (
-        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg border">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🌾</span>
-              <span className="text-sm font-medium">{gameState.productionSummary}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sistema de resumo de ação */}
-      {gameState.actionSummary && (
-        <div className="fixed top-44 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg border">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">⚡</span>
-              <span className="text-sm font-medium">{gameState.actionSummary}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sistema de resultado do dado - TEMPORÁRIO */}
-      {gameState.diceResult && (
-        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
-          <div className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg border animate-pulse">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🎲</span>
-              <span className="text-sm font-medium">Dado: {gameState.diceResult}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sistema de produção do dado - TEMPORÁRIO */}
-      {gameState.diceProductionSummary && (
-        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
-          <div className="bg-orange-600 text-white px-4 py-2 rounded-lg shadow-lg border animate-pulse">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🎯</span>
-              <span className="text-sm font-medium">{gameState.diceProductionSummary}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sistema de defesa pendente */}
-      {gameState.pendingDefense && (
-        <div className="fixed top-80 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg border">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🛡️</span>
-              <span className="text-sm font-medium">Crise detectada! Use carta de defesa: {gameState.pendingDefense.name}</span>
-              <button
-                onClick={() => gameState.handleActivateDefense?.(gameState.pendingDefense!)}
-                className="ml-2 px-2 py-1 bg-white text-red-600 rounded text-xs hover:bg-gray-100"
-              >
-                Usar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sistema de Notificações Medievais */}
+      <MedievalNotificationSystem position="top-right" maxNotifications={8} defaultDuration={4000} />
 
       {/* Sistema de vitória */}
       {gameState.victory && (

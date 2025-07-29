@@ -1957,11 +1957,12 @@ export function useGameState() {
       },
     }));
     
-    // Fazer as notificações desaparecerem automaticamente após 3 segundos
+    // As notificações agora são gerenciadas pelo sistema medieval
+    // Limpar após um tempo para evitar acúmulo
     setTimeout(() => {
       setDiceResult(null);
       setDiceProductionSummary(null);
-    }, 3000);
+    }, 5000);
   }, [game.phase, diceUsed, game.farmGrid, game.cityGrid]);
 
   const handleProduction = useCallback(() => {
