@@ -5,7 +5,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import AuthPage from '../components/AuthPage';
 import FixedSidebar from '../components/FixedSidebar';
 import EnhancedTopBar from '../components/EnhancedTopBar';
-import EnhancedGridBoard from '../components/EnhancedGridBoard';
+import EpicBattlefield from '../components/EpicBattlefield';
 import EnhancedHand from '../components/EnhancedHand';
 import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
@@ -25,6 +25,7 @@ const GamePage: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showStats, setShowStats] = useState(false);
   const [showSavedGames, setShowSavedGames] = useState(false);
+  const [handVisible, setHandVisible] = useState(true);
 
   // Hook principal do jogo que integra com Supabase
   const gameState = useGameState();
@@ -226,10 +227,11 @@ const GamePage: React.FC = () => {
           transition: 'padding-left 0.3s',
         }}
       >
-        <EnhancedGridBoard
+        <EpicBattlefield
           farmGrid={gameState.gridBoardProps.farmGrid}
           cityGrid={gameState.gridBoardProps.cityGrid}
           eventGrid={gameState.gridBoardProps.eventGrid}
+          landmarksGrid={gameState.gridBoardProps.landmarksGrid}
           farmCount={gameState.gridBoardProps.farmCount}
           farmMax={gameState.gridBoardProps.farmMax}
           cityCount={gameState.gridBoardProps.cityCount}
@@ -241,24 +243,30 @@ const GamePage: React.FC = () => {
           onSelectFarm={handleSelectFarm}
           onSelectCity={handleSelectCity}
           onSelectEvent={handleSelectEvent}
+          onSelectLandmark={gameState.gridBoardProps.onSelectLandmark}
           highlightFarm={gameState.gridBoardProps.highlightFarm}
           highlightCity={gameState.gridBoardProps.highlightCity}
           highlightEvent={gameState.gridBoardProps.highlightEvent}
+          highlightLandmark={gameState.gridBoardProps.highlightLandmark}
+          onToggleHand={() => setHandVisible(!handVisible)}
+          handVisible={handVisible}
         />
       </div>
 
       {/* Fixed Hand at Bottom with proper z-index */}
-      <div className="fixed bottom-0 left-0 right-0 z-30">
-        <EnhancedHand
-          key={`hand-${gameState.handProps.deckSize}-${gameState.handProps.hand.length}`}
-          hand={gameState.handProps.hand}
-          onSelectCard={handleSelectCard}
-          selectedCardId={gameState.handProps.selectedCardId}
-          canPlayCard={gameState.handProps.canPlayCard}
-          sidebarVisible={sidebarVisible}
-          deckSize={gameState.handProps.deckSize}
-        />
-      </div>
+      {handVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          <EnhancedHand
+            key={`hand-${gameState.handProps.deckSize}-${gameState.handProps.hand.length}`}
+            hand={gameState.handProps.hand}
+            onSelectCard={handleSelectCard}
+            selectedCardId={gameState.handProps.selectedCardId}
+            canPlayCard={gameState.handProps.canPlayCard}
+            sidebarVisible={sidebarVisible}
+            deckSize={gameState.handProps.deckSize}
+          />
+        </div>
+      )}
 
       {/* Modal de descarte manual */}
       {gameState.discardModal && (

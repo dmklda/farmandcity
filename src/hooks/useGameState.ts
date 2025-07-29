@@ -2079,19 +2079,23 @@ export function useGameState() {
     farmGrid: game.farmGrid,
     cityGrid: game.cityGrid,
     eventGrid: game.eventGrid,
+    landmarksGrid: game.landmarksGrid,
     farmCount: game.farmGrid.flat().filter(cell => cell.card).length,
-    farmMax: 12, // 3x4 grid
+    farmMax: 12, // 4x3 grid para o novo layout
     cityCount: game.cityGrid.flat().filter(cell => cell.card).length,
-    cityMax: 6, // 2x3 grid
+    cityMax: 12, // 4x3 grid para o novo layout
     eventCount: game.eventGrid.flat().filter(cell => cell.card).length,
     eventMax: 2, // 1x2 grid
-    landmarkCount: game.playerStats.landmarks,
-    landmarkMax: 3,
+    landmarkCount: game.landmarksGrid.flat().filter(cell => cell.card).length,
+    landmarkMax: 3, // 1x3 grid
     onSelectFarm: handleSelectFarm,
     onSelectCity: handleSelectCity,
+    onSelectEvent: (x: number, y: number) => handleSelectCell('event', x, y),
+    onSelectLandmark: (x: number, y: number) => handleSelectCell('landmarks', x, y),
     highlightFarm: selectedGrid === 'farm',
     highlightCity: selectedGrid === 'city',
     highlightEvent: selectedGrid === 'event',
+    highlightLandmark: selectedGrid === 'landmark',
   };
   
   const handProps = useMemo(() => {

@@ -4,7 +4,7 @@ const sharp = require('sharp');
 
 // Configurações
 const ICONS_DIR = path.join(__dirname, '../src/assets/icons');
-const SIZES = [16, 24, 32, 48, 64, 128]; // Tamanhos diferentes para diferentes usos
+const SIZES = [16, 24, 32, 48, 64, 128, 256, 512]; // Tamanhos diferentes para diferentes usos
 
 // Função para converter SVG para PNG
 async function convertSvgToPng(svgPath, outputDir, filename, sizes = [32]) {
@@ -15,8 +15,26 @@ async function convertSvgToPng(svgPath, outputDir, filename, sizes = [32]) {
       const pngFilename = `${filename}_${size}x${size}.png`;
       const pngPath = path.join(outputDir, pngFilename);
       
+      // Adicionar padding para preservar elementos que se estendem além do centro
+      const padding = Math.floor(size * 0.2); // 20% de padding
+      const finalSize = size + (padding * 2);
+      
       await sharp(svgBuffer)
-        .resize(size, size)
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 0, g: 0, b: 0, alpha: 0 } // Fundo transparente
+        })
+        .extend({
+          top: padding,
+          bottom: padding,
+          left: padding,
+          right: padding,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .resize(size, size, {
+          fit: 'contain',
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
         .png()
         .toFile(pngPath);
       

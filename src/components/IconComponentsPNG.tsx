@@ -146,7 +146,7 @@ import Booster128 from '../assets/icons/raridade/booster_128x128.png';
 
 // Interface para o componente de ícone PNG
 interface IconPNGProps {
-  size?: 8 | 16 | 24 | 32 | 48 | 64 | 128;
+  size?: 8 | 16 | 24 | 32 | 48 | 64 | 128 | 256 | 512;
   className?: string;
   alt?: string;
 }
@@ -475,7 +475,7 @@ export const BoosterIconPNG: React.FC<IconPNGProps> = ({ size = 32, className = 
 };
 
 // Funções helper para obter ícones por string
-export const getResourceIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 = 32) => {
+export const getResourceIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 | 256 | 512 = 32) => {
   switch (type) {
     case 'coins': return <CoinsIconPNG size={size} />;
     case 'food': return <FoodsIconPNG size={size} />;
@@ -485,7 +485,7 @@ export const getResourceIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 6
   }
 };
 
-export const getCardTypeIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 = 32) => {
+export const getCardTypeIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 | 256 | 512 = 32) => {
   switch (type) {
     case 'action': return <ActionIconPNG size={size} />;
     case 'city': return <CityIconPNG size={size} />;
@@ -499,7 +499,7 @@ export const getCardTypeIconPNG = (type: string, size: 8 | 16 | 24 | 32 | 48 | 6
   }
 };
 
-export const getRarityIconPNG = (rarity: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 = 32) => {
+export const getRarityIconPNG = (rarity: string, size: 8 | 16 | 24 | 32 | 48 | 64 | 128 | 256 | 512 = 32) => {
   switch (rarity) {
     case 'common': return <CommonIconPNG size={size} />;
     case 'uncommon': return <UncommonIconPNG size={size} />;
@@ -511,4 +511,31 @@ export const getRarityIconPNG = (rarity: string, size: 8 | 16 | 24 | 32 | 48 | 6
     case 'booster': return <BoosterIconPNG size={size} />;
     default: return <span className="text-lg">⭐</span>;
   }
+};
+
+// Logo do Jogo
+export const GameLogoPNG: React.FC<IconPNGProps> = ({ size = 64, className = "" }) => {
+  const getImageSrc = () => {
+    switch (size) {
+      case 16: return "/src/assets/icons/Seu Império aguarda_16x16.png";
+      case 24: return "/src/assets/icons/Seu Império aguarda_24x24.png";
+      case 32: return "/src/assets/icons/Seu Império aguarda_32x32.png";
+      case 48: return "/src/assets/icons/Seu Império aguarda_48x48.png";
+      case 64: return "/src/assets/icons/Seu Império aguarda_64x64.png";
+      case 128: return "/src/assets/icons/Seu Império aguarda_128x128.png";
+      case 256: return "/src/assets/icons/Seu Império aguarda_256x256.png";
+      case 512: return "/src/assets/icons/Seu Império aguarda_512x512.png";
+      default: return "/src/assets/icons/Seu Império aguarda_64x64.png";
+    }
+  };
+
+  return (
+    <img
+      src={getImageSrc()}
+      alt="Farmand Logo"
+      width={size}
+      height={size}
+      className={className}
+    />
+  );
 }; 

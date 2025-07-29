@@ -54,8 +54,8 @@ export function getInitialState(deck: Card[]): GameState {
     phase: 'draw' as const,
     resources: { coins: 10, food: 10, materials: 10, population: 5 },
     playerStats: { reputation: 0, totalProduction: 0, buildings: 0, landmarks: 0 },
-    farmGrid: createEmptyGrid(3, 4), // 3 linhas x 4 colunas = 12 slots
-    cityGrid: createEmptyGrid(2, 3), // 2 linhas x 3 colunas = 6 slots
+    farmGrid: createEmptyGrid(4, 3), // 4 linhas x 3 colunas = 12 slots para o novo layout
+    cityGrid: createEmptyGrid(4, 3), // 4 linhas x 3 colunas = 12 slots para o novo layout
     landmarksGrid: createEmptyGrid(1, 3), // 1 linha x 3 colunas = 3 slots para landmarks
     eventGrid: createEmptyGrid(1, 2), // 1 linha x 2 colunas = 2 slots para eventos
     hand,
