@@ -27,6 +27,8 @@ interface SidebarProps {
     production: number;
     landmarks: number;
     turn: number;
+    mode: 'reputation' | 'landmarks' | 'elimination' | 'infinite';
+    value: number;
   };
   history: string[];
 }
@@ -84,8 +86,8 @@ const CollapsibleSidebar: React.FC<SidebarProps> = ({ resources, progress, victo
 
   return (
     <aside className={`
-      sidebar bg-surface border-r border-border flex flex-col relative z-30
-      ${isExpanded ? 'w-80' : 'w-16'}
+      bg-surface border-r border-border z-30 h-[calc(100vh-4rem)] transition-all duration-300 fixed left-0 top-16
+      ${isExpanded ? 'w-80' : 'w-0 overflow-hidden'}
     `}>
       {/* Toggle Button */}
       <button
@@ -138,29 +140,37 @@ const CollapsibleSidebar: React.FC<SidebarProps> = ({ resources, progress, victo
           <div className="surface-elevated p-3 space-y-2">
             <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
               <Trophy className="w-4 h-4 text-secondary" />
-              Condições de Vitória
+              Condição de Vitória
             </h3>
             
             <div className="space-y-2 text-sm">
-              <div className={`flex items-center justify-between p-2 rounded ${victory.landmarks >= 3 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>3 Marcos Históricos</span>
-                <span className="font-bold">{victory.landmarks}/3</span>
-              </div>
+              {victory.mode === 'landmarks' && (
+                <div className={`flex items-center justify-between p-2 rounded ${victory.landmarks >= victory.value ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
+                  <span>{victory.value} Marcos Históricos</span>
+                  <span className="font-bold">{victory.landmarks}/{victory.value}</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-2 rounded ${victory.production >= 1000 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>1000 Produção Total</span>
-                <span className="font-bold">{victory.production}/1000</span>
-              </div>
+              {victory.mode === 'reputation' && (
+                <div className={`flex items-center justify-between p-2 rounded ${victory.reputation >= victory.value ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
+                  <span>{victory.value} Reputação</span>
+                  <span className="font-bold">{victory.reputation}/{victory.value}</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-2 rounded ${victory.reputation >= 10 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>10 Reputação</span>
-                <span className="font-bold">{victory.reputation}/10</span>
-              </div>
+              {victory.mode === 'elimination' && (
+                <div className={`flex items-center justify-between p-2 rounded ${victory.turn >= 20 ? 'bg-destructive/20 text-destructive' : 'text-text-secondary'}`}>
+                  <span>Sobreviver 20 Turnos</span>
+                  <span className="font-bold">{victory.turn}/20</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-2 rounded ${victory.turn >= 20 ? 'bg-destructive/20 text-destructive' : 'text-text-secondary'}`}>
-                <span>Sobreviver 20 Turnos</span>
-                <span className="font-bold">{victory.turn}/20</span>
-              </div>
+              {victory.mode === 'infinite' && (
+                <div className="flex items-center justify-between p-2 rounded text-text-secondary">
+                  <span>Modo Infinito</span>
+                  <span className="font-bold">Turno {victory.turn}</span>
+                </div>
+              )}
             </div>
           </div>
 

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
-import { Zap, Plus } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
+import { getCardTypeIconPNG } from '../IconComponentsPNG';
 
 interface GridCell {
   card?: any;
@@ -23,29 +24,37 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
   const [showDetail, setShowDetail] = React.useState<Card | null>(null);
 
   const renderGrid = () => {
-    const cols = eventGrid[0]?.length || 2;
+    const cols = eventGrid[0]?.length || 1;
     return (
-      <div className={`grid gap-0.5 p-1 flex-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className={`grid gap-0.5 p-0.5 flex-1 justify-center items-center`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {eventGrid.flatMap((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
               className={`
-                grid-cell aspect-square flex items-center justify-center text-xs font-medium cursor-pointer
+                grid-cell flex items-center justify-center text-xs font-medium cursor-pointer
                 ${highlight ? 'available' : ''}
                 ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
               `}
+              style={{
+                width: '70px',
+                height: '70px',
+                maxWidth: '70px',
+                maxHeight: '70px',
+                minWidth: '70px',
+                minHeight: '70px'
+              }}
               onClick={() => cell.card ? setShowDetail(cell.card) : onSelectEvent(colIndex, rowIndex)}
             >
               {cell.card ? (
                 <div className="text-center flex flex-col items-center">
-                  <div className="mb-0.5">{cell.card.icon || '⚡'}</div>
+                  <div className="mb-0.5">{getCardTypeIconPNG(cell.card.type, 14)}</div>
                   <div className="text-xs text-text-muted truncate max-w-full">
                     {cell.card.name.slice(0, 6)}
                   </div>
                 </div>
               ) : (
-                <Plus className="w-1/3 h-1/3 text-text-muted opacity-50" />
+                <Plus className="w-1/2 h-1/2 text-text-muted opacity-50" />
               )}
             </div>
           ))
@@ -56,12 +65,25 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
 
   return (
     <>
-      <NodeResizer minWidth={250} minHeight={150} />
-      <div className="surface-elevated border-2 border-magic-color w-full h-full flex flex-col">
-        <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5">
+      <NodeResizer minWidth={180} minHeight={120} />
+      <div className="surface-elevated border-2 border-magic-color w-full h-full flex flex-col relative overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            backgroundImage: `url('/assets/grids_background/Events_600x600.png')`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            width: '100%',
+            height: '100%'
+          }}
+        />
+        
+        <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5 relative z-10">
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <div className="grid grid-cols-[auto_auto] items-center gap-1">
-              <Zap className="w-3 h-3 text-magic-color" />
+              <Calendar className="w-3 h-3 text-magic-color" />
               <h3 className="font-bold text-text-primary text-xs">Eventos</h3>
             </div>
             <div className="text-xs font-bold text-magic-color">
@@ -70,18 +92,42 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
           </div>
         </div>
 
-        <div className="p-1 flex-1">
-          {/* Grid Content */}
-          {renderGrid()}
+        <div className="p-0.5 flex-1 relative z-10">
+          <div className="grid grid-cols-2 gap-0.5 h-full">
+            {eventGrid.flatMap((row, rowIndex) =>
+              row.map((cell, colIndex) => (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className={`
+                    aspect-square flex items-center justify-center text-xs font-medium cursor-pointer
+                    ${highlight ? 'available' : ''}
+                    ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
+                  `}
+                  style={{
+                    width: '70px',
+                    height: '70px',
+                    maxWidth: '70px',
+                    maxHeight: '70px',
+                    minWidth: '70px',
+                    minHeight: '70px'
+                  }}
+                  onClick={() => cell.card ? setShowDetail(cell.card) : onSelectEvent(colIndex, rowIndex)}
+                >
+                  {cell.card ? (
+                    <div className="text-center flex flex-col items-center">
+                      <div className="mb-0.5">{getCardTypeIconPNG(cell.card.type, 14)}</div>
+                      <div className="text-xs text-text-muted truncate max-w-full">
+                        {cell.card.name.slice(0, 6)}
+                      </div>
+                    </div>
+                  ) : (
+                    <Plus className="w-1/3 h-1/3 text-text-muted opacity-50" />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
           <CardDetailModal card={showDetail} isOpen={!!showDetail} onClose={() => setShowDetail(null)} />
-
-          {eventCount >= eventMax && (
-            <div className="mt-0.5 p-1 bg-magic-color/10 rounded-lg text-center">
-              <div className="text-magic-color font-bold text-xs">
-                🌟 Máximo!
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../../components/ui/switch';
 import { X, Upload, Eye, Save, Copy, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { CardValidator } from './CardValidator';
 
 interface CardEditorProps {
   card?: AdminCard | null;
@@ -339,8 +340,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                       id="cost_coins"
                       type="number"
                       min="0"
-                      value={formData.cost_coins || 0}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_coins: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      value={formData.cost_coins ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setFormData(prev => ({ ...prev, cost_coins: value }));
+                      }}
                     />
                   </div>
                   <div>
@@ -349,8 +354,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                       id="cost_food"
                       type="number"
                       min="0"
-                      value={formData.cost_food || 0}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_food: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      value={formData.cost_food ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setFormData(prev => ({ ...prev, cost_food: value }));
+                      }}
                     />
                   </div>
                   <div>
@@ -359,8 +368,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                       id="cost_materials"
                       type="number"
                       min="0"
-                      value={formData.cost_materials || 0}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_materials: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      value={formData.cost_materials ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setFormData(prev => ({ ...prev, cost_materials: value }));
+                      }}
                     />
                   </div>
                   <div>
@@ -369,8 +382,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                       id="cost_population"
                       type="number"
                       min="0"
-                      value={formData.cost_population || 0}
-                      onChange={(e) => setFormData(prev => ({ ...prev, cost_population: parseInt(e.target.value) || 0 }))}
+                      placeholder="0"
+                      value={formData.cost_population ?? ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0;
+                        setFormData(prev => ({ ...prev, cost_population: value }));
+                      }}
                     />
                   </div>
                 </div>
@@ -389,6 +406,12 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                   className={errors.effect ? 'border-red-500' : ''}
                 />
                 {errors.effect && <p className="text-red-500 text-sm mt-1">{errors.effect}</p>}
+                
+                {/* Card Validator */}
+                <CardValidator 
+                  effect={formData.effect || ''} 
+                  cardType={formData.type || 'farm'} 
+                />
               </div>
 
               {/* Effect Logic */}
@@ -451,6 +474,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                   accept="image/*"
                   onChange={handleFileChange}
                   className="hidden"
+                  aria-label="Selecionar imagem da carta"
                 />
                 <Button
                   variant="outline"

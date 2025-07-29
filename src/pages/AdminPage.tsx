@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { CardManager } from '../components/admin/CardManager';
+import { PackManager } from '../components/admin/PackManager';
+import { EventManager } from '../components/admin/EventManager';
+import { DailyRotationManager } from '../components/admin/DailyRotationManager';
 import { UserStatsPanel } from '../components/admin/UserStatsPanel';
 import { GameStatsPanel } from '../components/admin/GameStatsPanel';
 import { AdvancedStatsPanel } from '../components/admin/AdvancedStatsPanel';
@@ -22,6 +25,12 @@ export const AdminPage: React.FC = () => {
         return <AdminDashboard />;
       case 'cards':
         return <CardManager onStatsUpdate={() => {}} />;
+      case 'packs':
+        return <PackManager />;
+      case 'events':
+        return <EventManager />;
+      case 'rotation':
+        return <DailyRotationManager />;
       case 'users':
         return <UsersPage />;
       case 'stats':

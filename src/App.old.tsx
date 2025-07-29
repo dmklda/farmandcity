@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GameState, GamePhase, GridCell } from './types/gameState.js';
-import { starterCards, baseDeck } from './data/cards.js';
+import { starterCards, baseDeck } from './backup/cards.js';
 import { useGameState } from './hooks/useGameState';
 import { Resources } from './types/resources.js';
 import EnhancedHand from './components/EnhancedHand.js';
@@ -20,7 +20,7 @@ import type { User, Session } from '@supabase/supabase-js';
 
 import EnhancedGridBoard from './components/EnhancedGridBoard.js';
 import CardComponent from './components/CardComponent.js';
-import { CardsStatus } from './components/CardsStatus.js';
+
 import { DeckSelector } from './components/DeckSelector';
 import { DeckBuilder } from './components/DeckBuilder';
 
@@ -1044,6 +1044,7 @@ const App: React.FC = () => {
         selectedCardId={selectedCard?.id}
         canPlayCard={canPlayCardUI}
         sidebarVisible={sidebarVisible}
+        deckSize={game.deck.length}
       />
       
       {/* Modal de descarte manual */}
@@ -1122,8 +1123,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Status de carregamento das cartas */}
-      <CardsStatus />
+
     </div>
   );
 };

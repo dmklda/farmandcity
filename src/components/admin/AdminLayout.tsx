@@ -12,7 +12,9 @@ import {
   Settings, 
   Shield,
   Menu,
-  X
+  X,
+  Gift,
+  Calendar
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -26,11 +28,13 @@ interface AdminLayoutProps {
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', description: 'Visão geral do sistema', icon: LayoutDashboard },
   { id: 'cards', label: 'Gerenciar Cartas', description: 'Criar e editar cartas', icon: FileText },
+  { id: 'packs', label: 'Packs e Boosters', description: 'Gerenciar pacotes', icon: Package },
+  { id: 'events', label: 'Eventos', description: 'Eventos especiais', icon: Gift },
+  { id: 'rotation', label: 'Rotação Diária', description: 'Ciclo diário de cartas', icon: Calendar },
   { id: 'users', label: 'Usuários', description: 'Gerenciar jogadores', icon: Users },
   { id: 'stats', label: 'Estatísticas', description: 'Dados do jogo', icon: BarChart3 },
   { id: 'advanced-stats', label: 'Estatísticas Avançadas', description: 'Análises detalhadas', icon: TrendingUp },
   { id: 'monetization', label: 'Monetização', description: 'Pacotes e vendas', icon: DollarSign },
-  { id: 'booster-packs', label: 'Booster Packs', description: 'Gerenciar pacotes', icon: Package },
   { id: 'reports', label: 'Relatórios', description: 'Relatórios gerenciais', icon: FileBarChart },
   { id: 'logs', label: 'Logs do Sistema', description: 'Logs e auditoria', icon: ScrollText },
   { id: 'settings', label: 'Configurações', description: 'Configurações gerais', icon: Settings },

@@ -98,7 +98,7 @@ const EnhancedGridBoard: React.FC<EnhancedGridBoardProps> = ({
         onSelectEvent,
         highlight: highlightEvent
       },
-      style: { width: 300, height: 150 }
+      style: { width: 200, height: 120 }
     },
     {
       id: 'landmark-node',

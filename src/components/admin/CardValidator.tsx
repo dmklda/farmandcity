@@ -1,308 +1,480 @@
-import React, { useState } from 'react';
-import { AdminCard, CardType, CardRarity } from '../../types/admin';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react';
+import React from 'react';
+import { Card, } from '../ui/card';
+import { Badge as BadgeComponent } from '../ui/badge';
+
+interface ValidationResult {
+  isValid: boolean;
+  recognizedPattern: string | null;
+  parsedEffect: {
+    coins?: number;
+    food?: number;
+    materials?: number;
+    population?: number;
+  };
+  suggestions: string[];
+}
 
 interface CardValidatorProps {
-  card: AdminCard;
+  effect: string;
+  cardType: string;
 }
 
-interface ValidationRule {
-  id: string;
-  name: string;
-  description: string;
-  validate: (card: AdminCard) => { valid: boolean; message: string };
-}
+export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }) => {
+  const validateEffect = (effectText: string, type: string): ValidationResult => {
+    const effect = effectText.toLowerCase();
+    const suggestions: string[] = [];
+    let recognizedPattern: string | null = null;
+    let parsedEffect: any = {};
 
-const validationRules: ValidationRule[] = [
-  {
-    id: 'phase-type-consistency',
-    name: 'Consistência de Fase e Tipo',
-    description: 'A fase deve ser consistente com o tipo da carta',
-    validate: (card: AdminCard) => {
-      const expectedPhase = (() => {
-        switch (card.type) {
-          case 'action':
-          case 'magic':
-            return 'action';
-          case 'defense':
-          case 'trap':
-            return 'reaction';
-          default:
-            return 'draw';
-        }
-      })();
-
-      if (card.phase !== expectedPhase) {
-        return {
-          valid: false,
-          message: `Cartas do tipo ${card.type} devem ter fase '${expectedPhase}', mas têm '${card.phase}'`
-        };
-      }
-
-      return {
-        valid: true,
-        message: `Fase '${card.phase}' é consistente com o tipo '${card.type}'`
-      };
-    }
-  },
-  {
-    id: 'cost-balance',
-    name: 'Balanceamento de Custo',
-    description: 'O custo total deve ser apropriado para a raridade',
-    validate: (card: AdminCard) => {
-      const totalCost = card.cost_coins + card.cost_food + card.cost_materials + card.cost_population;
+    // Padrões para efeitos instantâneos (action, magic)
+    const instantPatterns: Array<{ pattern: RegExp; name: string; isDeduction?: boolean; isBidirectional?: boolean }> = [
+      // Múltiplos recursos
+      { pattern: /ganhe (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/, name: 'ganhe X recurso e Y recurso' },
+      { pattern: /ganho instantâneo de (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/, name: 'ganho instantâneo de X recurso e Y recurso' },
+      { pattern: /receba (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/, name: 'receba X recurso e Y recurso' },
+      { pattern: /obtenha (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/, name: 'obtenha X recurso e Y recurso' },
+      { pattern: /adicione (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/, name: 'adicione X recurso e Y recurso' },
       
-      const maxCosts = {
-        common: 3,
-        uncommon: 5,
-        rare: 8,
-        ultra: 12,
-        secret: 15,
-        legendary: 20,
-        crisis: 10,
-        booster: 6
-      };
+      // Recurso único
+      { pattern: /ganhe (\d+) (comida|moeda|material|população)/, name: 'ganhe X recurso' },
+      { pattern: /ganho instantâneo de (\d+) (comida|moeda|material|população)/, name: 'ganho instantâneo de X recurso' },
+      { pattern: /receba (\d+) (comida|moeda|material|população)/, name: 'receba X recurso' },
+      { pattern: /obtenha (\d+) (comida|moeda|material|população)/, name: 'obtenha X recurso' },
+      { pattern: /adicione (\d+) (comida|moeda|material|população)/, name: 'adicione X recurso' },
+      
+      // Efeitos de população específicos
+      { pattern: /aumenta população em (\d+)/, name: 'aumenta população em X' },
+      { pattern: /aumenta população máxima em (\d+)/, name: 'aumenta população máxima em X' },
+      { pattern: /fornece (\d+) população/, name: 'fornece X população' },
+      { pattern: /contratar trabalhadores/, name: 'contratar trabalhadores' },
+      
+      // Efeitos de reputação
+      { pattern: /\+(\d+) reputação/, name: '+X reputação' },
+      { pattern: /fornece (\d+) reputação/, name: 'fornece X reputação' },
+      { pattern: /garante (\d+) reputação/, name: 'garante X reputação' },
+      
+      // Efeitos de conversão/troca
+      { pattern: /troque (\d+) (comida|moeda|material|população) por (\d+) (comida|moeda|material|população)/, name: 'troque X recurso por Y recurso' },
+      { pattern: /converta (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população)/, name: 'converta X recurso em Y recurso' },
+      { pattern: /transforme (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população)/, name: 'transforme X recurso em Y recurso' },
+      
+      { pattern: /reduz custo de construção em (\d+) material/, name: 'reduz custo de construção em X material' },
+      
+      // Efeitos condicionais simples
+      { pattern: /ganha (\d+) moedas/, name: 'ganha X moedas' },
+      { pattern: /ganha (\d+) comida/, name: 'ganha X comida' },
+      { pattern: /ganha (\d+) material/, name: 'ganha X material' },
+      
+      // Efeitos condicionais complexos
+      { pattern: /ganha (\d+) (comida|moeda|material|população)\. se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida)/, name: 'ganha X recurso se tiver Y ou mais Z' },
+      { pattern: /ganha (\d+) (comida|moeda|material|população) se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida)/, name: 'ganha X recurso se tiver Y ou mais Z' },
+      { pattern: /se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida), ganha (\d+) (comida|moeda|material|população)/, name: 'se tiver X ou mais Y, ganha Z recurso' },
+      
+      // Efeitos condicionais com "em vez disso"
+      { pattern: /ganha (\d+) (comida|moeda|material|população)\. se você tiver (uma|alguma) (cidade|fazenda), ganha (\d+) (comida|moeda|material|população) em vez disso/, name: 'ganha X recurso, se tiver cidade/fazenda ganha Y em vez disso' },
+      { pattern: /ganha (\d+) (comida|moeda|material|população)\. se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades), ganha (\d+) (comida|moeda|material|população) em vez disso/, name: 'ganha X recurso, se tiver Y ou mais Z ganha W em vez disso' },
+      
+      // Efeitos "para cada X que você tem"
+      { pattern: /ganha (\d+) (comida|moeda|material|população) para cada (\d+) (moedas|materiais|comida|fazendas|cidades) que você tem/, name: 'ganha X recurso para cada Y Z que você tem' },
+      { pattern: /no final do turno, ganha (\d+) (comida|moeda|material|população) para cada (\d+) (moedas|materiais|comida|fazendas|cidades) que você tem/, name: 'no final do turno, ganha X recurso para cada Y Z' },
+      { pattern: /no início de cada turno, ganha (\d+) (comida|moeda|material|população)/, name: 'no início de cada turno, ganha X recurso' },
+      
+      // Efeitos de perda/dano
+      { pattern: /perde (\d+) (comida|moeda|material|população)/, name: 'perde X recurso', isDeduction: true },
+      { pattern: /todos os jogadores perdem (\d+) (comida|moeda|material|população)/, name: 'todos perdem X recurso', isDeduction: true },
+      { pattern: /perdem metade de suas (moedas|materiais|comida)/, name: 'perdem metade de suas X', isDeduction: true },
+      
+      // Efeitos de duplicação/multiplicação
+      { pattern: /duplica (produção de comida|produção de moedas|produção de materiais)/, name: 'duplica produção de X' },
+      { pattern: /dobra (produção de comida|produção de moedas|produção de materiais)/, name: 'dobra produção de X' },
+      { pattern: /duplica (produção de comida|produção de moedas|produção de materiais) por (\d+) turno/, name: 'duplica produção de X por Y turno' },
+      { pattern: /dobra (produção de comida|produção de moedas|produção de materiais) por (\d+) turno/, name: 'dobra produção de X por Y turno' },
+      { pattern: /duplica (produção de comida|produção de moedas|produção de materiais) por (\d+) turnos/, name: 'duplica produção de X por Y turnos' },
+      { pattern: /dobra (produção de comida|produção de moedas|produção de materiais) por (\d+) turnos/, name: 'dobra produção de X por Y turnos' },
+      { pattern: /duplica (produção de comida|produção de moedas|produção de materiais) neste turno/, name: 'duplica produção de X neste turno' },
+      { pattern: /dobra (produção de comida|produção de moedas|produção de materiais) neste turno/, name: 'dobra produção de X neste turno' },
+      { pattern: /todas as suas fazendas produzem \+(\d+) comida/, name: 'todas as fazendas produzem +X comida' },
+      { pattern: /todas as suas cidades produzem \+(\d+) (moeda|material)/, name: 'todas as cidades produzem +X recurso' },
+    ];
 
-      const maxCost = maxCosts[card.rarity] || 10;
+    // Padrões para produção por turno (farm, city)
+    const productionPatterns: Array<{ pattern: RegExp; name: string; isDeduction?: boolean; isBidirectional?: boolean }> = [
+      // Múltiplos recursos (DEVE VIR PRIMEIRO - padrões mais específicos)
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) e (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'produz X recurso e Y recurso por turno' },
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) e (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) a cada turno/, name: 'produz X recurso e Y recurso a cada turno' },
+      { pattern: /fornece (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) e (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'fornece X recurso e Y recurso por turno' },
+      { pattern: /gera (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) e (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'gera X recurso e Y recurso por turno' },
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno e (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/, name: 'produz X recurso por turno e Y recurso' },
+      
+      // Efeitos de dedução por turno (NOVO)
+      { pattern: /custa (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'custa X recurso por turno', isDeduction: true },
+      { pattern: /gasta (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'gasta X recurso por turno', isDeduction: true },
+      { pattern: /consome (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'consome X recurso por turno', isDeduction: true },
+      { pattern: /deduz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'deduz X recurso por turno', isDeduction: true },
+      
+      // Recurso único (DEVE VIR DEPOIS - padrões mais genéricos)
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'produz X recurso por turno' },
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) a cada turno/, name: 'produz X recurso a cada turno' },
+      { pattern: /fornece (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'fornece X recurso por turno' },
+      { pattern: /gera (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por turno/, name: 'gera X recurso por turno' },
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/, name: 'produz X recurso' },
+      
+      // Efeitos de população específicos
+      { pattern: /aumenta população em (\d+)/, name: 'aumenta população em X' },
+      { pattern: /aumenta população máxima em (\d+)/, name: 'aumenta população máxima em X' },
+      { pattern: /fornece (\d+) população/, name: 'fornece X população' },
+      { pattern: /população direta/, name: 'população direta' },
+      
+      // Efeitos de reputação
+      { pattern: /\+(\d+) reputação/, name: '+X reputação' },
+      { pattern: /fornece (\d+) reputação/, name: 'fornece X reputação' },
+      { pattern: /garante (\d+) reputação/, name: 'garante X reputação' },
+      
+      // Efeitos condicionais de produção
+      { pattern: /produz (\d+) (comida|comidas|moeda|moedas|material|materiais) se você tiver (\d+) ou mais/, name: 'produz X recurso se tiver Y ou mais' },
+      { pattern: /para cada (fazenda|cidade) que você tem, produz \+(\d+) (moeda|moedas|comida|comidas|material|materiais)/, name: 'para cada fazenda/cidade, produz +X recurso' },
+      
+      // Efeitos de produção contínua
+      { pattern: /produção contínua de (comida|comidas|moeda|moedas|material|materiais)/, name: 'produção contínua de X' },
+      { pattern: /produção ativada por dado/, name: 'produção ativada por dado' },
+    ];
 
-      if (totalCost > maxCost) {
-        return {
-          valid: false,
-          message: `Custo total ${totalCost} é muito alto para raridade ${card.rarity} (máx: ${maxCost})`
-        };
-      }
+    // Padrões para produção por dado
+    const dicePatterns: Array<{ pattern: RegExp; name: string; isDeduction?: boolean; isBidirectional?: boolean }> = [
+      // Múltiplos recursos por dado
+      { pattern: /produz (\d+) (comida|moeda|material) e (\d+) (comida|moeda|material|reputação) quando ativado por dado (\d+)/, name: 'produz X e Y recurso quando dado Z' },
+      { pattern: /produz (\d+) (comida|moeda|material) e (\d+) (comida|moeda|material|reputação) se dado for (\d+)/, name: 'produz X e Y recurso se dado Z' },
+      { pattern: /produz (\d+) (comida|moeda|material) e (\d+) (comida|moeda|material|reputação) com dado (\d+)/, name: 'produz X e Y recurso com dado Z' },
+      
+      // Recurso único por dado
+      { pattern: /produz (\d+) (comida|moeda|material) quando ativado por dado (\d+)/, name: 'produz X recurso quando dado Y' },
+      { pattern: /produz (\d+) (comida|moeda|material) se dado for (\d+)/, name: 'produz X recurso se dado for Y' },
+      { pattern: /produz (\d+) (comida|moeda|material) com dado (\d+)/, name: 'produz X recurso com dado Y' },
+      { pattern: /produz (\d+) (comida|moeda|material) quando dado = (\d+)/, name: 'produz X recurso quando dado = Y' },
+      
+      // Produção com dado específico
+      { pattern: /produção com dado (\d+)/, name: 'produção com dado X' },
+      { pattern: /produção ativada por dado/, name: 'produção ativada por dado' },
+    ];
 
-      return {
-        valid: true,
-        message: `Custo total ${totalCost} está dentro do limite para raridade ${card.rarity}`
-      };
+    // Padrões bidirecionais (sempre incluídos)
+    const bidirectionalPatterns: Array<{ pattern: RegExp; name: string; isDeduction?: boolean; isBidirectional?: boolean }> = [
+      // Efeitos de conversão bidirecional (NOVO)
+      { pattern: /transforme (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população) ou (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população)/i, name: 'transforme X recurso em Y ou Z em W', isBidirectional: true },
+      { pattern: /troque (\d+) (comida|moeda|material|população) por (\d+) (comida|moeda|material|população) ou (\d+) (comida|moeda|material|população) por (\d+) (comida|moeda|material|população)/i, name: 'troque X por Y ou Z por W', isBidirectional: true },
+      { pattern: /converta (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população) ou (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população)/i, name: 'converta X em Y ou Z em W', isBidirectional: true },
+    ];
+
+    let patternsToCheck = [];
+    
+    if (['action', 'magic'].includes(type)) {
+      patternsToCheck = [...instantPatterns, ...bidirectionalPatterns];
+    } else if (['farm', 'city'].includes(type)) {
+      patternsToCheck = [...productionPatterns, ...dicePatterns, ...bidirectionalPatterns];
+    } else {
+      patternsToCheck = [...instantPatterns, ...productionPatterns, ...dicePatterns, ...bidirectionalPatterns];
     }
-  },
-  {
-    id: 'usage-limits',
-    name: 'Limites de Uso',
-    description: 'Uso por turno deve ser apropriado para o tipo de carta',
-    validate: (card: AdminCard) => {
-      if (card.type === 'action' && card.use_per_turn > 3) {
-        return {
-          valid: false,
-          message: 'Cartas de ação não devem ter uso por turno maior que 3'
-        };
-      }
 
-      if (card.type === 'magic' && card.use_per_turn > 1) {
-        return {
-          valid: false,
-          message: 'Cartas de magia devem ter uso por turno limitado a 1'
-        };
-      }
-
-      if (card.use_per_turn < 1) {
-        return {
-          valid: false,
-          message: 'Uso por turno deve ser pelo menos 1'
-        };
-      }
-
-      return {
-        valid: true,
-        message: `Uso por turno ${card.use_per_turn} é apropriado para o tipo ${card.type}`
-      };
-    }
-  },
-  {
-    id: 'effect-completeness',
-    name: 'Completude do Efeito',
-    description: 'O efeito deve ser descritivo e completo',
-    validate: (card: AdminCard) => {
-      if (!card.effect || card.effect.trim().length < 10) {
-        return {
-          valid: false,
-          message: 'Descrição do efeito deve ter pelo menos 10 caracteres'
-        };
-      }
-
-      if (card.effect.length > 200) {
-        return {
-          valid: false,
-          message: 'Descrição do efeito deve ter no máximo 200 caracteres'
-        };
-      }
-
-      return {
-        valid: true,
-        message: 'Descrição do efeito tem tamanho apropriado'
-      };
-    }
-  },
-  {
-    id: 'rarity-consistency',
-    name: 'Consistência de Raridade',
-    description: 'A raridade deve ser consistente com o poder da carta',
-    validate: (card: AdminCard) => {
-      const totalCost = card.cost_coins + card.cost_food + card.cost_materials + card.cost_population;
-      const effectLength = card.effect.length;
-
-      // Regras básicas de consistência
-      if (card.rarity === 'common' && totalCost > 2) {
-        return {
-          valid: false,
-          message: 'Cartas comuns não devem ter custo total maior que 2'
-        };
-      }
-
-      if (card.rarity === 'legendary' && totalCost < 5) {
-        return {
-          valid: false,
-          message: 'Cartas lendárias devem ter custo total de pelo menos 5'
-        };
-      }
-
-      return {
-        valid: true,
-        message: `Raridade ${card.rarity} é consistente com o poder da carta`
-      };
-    }
-  },
-  {
-    id: 'reactive-validation',
-    name: 'Validação de Reatividade',
-    description: 'Cartas reativas devem ter configurações apropriadas',
-    validate: (card: AdminCard) => {
-      if (card.is_reactive) {
-        if (card.type !== 'defense' && card.type !== 'trap') {
-          return {
-            valid: false,
-            message: 'Apenas cartas de defesa e armadilha podem ser reativas'
-          };
+    // Processar padrões em ordem de especificidade (mais específico primeiro)
+    const processedRanges: Array<{start: number, end: number}> = [];
+    
+    for (const { pattern, name, isDeduction = false, isBidirectional = false } of patternsToCheck) {
+      const matches = effect.matchAll(new RegExp(pattern, 'g'));
+      
+      for (const match of matches) {
+        const matchStart = match.index!;
+        const matchEnd = matchStart + match[0].length;
+        
+        // Verificar se esta parte do texto já foi processada
+        const isAlreadyProcessed = processedRanges.some(range => 
+          (matchStart >= range.start && matchStart < range.end) ||
+          (matchEnd > range.start && matchEnd <= range.end) ||
+          (matchStart <= range.start && matchEnd >= range.end)
+        );
+        
+        if (isAlreadyProcessed) {
+          console.log('🔍 CardValidator - Pulando padrão já processado:', name, 'em posição', matchStart, '-', matchEnd);
+          continue;
         }
-
-        if (card.phase !== 'reaction') {
-          return {
-            valid: false,
-            message: 'Cartas reativas devem ter fase "reaction"'
-          };
+        
+        console.log('🔍 CardValidator - Padrão encontrado:', name);
+        console.log('🔍 CardValidator - Match:', match);
+        console.log('🔍 CardValidator - Match length:', match.length);
+        console.log('🔍 CardValidator - Posição:', matchStart, '-', matchEnd);
+        console.log('🔍 CardValidator - É bidirecional?', isBidirectional);
+        
+        recognizedPattern = name;
+        
+        // Marcar esta parte do texto como processada
+        processedRanges.push({ start: matchStart, end: matchEnd });
+        
+        // Verificar se é efeito bidirecional (tem 6 grupos de captura)
+        if (isBidirectional && match.length >= 7) {
+          // Padrão: "transforme X recurso1 em Y recurso2 ou Z recurso3 em W recurso4"
+          const value1 = parseInt(match[1], 10);
+          const resourceType1 = match[2];
+          const value2 = parseInt(match[3], 10);
+          const resourceType2 = match[4];
+          const value3 = parseInt(match[5], 10);
+          const resourceType3 = match[6];
+          const value4 = parseInt(match[7], 10);
+          const resourceType4 = match[8];
+          
+          console.log('🔍 CardValidator - Efeito bidirecional:', { 
+            value1, resourceType1, value2, resourceType2, 
+            value3, resourceType3, value4, resourceType4 
+          });
+          
+          // Para efeitos bidirecionais, mostrar ambas as opções
+          // Opção 1: X recurso1 → Y recurso2
+          // Opção 2: Z recurso3 → W recurso4
+          
+          // Adicionar primeira opção (dedução do primeiro, adição do segundo)
+          switch (resourceType1) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) - value1;
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) - value1;
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) - value1;
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) - value1;
+              break;
+          }
+          
+          switch (resourceType2) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) + value2;
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) + value2;
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) + value2;
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) + value2;
+              break;
+          }
+          
+          // Adicionar segunda opção (dedução do terceiro, adição do quarto)
+          switch (resourceType3) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) - value3;
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) - value3;
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) - value3;
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) - value3;
+              break;
+          }
+          
+          switch (resourceType4) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) + value4;
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) + value4;
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) + value4;
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) + value4;
+              break;
+          }
+          
+        } else if (match.length >= 5) {
+          // Padrão: "produz X recurso1 e Y recurso2 por turno"
+          const value1 = parseInt(match[1], 10);
+          const resourceType1 = match[2];
+          const value2 = parseInt(match[3], 10);
+          const resourceType2 = match[4];
+          
+          console.log('🔍 CardValidator - Múltiplos recursos:', { value1, resourceType1, value2, resourceType2 });
+          
+          // Aplicar multiplicador para deduções
+          const multiplier = isDeduction ? -1 : 1;
+          console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
+          
+          // Adicionar primeiro recurso
+          switch (resourceType1) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) + (value1 * multiplier);
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) + (value1 * multiplier);
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) + (value1 * multiplier);
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) + (value1 * multiplier);
+              break;
+          }
+          
+          // Adicionar segundo recurso
+          switch (resourceType2) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) + (value2 * multiplier);
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) + (value2 * multiplier);
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) + (value2 * multiplier);
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) + (value2 * multiplier);
+              break;
+            case 'reputação':
+              parsedEffect.reputation = value2 * multiplier;
+              break;
+          }
+        } else {
+          // Padrão: "produz X recurso por turno" (recurso único)
+          const value = parseInt(match[1], 10);
+          const resourceType = match[2];
+          
+          console.log('🔍 CardValidator - Recurso único:', { value, resourceType });
+          
+          // Aplicar multiplicador para deduções
+          const multiplier = isDeduction ? -1 : 1;
+          console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
+          
+          switch (resourceType) {
+            case 'comida':
+            case 'comidas':
+              parsedEffect.food = (parsedEffect.food || 0) + (value * multiplier);
+              break;
+            case 'moeda':
+            case 'moedas':
+              parsedEffect.coins = (parsedEffect.coins || 0) + (value * multiplier);
+              break;
+            case 'material':
+            case 'materiais':
+              parsedEffect.materials = (parsedEffect.materials || 0) + (value * multiplier);
+              break;
+            case 'população':
+            case 'populações':
+              parsedEffect.population = (parsedEffect.population || 0) + (value * multiplier);
+              break;
+            case 'reputação':
+              parsedEffect.reputation = value * multiplier;
+              break;
+          }
         }
+        
+        console.log('🔍 CardValidator - Parsed effect após processamento:', parsedEffect);
+      }
+    }
+
+    // Sugestões baseadas no tipo de carta
+    if (!recognizedPattern) {
+      if (['action', 'magic'].includes(type)) {
+        suggestions.push('Para cartas de ação/magia, use: "Ganhe X moeda", "Receba X comida", etc.');
+        suggestions.push('Para múltiplos recursos: "Ganhe X moeda e Y comida"');
+      } else if (['farm', 'city'].includes(type)) {
+        suggestions.push('Para cartas de fazenda/cidade, use: "Produz X comida por turno", "Fornece X material", etc.');
+        suggestions.push('Para múltiplos recursos: "Produz X comida e Y material por turno"');
+      }
+      suggestions.push('Verifique se o texto está em português e usa números.');
+      suggestions.push('Exemplos válidos: "Ganhe 2 moedas", "Produz 1 comida e 1 material por turno"');
       }
 
       return {
-        valid: true,
-        message: 'Configuração de reatividade está correta'
-      };
-    }
-  }
-];
-
-export const CardValidator: React.FC<CardValidatorProps> = ({ card }) => {
-  const [validationResults, setValidationResults] = useState<Array<{
-    rule: ValidationRule;
-    result: { valid: boolean; message: string };
-  }>>([]);
-
-  const runValidation = () => {
-    const results = validationRules.map(rule => ({
-      rule,
-      result: rule.validate(card)
-    }));
-    setValidationResults(results);
+      isValid: !!recognizedPattern,
+      recognizedPattern,
+      parsedEffect,
+      suggestions
+    };
   };
 
-  const validCount = validationResults.filter(r => r.result.valid).length;
-  const totalCount = validationResults.length;
+  const result = validateEffect(effect, cardType);
+
+  if (!effect.trim()) {
+    return null;
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5" />
-          Validador de Mecânica
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Valide as regras de mecânica da carta
-          </p>
-          <Button onClick={runValidation} size="sm">
-            Executar Validação
-          </Button>
-        </div>
-
-        {validationResults.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Resultados:</span>
-              <Badge variant={validCount === totalCount ? 'default' : 'destructive'}>
-                {validCount}/{totalCount} válidas
-              </Badge>
-            </div>
+    <Card className="p-4 mt-4">
+      <h4 className="font-semibold mb-2">Validação do Efeito</h4>
 
             <div className="space-y-2">
-              {validationResults.map(({ rule, result }) => (
-                <div
-                  key={rule.id}
-                  className={`p-3 rounded border ${
-                    result.valid
-                      ? 'border-green-200 bg-green-50'
-                      : 'border-red-200 bg-red-50'
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {result.valid ? (
-                      <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                    )}
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{rule.name}</h4>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {rule.description}
-                      </p>
-                      <p className={`text-sm ${
-                        result.valid ? 'text-green-700' : 'text-red-700'
-                      }`}>
-                        {result.message}
-                      </p>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Status:</span>
+          {result.isValid ? (
+            <BadgeComponent variant="default" className="bg-green-100 text-green-800">
+              ✅ Válido
+            </BadgeComponent>
+          ) : (
+            <BadgeComponent variant="destructive">
+              ❌ Não reconhecido
+            </BadgeComponent>
+          )}
                     </div>
+
+        {result.recognizedPattern && (
+          <div className="text-sm text-green-600">
+            <strong>Padrão reconhecido:</strong> {result.recognizedPattern}
                   </div>
-                </div>
+        )}
+
+        {Object.keys(result.parsedEffect).length > 0 && (
+          <div className="text-sm">
+            <strong>Efeito parseado:</strong>
+            <div className="mt-1 space-x-2">
+              {Object.entries(result.parsedEffect).map(([key, value]) => (
+                <BadgeComponent key={key} variant="outline">
+                  +{value} {key}
+                </BadgeComponent>
               ))}
             </div>
-
-            {validCount === totalCount && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">
-                    Todas as validações passaram! A carta está pronta para uso.
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {validCount < totalCount && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <div className="flex items-center gap-2">
-                  <Info className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-800">
-                    {totalCount - validCount} problema(s) encontrado(s). Corrija antes de publicar.
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {validationResults.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Clique em "Executar Validação" para verificar a carta</p>
+        {result.suggestions.length > 0 && (
+          <div className="text-sm">
+            <strong>Sugestões:</strong>
+            <ul className="mt-1 list-disc list-inside text-red-600">
+              {result.suggestions.map((suggestion, index) => (
+                <li key={index}>{suggestion}</li>
+              ))}
+            </ul>
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }; 

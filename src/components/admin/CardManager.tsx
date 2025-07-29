@@ -246,6 +246,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
 
             {/* Type Filter */}
             <select
+              title="Filtrar por tipo"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as CardType | 'all')}
               className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -263,6 +264,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
 
             {/* Rarity Filter */}
             <select
+              title="Filtrar por raridade"
               value={filterRarity}
               onChange={(e) => setFilterRarity(e.target.value as CardRarity | 'all')}
               className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -280,6 +282,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
 
             {/* Active Filter */}
             <select
+              title="Filtrar por status"
               value={filterActive.toString()}
               onChange={(e) => {
                 const value = e.target.value;

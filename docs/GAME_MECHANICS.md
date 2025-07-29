@@ -535,3 +535,79 @@ Fazenda Completa
 - **Objetivo**: Alta retenção de jogadores
 - **Medição**: Sessões por jogador
 - **Ajuste**: Melhorar feedback e recompensas 
+
+## Condições de Vitória Configuráveis ✅ **NOVO**
+
+### **Modos de Vitória Disponíveis**
+
+O jogo agora suporta diferentes condições de vitória que podem ser configuradas no painel administrativo:
+
+#### **🏛️ Vitória por Marcos**
+- **Objetivo**: Construir N marcos históricos
+- **Configuração**: Definir quantidade de marcos (padrão: 3)
+- **Exemplo**: "Vitória: 5 marcos históricos concluídos!"
+
+#### **⭐ Vitória por Reputação**
+- **Objetivo**: Alcançar N pontos de reputação
+- **Configuração**: Definir pontuação necessária (padrão: 10)
+- **Exemplo**: "Vitória: Reputação 20 alcançada!"
+
+#### **⏰ Vitória por Eliminação**
+- **Objetivo**: Sobreviver por 20 turnos
+- **Configuração**: Definir número de turnos (padrão: 20)
+- **Exemplo**: "Vitória: Sobreviveu a 20 turnos!"
+
+#### **∞ Modo Infinito**
+- **Objetivo**: Jogar indefinidamente
+- **Características**:
+  - O jogo nunca termina por pontos ou marcos
+  - Eventos e crises escalam a cada 10 turnos
+  - Custos de cartas aumentam gradualmente
+  - Produção pode ser reduzida ao longo do tempo
+  - Último jogador com recursos vence
+
+### **Configuração no Painel Admin**
+
+1. Acesse `/admin`
+2. Vá para "Configurações"
+3. Seção "Configurações de Vitória":
+   - **Condição de Vitória**: Selecione o modo desejado
+   - **Valor para Vitória**: Defina o valor necessário
+
+### **Seleção pelo Jogador** ✅ **NOVO**
+
+O jogador agora pode escolher o modo de jogo diretamente na interface:
+
+1. **Menu Principal**: Clique em "Escolher Modo de Jogo"
+2. **Seleção**: Escolha entre 8 modos diferentes:
+   - **Clássico - Marcos**: 3 landmarks (Fácil)
+   - **Desafio - Reputação**: 15 reputação (Médio)
+   - **Modo Sobrevivência**: 25 turnos (Difícil)
+   - **Desafio Infinito**: Sem fim (Extremo)
+   - **Speed Run**: 5 landmarks (Médio)
+   - **Mestre Construtor**: 8 landmarks (Extremo)
+   - **Status Lendário**: 25 reputação (Extremo)
+   - **Teste de Resistência**: 50 turnos (Extremo)
+3. **Início**: O jogo inicia automaticamente com o modo selecionado
+4. **Jogo Rápido**: Botão para iniciar com configurações padrão
+
+### **Escalonamento no Modo Infinito**
+
+No modo infinito, o jogo fica progressivamente mais desafiador:
+
+- **Ciclos de 10 turnos**: A cada 10 turnos, o jogo escala
+- **Eventos de Crise**: Maior frequência de eventos negativos
+- **Custos Crescentes**: Cartas ficam mais caras ao longo do tempo
+- **Produção Reduzida**: Estruturas podem produzir menos recursos
+- **Histórico**: O sistema registra cada ciclo de escalonamento
+
+### **Interface Adaptativa**
+
+A interface do jogo se adapta automaticamente ao modo selecionado:
+
+- **Sidebar**: Mostra apenas a condição de vitória ativa
+- **Progresso**: Barras de progresso ajustam aos valores configurados
+- **Indicadores**: Cores e ícones mudam conforme o progresso
+- **Modo Infinito**: Mostra o número do turno atual
+
+## Próximos Passos 

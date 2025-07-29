@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { CardManager } from './CardManager';
+import { PackManager } from './PackManager';
+import { EventManager } from './EventManager';
+import { DailyRotationManager } from './DailyRotationManager';
 import { UserStatsPanel } from './UserStatsPanel';
 import { GameStatsPanel } from './GameStatsPanel';
 import { MonetizationPanel } from './MonetizationPanel';
@@ -153,8 +156,11 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs defaultValue="cards" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="cards">Gerenciar Cartas</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="cards">Cartas</TabsTrigger>
+            <TabsTrigger value="packs">Packs</TabsTrigger>
+            <TabsTrigger value="events">Eventos</TabsTrigger>
+            <TabsTrigger value="rotation">Rotação Diária</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="stats">Estatísticas</TabsTrigger>
             <TabsTrigger value="advanced-stats">Estatísticas Avançadas</TabsTrigger>
@@ -163,6 +169,18 @@ export const AdminDashboard: React.FC = () => {
 
           <TabsContent value="cards" className="mt-6">
             <CardManager onStatsUpdate={fetchDashboardStats} />
+          </TabsContent>
+
+          <TabsContent value="packs" className="mt-6">
+            <PackManager />
+          </TabsContent>
+
+          <TabsContent value="events" className="mt-6">
+            <EventManager />
+          </TabsContent>
+
+          <TabsContent value="rotation" className="mt-6">
+            <DailyRotationManager />
           </TabsContent>
 
           <TabsContent value="users" className="mt-6">

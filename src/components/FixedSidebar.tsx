@@ -27,6 +27,8 @@ interface SidebarProps {
     production: number;
     landmarks: number;
     turn: number;
+    mode: 'reputation' | 'landmarks' | 'elimination' | 'infinite';
+    value: number;
   };
   history: string[];
   isVisible: boolean;
@@ -69,7 +71,7 @@ const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, hi
     <>
       {/* Sidebar */}
       <aside className={`
-        bg-surface border-r border-border z-30 h-screen transition-all duration-300 fixed left-0 top-0
+        bg-surface border-r border-border z-30 h-[calc(100vh-4rem)] transition-all duration-300 fixed left-0 top-16
         ${isVisible ? 'w-72' : 'w-0 overflow-hidden'}
       `}>
         <div className="p-2 h-full overflow-hidden flex flex-col">
@@ -109,29 +111,37 @@ const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, hi
           <div className="surface-elevated p-2 space-y-1 mt-2">
             <h3 className="text-sm font-bold text-text-primary flex items-center gap-1.5">
               <Trophy className="w-3 h-3 text-secondary" />
-              Condições de Vitória
+              Condição de Vitória
             </h3>
           
             <div className="space-y-1 text-xs">
-              <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.landmarks >= 3 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>3 Marcos Históricos</span>
-                <span className="font-bold">{victory.landmarks}/3</span>
-              </div>
+              {victory.mode === 'landmarks' && (
+                <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.landmarks >= victory.value ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
+                  <span>{victory.value} Marcos Históricos</span>
+                  <span className="font-bold">{victory.landmarks}/{victory.value}</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.production >= 1000 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>1000 Produção Total</span>
-                <span className="font-bold">{victory.production}/1000</span>
-              </div>
+              {victory.mode === 'reputation' && (
+                <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.reputation >= victory.value ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
+                  <span>{victory.value} Reputação</span>
+                  <span className="font-bold">{victory.reputation}/{victory.value}</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.reputation >= 10 ? 'bg-farm-color/20 text-farm-color' : 'text-text-secondary'}`}>
-                <span>10 Reputação</span>
-                <span className="font-bold">{victory.reputation}/10</span>
-              </div>
+              {victory.mode === 'elimination' && (
+                <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.turn >= 20 ? 'bg-destructive/20 text-destructive' : 'text-text-secondary'}`}>
+                  <span>Sobreviver 20 Turnos</span>
+                  <span className="font-bold">{victory.turn}/20</span>
+                </div>
+              )}
               
-              <div className={`flex items-center justify-between p-1.5 rounded text-xs ${victory.turn >= 20 ? 'bg-destructive/20 text-destructive' : 'text-text-secondary'}`}>
-                <span>Sobreviver 20 Turnos</span>
-                <span className="font-bold">{victory.turn}/20</span>
-              </div>
+              {victory.mode === 'infinite' && (
+                <div className="flex items-center justify-between p-1.5 rounded text-xs text-text-secondary">
+                  <span>Modo Infinito</span>
+                  <span className="font-bold">Turno {victory.turn}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -161,6 +171,7 @@ const FixedSidebar: React.FC<SidebarProps> = ({ resources, progress, victory, hi
               </div>
             </div>
           </div>
+
         </div>
       </aside>
     </>

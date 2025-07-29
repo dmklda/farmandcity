@@ -35,6 +35,8 @@ interface GameSettings {
   gameRules: string;
   contactEmail: string;
   supportDiscord: string;
+  victoryMode: string;
+  victoryValue: number;
 }
 
 export const SettingsPage: React.FC = () => {
@@ -52,7 +54,9 @@ export const SettingsPage: React.FC = () => {
     },
     gameRules: 'Regras padrão do jogo Famand...',
     contactEmail: 'support@famand.com',
-    supportDiscord: 'https://discord.gg/famand'
+    supportDiscord: 'https://discord.gg/famand',
+    victoryMode: 'reputation',
+    victoryValue: 1000
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,7 +94,9 @@ export const SettingsPage: React.FC = () => {
           },
           gameRules: settingValue.gameRules || 'Regras padrão do jogo Famand...',
           contactEmail: settingValue.contactEmail || 'support@famand.com',
-          supportDiscord: settingValue.supportDiscord || 'https://discord.gg/famand'
+          supportDiscord: settingValue.supportDiscord || 'https://discord.gg/famand',
+          victoryMode: settingValue.victoryMode || 'reputation',
+          victoryValue: settingValue.victoryValue || 1000
         });
       }
     } catch (error) {
@@ -142,7 +148,9 @@ export const SettingsPage: React.FC = () => {
         },
         gameRules: 'Regras padrão do jogo Famand...',
         contactEmail: 'support@famand.com',
-        supportDiscord: 'https://discord.gg/famand'
+        supportDiscord: 'https://discord.gg/famand',
+        victoryMode: 'reputation',
+        victoryValue: 1000
       });
       toast.success('Configurações redefinidas para padrão');
     }
@@ -334,6 +342,44 @@ export const SettingsPage: React.FC = () => {
               value={settings.gameRules}
               onChange={(e) => setSettings({ ...settings, gameRules: e.target.value })}
               rows={4}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Victory Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Configurações de Vitória
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="victoryMode">Condição de Vitória</Label>
+            <select
+              id="victoryMode"
+              title="Condição de Vitória"
+              value={settings.victoryMode}
+              onChange={e => setSettings(s => ({ ...s, victoryMode: e.target.value as any }))}
+              className="block w-full border rounded p-2 mt-1"
+            >
+              <option value="reputation">Reputação</option>
+              <option value="landmarks">Marcos</option>
+              <option value="elimination">Eliminação</option>
+              <option value="infinite">Infinito</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="victoryValue">Valor para Vitória</Label>
+            <Input
+              id="victoryValue"
+              type="number"
+              min={1}
+              value={settings.victoryValue}
+              onChange={e => setSettings(s => ({ ...s, victoryValue: parseInt(e.target.value) }))}
+              className="mt-1"
             />
           </div>
         </CardContent>

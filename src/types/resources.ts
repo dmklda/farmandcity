@@ -5,4 +5,5 @@ export interface Resources {
   food: number;       // Alimentação
   materials: number;  // Materiais de construção
   population: number; // População
+  reputation?: number; // Reputação (opcional)
 } 

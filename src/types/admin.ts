@@ -20,6 +20,7 @@ export interface AdminCard {
   art_url?: string | null;
   frame_url?: string | null;
   is_active: boolean;
+  is_starter: boolean;
   tags?: string[] | null;
   created_at: string;
   updated_at: string;
@@ -52,4 +53,15 @@ export interface GameStats {
   times_used: number;
   wins_with_card: number;
   last_used: string;
+}
+
+export interface PlayerDeck {
+  id: string;
+  player_id: string;
+  name: string;
+  card_ids: string[];
+  is_active: boolean;
+  is_starter_deck: boolean;
+  created_at: string;
+  updated_at: string;
 }

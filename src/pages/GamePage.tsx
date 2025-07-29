@@ -1,0 +1,651 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
+
+import AuthPage from '../components/AuthPage';
+import FixedSidebar from '../components/FixedSidebar';
+import EnhancedTopBar from '../components/EnhancedTopBar';
+import EnhancedGridBoard from '../components/EnhancedGridBoard';
+import EnhancedHand from '../components/EnhancedHand';
+import SavedGamesModal from '../components/SavedGamesModal';
+import PlayerStatsModal from '../components/PlayerStatsModal';
+
+import { useGameState } from '../hooks/useGameState';
+import { usePlayerDecks } from '../hooks/usePlayerDecks';
+import { useAppContext } from '../contexts/AppContext';
+import { Card } from '../types/card';
+
+const GamePage: React.FC = () => {
+  // Estados de autenticação
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Estados de UI
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [showStats, setShowStats] = useState(false);
+  const [showSavedGames, setShowSavedGames] = useState(false);
+
+  // Hook principal do jogo que integra com Supabase
+  const gameState = useGameState();
+  const { activeDeck, decks, loading: decksLoading } = usePlayerDecks();
+  const { setCurrentView } = useAppContext();
+
+  // Função para iniciar novo jogo
+  const handleNewGame = () => {
+    if (window.confirm('Tem certeza que deseja iniciar um novo jogo? O jogo atual será perdido.')) {
+      gameState.clearSavedGame();
+      window.location.reload(); // Recarregar para iniciar novo jogo
+    }
+  };
+
+  // Handlers para os botões da TopBar
+  const handleShowStats = () => {
+    setShowStats(true);
+  };
+
+  const handleShowSavedGames = () => {
+    setShowSavedGames(true);
+  };
+
+  const handleGoHome = () => {
+    setCurrentView('home');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentView('home');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    // Usuário será atualizado automaticamente pelo listener
+  };
+
+  // Handlers para o jogo
+  const handleNextPhase = () => {
+    gameState.handleNextPhase();
+  };
+
+  const handleSelectFarm = (x: number, y: number) => {
+    gameState.handleSelectCell('farm', x, y);
+  };
+
+  const handleSelectCity = (x: number, y: number) => {
+    gameState.handleSelectCell('city', x, y);
+  };
+
+  const handleSelectEvent = (x: number, y: number) => {
+    gameState.handleSelectCell('event', x, y);
+  };
+
+  const handleSelectCard = (card: Card) => {
+    gameState.handleSelectCard(card);
+  };
+
+  const handleLoadGame = () => {
+    // TODO: Implementar carregamento de jogo
+    console.log('Carregar jogo');
+  };
+
+  // Setup de autenticação
+  useEffect(() => {
+    console.log('GamePage: Iniciando setup de autenticação');
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: string, session: Session | null) => {
+        console.log('GamePage: Auth state change:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+      console.log('GamePage: Session inicial:', session?.user?.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Logs de debug para estados
+  useEffect(() => {
+    console.log('GamePage: Estado atualizado:', {
+      loading,
+      user: user?.email,
+      gameStateLoading: gameState.loading,
+      decksLoading,
+      activeDeck: activeDeck?.name,
+      activeDeckCards: activeDeck?.cards?.length
+    });
+  }, [loading, user, gameState.loading, decksLoading, activeDeck]);
+
+  // Loading state
+  if (loading || gameState.loading || decksLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando jogo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth page for non-authenticated users
+  if (!user) {
+    return <AuthPage onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  // Verificar se o usuário tem um deck ativo
+  if (!activeDeck || activeDeck.cards.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Nenhum Deck Ativo</h2>
+          <p className="text-muted-foreground mb-6">
+            Você precisa selecionar um deck ativo na página inicial antes de jogar.
+          </p>
+          <button
+            onClick={() => setCurrentView('home')}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+          >
+            Voltar à Página Inicial
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar se o jogo ainda está carregando
+  if (gameState.loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">Carregando Jogo...</h2>
+          <p className="text-muted-foreground">
+            Preparando seu deck e cartas...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Layout principal para usuários autenticados
+  return (
+    <div className="h-screen bg-background w-full overflow-hidden">
+      {/* Fixed Sidebar */}
+      <FixedSidebar
+        resources={gameState.sidebarProps.resources}
+        progress={gameState.sidebarProps.progress}
+        victory={gameState.sidebarProps.victory}
+        history={gameState.sidebarProps.history}
+        isVisible={sidebarVisible}
+        setIsVisible={setSidebarVisible}
+      />
+
+      {/* Fixed TopBar */}
+      <EnhancedTopBar
+        turn={gameState.topBarProps.turn}
+        turnMax={gameState.topBarProps.turnMax}
+        buildCount={gameState.topBarProps.buildCount}
+        buildMax={gameState.topBarProps.buildMax}
+        phase={gameState.topBarProps.phase}
+        onNextPhase={handleNextPhase}
+        discardMode={gameState.topBarProps.discardMode}
+        resources={gameState.topBarProps.resources}
+        productionPerTurn={gameState.topBarProps.productionPerTurn}
+        productionDetails={gameState.topBarProps.productionDetails}
+        onToggleSidebar={() => setSidebarVisible((v) => !v)}
+        onShowStats={handleShowStats}
+        onShowSavedGames={handleShowSavedGames}
+        onGoHome={handleGoHome}
+        onLogout={handleLogout}
+        userEmail={user?.email}
+        activeDeck={activeDeck}
+        // Props do sistema de dado
+        onDiceRoll={gameState.handleDiceRoll}
+        diceUsed={gameState.diceUsed}
+        diceResult={gameState.diceResult}
+      />
+
+      {/* Main Content Area - Scrollable with proper spacing */}
+      <div
+        className="h-full overflow-y-auto overflow-x-hidden p-3"
+        style={{
+          paddingLeft: sidebarVisible ? '300px' : '24px',
+          paddingTop: '64px', // Space for top bar
+          paddingBottom: '0px', // Space for hand
+          transition: 'padding-left 0.3s',
+        }}
+      >
+        <EnhancedGridBoard
+          farmGrid={gameState.gridBoardProps.farmGrid}
+          cityGrid={gameState.gridBoardProps.cityGrid}
+          eventGrid={gameState.gridBoardProps.eventGrid}
+          farmCount={gameState.gridBoardProps.farmCount}
+          farmMax={gameState.gridBoardProps.farmMax}
+          cityCount={gameState.gridBoardProps.cityCount}
+          cityMax={gameState.gridBoardProps.cityMax}
+          eventCount={gameState.gridBoardProps.eventCount}
+          eventMax={gameState.gridBoardProps.eventMax}
+          landmarkCount={gameState.gridBoardProps.landmarkCount}
+          landmarkMax={gameState.gridBoardProps.landmarkMax}
+          onSelectFarm={handleSelectFarm}
+          onSelectCity={handleSelectCity}
+          onSelectEvent={handleSelectEvent}
+          highlightFarm={gameState.gridBoardProps.highlightFarm}
+          highlightCity={gameState.gridBoardProps.highlightCity}
+          highlightEvent={gameState.gridBoardProps.highlightEvent}
+        />
+      </div>
+
+      {/* Fixed Hand at Bottom with proper z-index */}
+      <div className="fixed bottom-0 left-0 right-0 z-30">
+        <EnhancedHand
+          key={`hand-${gameState.handProps.deckSize}-${gameState.handProps.hand.length}`}
+          hand={gameState.handProps.hand}
+          onSelectCard={handleSelectCard}
+          selectedCardId={gameState.handProps.selectedCardId}
+          canPlayCard={gameState.handProps.canPlayCard}
+          sidebarVisible={sidebarVisible}
+          deckSize={gameState.handProps.deckSize}
+        />
+      </div>
+
+      {/* Modal de descarte manual */}
+      {gameState.discardModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-amber-500 shadow-2xl">
+            <div className="text-center mb-8">
+              <h3 className="text-3xl font-bold text-white mb-3">Descarte obrigatório</h3>
+              <p className="text-gray-300 text-lg">Escolha uma carta para descartar:</p>
+            </div>
+            <div className="flex gap-6 justify-center flex-wrap">
+              {gameState.game.hand.map((card, index) => (
+                <div
+                  key={index}
+                  className="cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-lg"
+                  onClick={() => gameState.handleDiscardCard(card)}
+                >
+                  <div className="bg-gradient-to-br from-green-600 to-green-700 border-2 border-green-400 rounded-lg p-4 min-w-[140px] text-center shadow-lg">
+                    <div className="text-white font-semibold text-sm mb-2 leading-tight">{card.name}</div>
+                    <div className="text-green-200 text-xs font-medium">
+                      {card.type} | {card.rarity}
+                    </div>
+                    <div className="mt-2 text-green-100 text-xs opacity-75">
+                      {card.cost.coins ? `💰 ${card.cost.coins}` : ''}
+                      {card.cost.food ? ` 🍎 ${card.cost.food}` : ''}
+                      {card.cost.materials ? ` 🧱 ${card.cost.materials}` : ''}
+                      {card.cost.population ? ` 👥 ${card.cost.population}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center mt-6">
+              <p className="text-gray-400 text-sm">
+                Clique em uma carta para descartá-la
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de jogos salvos */}
+      {showSavedGames && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-green-500 shadow-2xl">
+            <div className="text-center mb-6">
+              <h3 className="text-3xl font-bold text-white mb-3">💾 Jogos Salvos</h3>
+              <p className="text-gray-300">Gerencie suas partidas salvas</p>
+            </div>
+            
+            <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+              {/* Jogo atual */}
+              <div className="bg-slate-700 p-4 rounded-lg border-2 border-blue-500">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white">🎮 Jogo Atual</h4>
+                    <p className="text-gray-300 text-sm">Turno {gameState.game.turn} - {gameState.game.phase}</p>
+                    <p className="text-gray-400 text-xs">Última atualização: {new Date().toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-300">
+                      <div>💰 {gameState.game.resources.coins}</div>
+                      <div>🌾 {gameState.game.resources.food}</div>
+                      <div>🏗️ {gameState.game.resources.materials}</div>
+                      <div>👥 {gameState.game.resources.population}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Jogos salvos (exemplo) */}
+              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white">🏛️ Vitória por Marcos</h4>
+                    <p className="text-gray-300 text-sm">Turno 15 - 2/3 landmarks</p>
+                    <p className="text-gray-400 text-xs">Salvo em 25/01/2025 às 14:30</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-300">
+                      <div>💰 250</div>
+                      <div>🌾 45</div>
+                      <div>🏗️ 18</div>
+                      <div>👥 12</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white">⭐ Desafio Reputação</h4>
+                    <p className="text-gray-300 text-sm">Turno 8 - 12/15 reputação</p>
+                    <p className="text-gray-400 text-xs">Salvo em 24/01/2025 às 16:45</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-300">
+                      <div>💰 180</div>
+                      <div>🌾 30</div>
+                      <div>🏗️ 8</div>
+                      <div>👥 6</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h4 className="text-lg font-semibold text-white">⏰ Modo Sobrevivência</h4>
+                    <p className="text-gray-300 text-sm">Turno 22 - Sobrevivendo</p>
+                    <p className="text-gray-400 text-xs">Salvo em 23/01/2025 às 10:15</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-300">
+                      <div>💰 320</div>
+                      <div>🌾 60</div>
+                      <div>🏗️ 25</div>
+                      <div>👥 15</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowSavedGames(false)}
+                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => {
+                  // TODO: Implementar salvamento automático
+                  alert('Jogo salvo automaticamente!');
+                  setShowSavedGames(false);
+                }}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                💾 Salvar Agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de estatísticas do jogador */}
+      <PlayerStatsModal
+        isOpen={showStats}
+        onClose={() => setShowStats(false)}
+      />
+
+      {/* Modal de estatísticas do jogo */}
+      {showStats && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-blue-500 shadow-2xl">
+            <div className="text-center mb-6">
+              <h3 className="text-3xl font-bold text-white mb-3">📊 Estatísticas do Jogo</h3>
+              <p className="text-gray-300">Informações detalhadas sobre sua partida</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Recursos Atuais */}
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-white mb-3">💰 Recursos Atuais</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Moedas:</span>
+                    <span className="text-yellow-400 font-bold">{gameState.game.resources.coins}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Comida:</span>
+                    <span className="text-green-400 font-bold">{gameState.game.resources.food}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Materiais:</span>
+                    <span className="text-orange-400 font-bold">{gameState.game.resources.materials}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">População:</span>
+                    <span className="text-blue-400 font-bold">{gameState.game.resources.population}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Produção por Turno */}
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-white mb-3">⚙️ Produção por Turno</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Moedas:</span>
+                    <span className="text-yellow-400 font-bold">+{gameState.topBarProps.productionPerTurn.coins}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Comida:</span>
+                    <span className="text-green-400 font-bold">+{gameState.topBarProps.productionPerTurn.food}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Materiais:</span>
+                    <span className="text-orange-400 font-bold">+{gameState.topBarProps.productionPerTurn.materials}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">População:</span>
+                    <span className="text-blue-400 font-bold">+{gameState.topBarProps.productionPerTurn.population}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progresso */}
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-white mb-3">📈 Progresso</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Reputação:</span>
+                    <span className="text-purple-400 font-bold">{gameState.game.playerStats.reputation}/{gameState.sidebarProps.progress.reputationMax}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Produção Total:</span>
+                    <span className="text-cyan-400 font-bold">{gameState.game.playerStats.totalProduction}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Marcos:</span>
+                    <span className="text-indigo-400 font-bold">{gameState.game.playerStats.landmarks}/{gameState.sidebarProps.progress.landmarksMax}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Turno:</span>
+                    <span className="text-white font-bold">{gameState.game.turn}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações do Deck */}
+              <div className="bg-slate-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-white mb-3">🃏 Deck Ativo</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Nome:</span>
+                    <span className="text-white font-bold">{activeDeck?.name || 'Nenhum'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Cartas no Deck:</span>
+                    <span className="text-white font-bold">{gameState.game.deck.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Cartas na Mão:</span>
+                    <span className="text-white font-bold">{gameState.game.hand.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Fase Atual:</span>
+                    <span className="text-white font-bold capitalize">{gameState.game.phase}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={() => setShowStats(false)}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de notificação de erros */}
+      {gameState.error && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg shadow-lg">
+            {gameState.error}
+          </div>
+        </div>
+      )}
+
+      {/* Highlight/Feedback visual */}
+      {gameState.highlight && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg">
+            {gameState.highlight}
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de resumo de produção */}
+      {gameState.productionSummary && (
+        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg border">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🌾</span>
+              <span className="text-sm font-medium">{gameState.productionSummary}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de resumo de ação */}
+      {gameState.actionSummary && (
+        <div className="fixed top-44 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg border">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">⚡</span>
+              <span className="text-sm font-medium">{gameState.actionSummary}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de resultado do dado - TEMPORÁRIO */}
+      {gameState.diceResult && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg border animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🎲</span>
+              <span className="text-sm font-medium">Dado: {gameState.diceResult}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de produção do dado - TEMPORÁRIO */}
+      {gameState.diceProductionSummary && (
+        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-orange-600 text-white px-4 py-2 rounded-lg shadow-lg border animate-pulse">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🎯</span>
+              <span className="text-sm font-medium">{gameState.diceProductionSummary}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de defesa pendente */}
+      {gameState.pendingDefense && (
+        <div className="fixed top-80 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg border">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">🛡️</span>
+              <span className="text-sm font-medium">Crise detectada! Use carta de defesa: {gameState.pendingDefense.name}</span>
+              <button
+                onClick={() => gameState.handleActivateDefense?.(gameState.pendingDefense!)}
+                className="ml-2 px-2 py-1 bg-white text-red-600 rounded text-xs hover:bg-gray-100"
+              >
+                Usar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de vitória */}
+      {gameState.victory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-green-600 text-white p-8 rounded-lg shadow-lg border max-w-md text-center">
+            <div className="text-4xl mb-4">🏆</div>
+            <h2 className="text-2xl font-bold mb-4">Vitória!</h2>
+            <p className="text-lg mb-6">{gameState.victory}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium"
+            >
+              Jogar Novamente
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sistema de derrota */}
+      {gameState.defeat && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-red-600 text-white p-8 rounded-lg shadow-lg border max-w-md text-center">
+            <div className="text-4xl mb-4">💀</div>
+            <h2 className="text-2xl font-bold mb-4">Derrota!</h2>
+            <p className="text-lg mb-6">{gameState.defeat}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-white text-red-600 rounded hover:bg-gray-100 font-medium"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default GamePage;

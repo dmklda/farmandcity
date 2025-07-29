@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { BarChart3, Trophy, Clock, Target, TrendingUp, Calendar } from 'lucide-react';
+import { BarChart3, Trophy, Clock, Target, TrendingUp, Calendar, Building2, Landmark, Star, BarChart } from 'lucide-react';
 
 interface GameHistory {
   id: string;
@@ -117,23 +117,25 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
           <div className="flex gap-4 mt-4">
             <button
               onClick={() => setActiveTab('stats')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 activeTab === 'stats' 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
-              📊 Estatísticas
+              <BarChart3 size={16} />
+              Estatísticas
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 activeTab === 'history' 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
               }`}
             >
-              📈 Histórico
+              <TrendingUp size={16} />
+              Histórico
             </button>
           </div>
         </div>
@@ -196,22 +198,32 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                     <h3 className="font-semibold text-foreground mb-3">Estatísticas Detalhadas</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">🏗️ Total de Construções:</span>
-                        <span className="font-medium">{playerStats.totalBuildings}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">🏛️ Total de Marcos:</span>
-                        <span className="font-medium">{playerStats.totalLandmarks}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">⏱️ Tempo Médio por Jogo:</span>
-                        <span className="font-medium">
-                          {playerStats.averageGameTime ? `${playerStats.averageGameTime} min` : 'N/A'}
+                        <span className="text-muted-foreground flex items-center gap-2">
+                          <Building2 size={16} />
+                          Total de Construções:
                         </span>
+                        <span className="text-foreground font-medium">{playerStats.totalBuildings}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">🎯 Total de Turnos Jogados:</span>
-                        <span className="font-medium">{playerStats.totalTurns}</span>
+                        <span className="text-muted-foreground flex items-center gap-2">
+                          <Landmark size={16} />
+                          Total de Marcos:
+                        </span>
+                        <span className="text-foreground font-medium">{playerStats.totalLandmarks}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground flex items-center gap-2">
+                          <Target size={16} />
+                          Total de Turnos Jogados:
+                        </span>
+                        <span className="text-foreground font-medium">{playerStats.totalTurns}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground flex items-center gap-2">
+                          <Clock size={16} />
+                          Tempo Médio por Jogo:
+                        </span>
+                        <span className="text-foreground font-medium">{playerStats.averageGameTime} min</span>
                       </div>
                     </div>
                   </div>

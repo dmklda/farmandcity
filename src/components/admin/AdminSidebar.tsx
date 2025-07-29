@@ -14,7 +14,10 @@ import {
   TrendingUp,
   Package,
   LogOut,
-  User
+  User,
+  Gift,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/button';
@@ -42,6 +45,24 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isCollapsed, onToggl
       description: 'Criar e editar cartas'
     },
     {
+      title: 'Packs e Boosters',
+      icon: Package,
+      path: '/admin/packs',
+      description: 'Gerenciar pacotes'
+    },
+    {
+      title: 'Eventos',
+      icon: Gift,
+      path: '/admin/events',
+      description: 'Eventos especiais'
+    },
+    {
+      title: 'Rotação Diária',
+      icon: Calendar,
+      path: '/admin/rotation',
+      description: 'Ciclo diário de cartas'
+    },
+    {
       title: 'Usuários',
       icon: Users,
       path: '/admin/users',
@@ -64,12 +85,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isCollapsed, onToggl
       icon: DollarSign,
       path: '/admin/monetization',
       description: 'Pacotes e vendas'
-    },
-    {
-      title: 'Booster Packs',
-      icon: Package,
-      path: '/admin/boosters',
-      description: 'Gerenciar pacotes'
     },
     {
       title: 'Relatórios',

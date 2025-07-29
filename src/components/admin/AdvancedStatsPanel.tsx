@@ -30,39 +30,89 @@ export const AdvancedStatsPanel: React.FC = () => {
     try {
       setLoading(true);
 
-      // Simular dados de estatísticas avançadas
-      // Em produção, isso viria de queries complexas no Supabase
-      const mockStats: GameStats = {
-        totalGames: 1247,
-        activePlayers: 89,
-        averageGameDuration: 23.5,
-        mostUsedCards: [
-          { card_name: 'Campo de Trigo', usage_count: 342 },
-          { card_name: 'Mercado', usage_count: 298 },
-          { card_name: 'Casa', usage_count: 267 },
-          { card_name: 'Colheita', usage_count: 234 },
-          { card_name: 'Oficina Simples', usage_count: 198 }
-        ],
-        winRates: [
-          { player_name: 'Player1', wins: 15, total_games: 20 },
-          { player_name: 'Player2', wins: 12, total_games: 18 },
-          { player_name: 'Player3', wins: 8, total_games: 15 },
-          { player_name: 'Player4', wins: 6, total_games: 12 },
-          { player_name: 'Player5', wins: 4, total_games: 10 }
-        ],
-        revenueByCard: [
-          { card_name: 'Pacote Lendário', revenue: 1250 },
-          { card_name: 'Pacote Ultra', revenue: 890 },
-          { card_name: 'Pacote Raro', revenue: 567 },
-          { card_name: 'Pacote Incomum', revenue: 234 },
-          { card_name: 'Pacote Comum', revenue: 123 }
-        ],
-        dailyActiveUsers: 45,
-        weeklyActiveUsers: 156,
-        monthlyActiveUsers: 423
+      // Buscar dados reais do Supabase
+      const [gamesData, profilesData, gameStatsData, purchaseData, cardsData] = await Promise.all([
+        supabase.from('games').select('*'),
+        supabase.from('profiles').select('*'),
+        supabase.from('game_stats').select('*, cards(name)').order('times_used', { ascending: false }),
+        supabase.from('pack_purchases').select('*, booster_packs(name, price_coins)'),
+        supabase.from('cards').select('*')
+      ]);
+
+      // Calcular estatísticas de jogos
+      const totalGames = gamesData.data?.length || 0;
+      const activePlayers = profilesData.data?.length || 0;
+      
+      // Calcular duração média dos jogos
+      const gameDurations = gamesData.data?.map(game => {
+        const createdAt = new Date(game.created_at);
+        const updatedAt = new Date(game.updated_at);
+        return (updatedAt.getTime() - createdAt.getTime()) / (1000 * 60); // em minutos
+      }).filter(duration => duration > 0) || [];
+      
+      const averageGameDuration = gameDurations.length > 0 
+        ? gameDurations.reduce((sum, duration) => sum + duration, 0) / gameDurations.length 
+        : 0;
+
+      // Cartas mais usadas
+      const mostUsedCards = gameStatsData.data?.slice(0, 5).map(stat => ({
+        card_name: stat.cards?.name || 'Carta Desconhecida',
+        usage_count: stat.times_used || 0
+      })) || [];
+
+      // Taxa de vitória por jogador
+      const winRates = gameStatsData.data?.slice(0, 5).map(stat => ({
+        player_name: `Jogador ${stat.user_id?.slice(0, 8)}`,
+        wins: stat.wins_with_card || 0,
+        total_games: stat.times_used || 0
+      })) || [];
+
+      // Receita por pacote
+      const revenueByCard = purchaseData.data?.reduce((acc, purchase) => {
+        const packName = purchase.booster_packs?.name || 'Pacote Desconhecido';
+        const existing = acc.find(item => item.card_name === packName);
+        if (existing) {
+          existing.revenue += purchase.booster_packs?.price_coins || 0;
+        } else {
+          acc.push({
+            card_name: packName,
+            revenue: purchase.booster_packs?.price_coins || 0
+          });
+        }
+        return acc;
+      }, [] as Array<{ card_name: string; revenue: number }>) || [];
+
+      // Usuários ativos por período
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const dailyActiveUsers = profilesData.data?.filter(profile => 
+        new Date(profile.updated_at) >= oneDayAgo
+      ).length || 0;
+
+      const weeklyActiveUsers = profilesData.data?.filter(profile => 
+        new Date(profile.updated_at) >= oneWeekAgo
+      ).length || 0;
+
+      const monthlyActiveUsers = profilesData.data?.filter(profile => 
+        new Date(profile.updated_at) >= oneMonthAgo
+      ).length || 0;
+
+      const realStats: GameStats = {
+        totalGames,
+        activePlayers,
+        averageGameDuration: Math.round(averageGameDuration * 10) / 10,
+        mostUsedCards,
+        winRates,
+        revenueByCard: revenueByCard.slice(0, 5),
+        dailyActiveUsers,
+        weeklyActiveUsers,
+        monthlyActiveUsers
       };
 
-      setStats(mockStats);
+      setStats(realStats);
     } catch (error) {
       console.error('Error fetching advanced stats:', error);
     } finally {

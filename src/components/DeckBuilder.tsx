@@ -37,10 +37,10 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
     const cardGroups: Record<string, { card: Card; owned: number; inDeck: number }> = {};
     
     playerCards.forEach(card => {
-      const baseId = card.id.split('_')[0]; // Remove sufixo de cópia
+      const baseId = card.id; // Usar ID completo
       if (!cardGroups[baseId]) {
         cardGroups[baseId] = {
-          card: { ...card, id: baseId }, // Usar ID base
+          card: { ...card, id: baseId }, // Usar ID completo
           owned: 0,
           inDeck: 0
         };

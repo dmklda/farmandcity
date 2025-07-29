@@ -80,6 +80,57 @@ export type Database = {
         }
         Relationships: []
       }
+      card_purchases: {
+        Row: {
+          card_id: string | null
+          currency_type: string
+          discount_percentage: number | null
+          event_id: string | null
+          id: string
+          player_id: string | null
+          price_coins: number | null
+          price_gems: number | null
+          purchased_at: string | null
+        }
+        Insert: {
+          card_id?: string | null
+          currency_type?: string
+          discount_percentage?: number | null
+          event_id?: string | null
+          id?: string
+          player_id?: string | null
+          price_coins?: number | null
+          price_gems?: number | null
+          purchased_at?: string | null
+        }
+        Update: {
+          card_id?: string | null
+          currency_type?: string
+          discount_percentage?: number | null
+          event_id?: string | null
+          id?: string
+          player_id?: string | null
+          price_coins?: number | null
+          price_gems?: number | null
+          purchased_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_purchases_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_purchases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "shop_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cards: {
         Row: {
           art_url: string | null
@@ -95,6 +146,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_reactive: boolean | null
+          is_starter: boolean | null
           name: string
           phase: Database["public"]["Enums"]["game_phase"]
           rarity: Database["public"]["Enums"]["card_rarity"]
@@ -118,6 +170,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_reactive?: boolean | null
+          is_starter?: boolean | null
           name: string
           phase: Database["public"]["Enums"]["game_phase"]
           rarity: Database["public"]["Enums"]["card_rarity"]
@@ -141,6 +194,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_reactive?: boolean | null
+          is_starter?: boolean | null
           name?: string
           phase?: Database["public"]["Enums"]["game_phase"]
           rarity?: Database["public"]["Enums"]["card_rarity"]
@@ -151,6 +205,50 @@ export type Database = {
           use_per_turn?: number | null
         }
         Relationships: []
+      }
+      daily_rotation_cards: {
+        Row: {
+          card_id: string | null
+          created_at: string | null
+          currency_type: string
+          discount_percentage: number | null
+          id: string
+          is_active: boolean | null
+          price_coins: number | null
+          price_gems: number | null
+          rotation_date: string
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string | null
+          currency_type?: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rotation_date: string
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string | null
+          currency_type?: string
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_coins?: number | null
+          price_gems?: number | null
+          rotation_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_rotation_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_history: {
         Row: {
@@ -289,6 +387,45 @@ export type Database = {
         }
         Relationships: []
       }
+      missions: {
+        Row: {
+          created_at: string | null
+          description: string
+          difficulty: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          mission_type: string
+          name: string
+          requirements: Json
+          rewards: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          difficulty: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mission_type: string
+          name: string
+          requirements: Json
+          rewards: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          difficulty?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mission_type?: string
+          name?: string
+          requirements?: Json
+          rewards?: Json
+        }
+        Relationships: []
+      }
       pack_purchases: {
         Row: {
           cards_received: Json | null
@@ -345,12 +482,46 @@ export type Database = {
         }
         Relationships: []
       }
+      player_currency: {
+        Row: {
+          coins: number | null
+          created_at: string | null
+          experience_points: number | null
+          gems: number | null
+          id: string
+          level: number | null
+          player_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          coins?: number | null
+          created_at?: string | null
+          experience_points?: number | null
+          gems?: number | null
+          id?: string
+          level?: number | null
+          player_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          coins?: number | null
+          created_at?: string | null
+          experience_points?: number | null
+          gems?: number | null
+          id?: string
+          level?: number | null
+          player_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       player_decks: {
         Row: {
           card_ids: string[]
           created_at: string
           id: string
           is_active: boolean
+          is_starter_deck: boolean | null
           name: string
           player_id: string
           updated_at: string
@@ -360,6 +531,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_starter_deck?: boolean | null
           name: string
           player_id: string
           updated_at?: string
@@ -369,11 +541,56 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_starter_deck?: boolean | null
           name?: string
           player_id?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      player_missions: {
+        Row: {
+          claimed_rewards: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          mission_id: string
+          player_id: string
+          progress: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          claimed_rewards?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          mission_id: string
+          player_id: string
+          progress?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          claimed_rewards?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          mission_id?: string
+          player_id?: string
+          progress?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -483,6 +700,207 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          discount_percentage: number | null
+          end_date: string
+          event_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          end_date: string
+          event_type: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          discount_percentage?: number | null
+          end_date?: string
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shop_items: {
+        Row: {
+          card_ids: string[] | null
+          created_at: string | null
+          currency_type: string
+          description: string | null
+          discount_percentage: number | null
+          event_id: string | null
+          guaranteed_cards: Json | null
+          id: string
+          is_active: boolean | null
+          is_daily_rotation: boolean | null
+          is_limited: boolean | null
+          item_type: string
+          name: string
+          price_coins: number | null
+          price_gems: number | null
+          rarity: string | null
+          rotation_date: string | null
+          sold_quantity: number | null
+          stock_quantity: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_ids?: string[] | null
+          created_at?: string | null
+          currency_type?: string
+          description?: string | null
+          discount_percentage?: number | null
+          event_id?: string | null
+          guaranteed_cards?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_daily_rotation?: boolean | null
+          is_limited?: boolean | null
+          item_type: string
+          name: string
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          rotation_date?: string | null
+          sold_quantity?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_ids?: string[] | null
+          created_at?: string | null
+          currency_type?: string
+          description?: string | null
+          discount_percentage?: number | null
+          event_id?: string | null
+          guaranteed_cards?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_daily_rotation?: boolean | null
+          is_limited?: boolean | null
+          item_type?: string
+          name?: string
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+          rotation_date?: string | null
+          sold_quantity?: number | null
+          stock_quantity?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shop_purchases: {
+        Row: {
+          event_id: string | null
+          id: string
+          item_id: string | null
+          item_type: string
+          items_received: Json | null
+          player_id: string | null
+          purchased_at: string | null
+          quantity: number | null
+          total_price_coins: number | null
+          total_price_gems: number | null
+        }
+        Insert: {
+          event_id?: string | null
+          id?: string
+          item_id?: string | null
+          item_type: string
+          items_received?: Json | null
+          player_id?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          total_price_coins?: number | null
+          total_price_gems?: number | null
+        }
+        Update: {
+          event_id?: string | null
+          id?: string
+          item_id?: string | null
+          item_type?: string
+          items_received?: Json | null
+          player_id?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          total_price_coins?: number | null
+          total_price_gems?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "shop_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shop_purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      special_events: {
+        Row: {
+          bonuses: Json | null
+          created_at: string | null
+          description: string | null
+          end_date: string
+          event_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          special_items: string[] | null
+          start_date: string
+        }
+        Insert: {
+          bonuses?: Json | null
+          created_at?: string | null
+          description?: string | null
+          end_date: string
+          event_type: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          special_items?: string[] | null
+          start_date: string
+        }
+        Update: {
+          bonuses?: Json | null
+          created_at?: string | null
+          description?: string | null
+          end_date?: string
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          special_items?: string[] | null
+          start_date?: string
+        }
+        Relationships: []
+      }
       system_logs: {
         Row: {
           created_at: string
@@ -528,6 +946,29 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      get_active_shop_events: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          description: string
+          event_type: string
+          discount_percentage: number
+        }[]
+      }
+      get_daily_rotation_cards: {
+        Args: { p_date?: string }
+        Returns: {
+          card_id: string
+          card_name: string
+          card_type: string
+          card_rarity: string
+          price_coins: number
+          price_gems: number
+          currency_type: string
+          discount_percentage: number
+        }[]
+      }
       get_starter_card_id: {
         Args: { card_slug: string }
         Returns: string
@@ -541,6 +982,24 @@ export type Database = {
           p_severity?: string
         }
         Returns: string
+      }
+      open_pack: {
+        Args: { pack_id: string }
+        Returns: Json
+      }
+      test_open_pack: {
+        Args: { pack_id: string }
+        Returns: Json
+      }
+      purchase_pack: {
+        Args: { pack_id: string }
+        Returns: {
+          success: boolean
+          purchase_id: string
+          cards_received: Json
+          remaining_coins: number
+          remaining_gems: number
+        }
       }
     }
     Enums: {

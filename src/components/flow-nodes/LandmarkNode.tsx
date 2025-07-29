@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeResizer } from '@xyflow/react';
-import { Crown, Plus } from 'lucide-react';
+import { Crown, Plus, Trophy } from 'lucide-react';
 import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
 
@@ -16,8 +16,21 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData & {landmarks?: Card[]} }> 
   return (
     <>
       <NodeResizer minWidth={200} minHeight={150} />
-      <div className="surface-elevated border-2 border-secondary w-full h-full flex flex-col">
-        <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5">
+      <div className="surface-elevated border-2 border-secondary w-full h-full flex flex-col relative overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            backgroundImage: `url('/assets/grids_background/Landmark_600x600.png')`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            width: '100%',
+            height: '100%'
+          }}
+        />
+        
+        <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5 relative z-10">
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <div className="grid grid-cols-[auto_auto] items-center gap-1">
               <Crown className="w-3 h-3 text-secondary" />
@@ -29,7 +42,7 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData & {landmarks?: Card[]} }> 
           </div>
         </div>
 
-        <div className="p-1 flex-1">
+        <div className="p-1 flex-1 relative z-10">
           <div className="grid grid-cols-3 gap-0.5 h-full">
             {Array.from({ length: 3 }, (_, i) => (
               <div
@@ -58,8 +71,9 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData & {landmarks?: Card[]} }> 
 
           {landmarkCount >= landmarkMax && (
             <div className="mt-1 p-1 bg-secondary/10 rounded-lg text-center">
-              <div className="text-secondary font-bold text-xs">
-                🎉 Vitória!
+              <div className="text-secondary font-bold text-xs flex items-center justify-center gap-1">
+                <Trophy size={12} />
+                Vitória!
               </div>
             </div>
           )}

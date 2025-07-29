@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color Palette - Medieval Fantasy Theme */
+  --primary: 220 100% 60%;        /* Blue for primary actions */
+  --primary-hover: 220 100% 55%;
+  --secondary: 43 96% 56%;         /* Gold for resources */
+  --accent: 142 76% 36%;           /* Green for farms */
+  --destructive: 0 84% 60%;        /* Red for warnings */
+  
+  /* Game-specific colors */
+  --farm-color: 142 76% 36%;       /* Green */
+  --city-color: 220 100% 60%;      /* Blue */
+  --magic-color: 271 81% 56%;      /* Purple */
+  --event-color: 25 95% 53%;       /* Orange */
+  
+  /* Background colors */
+  --background: 218 25% 15%;       /* Dark blue-gray */
+  --surface: 218 25% 18%;          /* Slightly lighter */
+  --surface-hover: 218 25% 22%;
+  --surface-card: 218 25% 20%;
+  
+  /* Text colors */
+  --text-primary: 0 0% 98%;        /* Almost white */
+  --text-secondary: 0 0% 72%;      /* Light gray */
+  --text-muted: 0 0% 45%;          /* Muted gray */
+  
+  /* Border colors */
+  --border: 218 15% 30%;
+  --border-hover: 218 15% 40%;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(220 100% 50%));
+  --gradient-card: linear-gradient(135deg, hsl(var(--surface-card)), hsl(218 25% 25%));
+  
+  /* Shadows */
+  --shadow-card: 0 4px 20px -4px hsl(218 25% 8% / 0.3);
+  --shadow-glow: 0 0 20px hsl(var(--primary) / 0.3);
+  
+  /* Transitions */
+  --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--text-primary));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom component classes */
+.card-interactive {
+  transition: var(--transition-spring);
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-glow);
+}
+
+.card-selected {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  box-shadow: var(--shadow-glow);
+}
+
+.resource-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: var(--transition-smooth);
+}
+
+.resource-chip:hover {
+  background: hsl(var(--surface-hover));
+  border-color: hsl(var(--border-hover));
+}
+
+.grid-cell {
+  background: hsl(var(--surface-card));
+  border: 2px dashed hsl(var(--border));
+  border-radius: 0.5rem;
+  transition: var(--transition-smooth);
+  position: relative;
+}
+
+.grid-cell:hover {
+  background: hsl(var(--surface-hover));
+  border-color: hsl(var(--border-hover));
+  transform: scale(1.02);
+}
+
+.grid-cell.available {
+  border-color: hsl(var(--accent));
+  background: hsl(var(--accent) / 0.1);
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: hsl(var(--text-primary));
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-card);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px -5px hsl(var(--primary) / 0.4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Sidebar animations */
+.sidebar {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card animations */
+@keyframes card-draw {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-enter {
+  animation: card-draw 0.3s ease-out;
+}
+
+@keyframes fade-in-slide {
+  from { opacity: 0; transform: translateY(40px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-fade-in-slide {
+  animation: fade-in-slide 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Game-specific utility classes */
+.surface-elevated {
+  background: hsl(var(--surface-card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+
+.text-accent-farm { color: hsl(var(--farm-color)); }
+.text-accent-city { color: hsl(var(--city-color)); }
+.text-accent-magic { color: hsl(var(--magic-color)); }
+.text-accent-event { color: hsl(var(--event-color)); }
+
+.bg-accent-farm { background: hsl(var(--farm-color) / 0.1); }
+.bg-accent-city { background: hsl(var(--city-color) / 0.1); }
+.bg-accent-magic { background: hsl(var(--magic-color) / 0.1); }
+.bg-accent-event { background: hsl(var(--event-color) / 0.1); }

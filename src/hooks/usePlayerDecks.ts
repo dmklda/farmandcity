@@ -6,8 +6,9 @@ interface PlayerDeck {
   id: string;
   player_id: string;
   name: string;
-  card_ids: string[];
+  card_ids: string[]; // Agora é UUID[]
   is_active: boolean;
+  is_starter_deck: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -23,16 +24,31 @@ export const usePlayerDecks = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchPlayerDecks();
+    // Só buscar decks se o usuário estiver autenticado
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        fetchPlayerDecks();
+      } else {
+        setLoading(false);
+        setDecks([]);
+        setActiveDeck(null);
+      }
+    };
+    
+    checkAuthAndFetch();
   }, []);
 
   const fetchPlayerDecks = async () => {
     try {
+      console.log('=== DEBUG: fetchPlayerDecks iniciado ===');
       setLoading(true);
       setError(null);
 
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
+      
+      console.log('Usuário autenticado:', user.data.user.id);
 
       // Buscar decks do jogador
       const { data: decksData, error: decksError } = await supabase
@@ -43,7 +59,10 @@ export const usePlayerDecks = () => {
 
       if (decksError) throw decksError;
 
+      console.log('Decks encontrados:', decksData);
+
       if (!decksData || decksData.length === 0) {
+        console.log('Usuário não possui decks ainda');
         setDecks([]);
         setActiveDeck(null);
         return;
@@ -53,12 +72,19 @@ export const usePlayerDecks = () => {
       const decksWithCards: DeckWithCards[] = [];
       
       for (const deck of decksData) {
-        if (deck.card_ids.length === 0) {
-          decksWithCards.push({ ...deck, cards: [] });
+        console.log(`Processando deck: ${deck.name}, card_ids:`, deck.card_ids);
+        
+        if (!deck.card_ids || deck.card_ids.length === 0) {
+          console.log(`Deck ${deck.name} está vazio`);
+          decksWithCards.push({ 
+            ...deck, 
+            cards: [],
+            is_starter_deck: false // Valor padrão se não existir no banco
+          });
           continue;
         }
 
-        // Buscar cartas do deck
+        // Buscar cartas do deck usando UUIDs
         const { data: cardsData, error: cardsError } = await supabase
           .from('cards')
           .select('*')
@@ -67,17 +93,27 @@ export const usePlayerDecks = () => {
 
         if (cardsError) {
           console.error('Error fetching cards for deck:', deck.name, cardsError);
-          decksWithCards.push({ ...deck, cards: [] });
+          decksWithCards.push({ 
+            ...deck, 
+            cards: [],
+            is_starter_deck: false // Valor padrão se não existir no banco
+          });
           continue;
         }
+
+        console.log(`Cartas encontradas para deck ${deck.name}:`, cardsData?.length);
+        console.log('Dados das cartas:', cardsData);
 
         // Converter cartas para o formato do jogo, respeitando as múltiplas cópias no deck
         const gameCards: Card[] = [];
         deck.card_ids.forEach((cardId, index) => {
+          console.log(`Processando card_id ${index}:`, cardId);
           const cardData = cardsData?.find(c => c.id === cardId);
+          console.log('Card data encontrada:', cardData);
+          
           if (cardData) {
-            gameCards.push({
-              id: `${cardData.id}_${index}`, // ID único para cada cópia no deck
+            const gameCard = {
+              id: cardData.id, // Usar UUID puro do banco
               name: cardData.name,
               type: cardData.type,
               cost: {
@@ -91,46 +127,103 @@ export const usePlayerDecks = () => {
               },
               rarity: cardData.rarity,
               activation: getActivationDescription(cardData),
-            });
+            };
+            console.log('Game card criada:', gameCard);
+            gameCards.push(gameCard);
+          } else {
+            console.warn(`❌ Carta não encontrada: ${cardId} no deck ${deck.name}`);
           }
         });
 
+        console.log(`Total de game cards criadas: ${gameCards.length}`);
+        console.log('Primeiras 3 game cards:', gameCards.slice(0, 3));
+
         const deckWithCards: DeckWithCards = {
           ...deck,
-          cards: gameCards
+          cards: gameCards,
+          is_starter_deck: false // Valor padrão se não existir no banco
         };
 
         decksWithCards.push(deckWithCards);
+        console.log(`Deck ${deck.name}: ${gameCards.length} cartas carregadas`);
 
         // Se for o deck ativo, definir como activeDeck
         if (deck.is_active) {
+          console.log(`✅ Definindo deck ativo: ${deck.name} com ${gameCards.length} cartas`);
+          console.log('Deck ativo completo:', deckWithCards);
           setActiveDeck(deckWithCards);
         }
       }
 
       setDecks(decksWithCards);
+      console.log('Todos os decks processados:', decksWithCards.map(d => ({ name: d.name, cards: d.cards.length, is_active: d.is_active })));
+      console.log('=== DEBUG: Final do fetchPlayerDecks ===');
+      console.log('activeDeck será definido como:', activeDeck);
 
-      // Se não há deck ativo, definir o primeiro como ativo
-      if (!activeDeck && decksWithCards.length > 0) {
+      // Verificar se há apenas um deck ativo
+      const activeDecks = decksWithCards.filter(deck => deck.is_active);
+      if (activeDecks.length > 1) {
+        console.warn(`Múltiplos decks ativos detectados: ${activeDecks.length}. Manter apenas o mais recente.`);
+        // Manter apenas o deck mais recente ativo
+        const mostRecentActive = activeDecks.sort((a, b) => 
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        )[0];
+        
+        // Desativar outros decks via API
+        for (const deck of activeDecks) {
+          if (deck.id !== mostRecentActive.id) {
+            try {
+              await supabase
+                .from('player_decks')
+                .update({ is_active: false })
+                .eq('id', deck.id);
+            } catch (err) {
+              console.error(`Erro ao desativar deck ${deck.name}:`, err);
+            }
+          }
+        }
+        
+        setActiveDeck(mostRecentActive);
+      } else if (activeDecks.length === 1) {
+        console.log('✅ Um deck ativo encontrado:', activeDecks[0].name);
+        setActiveDeck(activeDecks[0]);
+      } else if (decksWithCards.length > 0) {
+        // Se não há deck ativo, definir o primeiro como ativo
+        console.log('🔄 Nenhum deck ativo encontrado. Ativando o primeiro deck disponível.');
         setActiveDeck(decksWithCards[0]);
+        // Ativar o primeiro deck no banco
+        try {
+          await setActiveDeckById(decksWithCards[0].id);
+        } catch (err) {
+          console.error('Erro ao ativar primeiro deck:', err);
+        }
       }
 
     } catch (err: any) {
-      console.error('Error fetching player decks:', err);
+      console.error('❌ Error fetching player decks:', err);
       setError(err.message || 'Erro ao carregar decks do jogador');
+      setDecks([]);
+      setActiveDeck(null);
     } finally {
+      console.log('=== DEBUG: fetchPlayerDecks finalizado ===');
       setLoading(false);
     }
   };
 
-  const createDeck = async (name: string, cardIds: string[] = []) => {
+  const createDeck = async (name: string, cardIds: string[] = [], isStarterDeck: boolean = false) => {
     try {
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
 
-      // Validar limite de 28 cartas
-      if (cardIds.length > 28) {
-        throw new Error('Um deck não pode ter mais de 28 cartas');
+      // Validar limites baseado no tipo de deck
+      if (isStarterDeck) {
+        if (cardIds.length !== 38) {
+          throw new Error('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)');
+        }
+      } else {
+        if (cardIds.length < 10 || cardIds.length > 28) {
+          throw new Error('Deck customizado deve ter entre 10 e 28 cartas');
+        }
       }
 
       const { data, error } = await supabase
@@ -139,13 +232,16 @@ export const usePlayerDecks = () => {
           player_id: user.data.user.id,
           name,
           card_ids: cardIds,
-          is_active: false // Não ativar automaticamente
+          is_active: false, // Não ativar automaticamente
+          is_starter_deck: isStarterDeck
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      console.log(`Deck criado: ${name} com ${cardIds.length} cartas`);
+      
       // Recarregar decks
       await fetchPlayerDecks();
       return data;
@@ -157,9 +253,21 @@ export const usePlayerDecks = () => {
 
   const updateDeck = async (deckId: string, updates: Partial<Pick<PlayerDeck, 'name' | 'card_ids'>>) => {
     try {
-      // Validar limite de 28 cartas se card_ids está sendo atualizado
-      if (updates.card_ids && updates.card_ids.length > 28) {
-        throw new Error('Um deck não pode ter mais de 28 cartas');
+      // Buscar deck atual para verificar se é starter deck
+      const currentDeck = decks.find(d => d.id === deckId);
+      if (!currentDeck) throw new Error('Deck não encontrado');
+
+      // Validar limites baseado no tipo de deck
+      if (updates.card_ids) {
+        if (currentDeck.is_starter_deck) {
+          if (updates.card_ids.length !== 38) {
+            throw new Error('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)');
+          }
+        } else {
+          if (updates.card_ids.length < 10 || updates.card_ids.length > 28) {
+            throw new Error('Deck customizado deve ter entre 10 e 28 cartas');
+          }
+        }
       }
 
       const { error } = await supabase
@@ -169,6 +277,8 @@ export const usePlayerDecks = () => {
 
       if (error) throw error;
 
+      console.log(`Deck atualizado: ${updates.name || currentDeck.name}`);
+      
       // Recarregar decks
       await fetchPlayerDecks();
     } catch (err: any) {
@@ -193,6 +303,11 @@ export const usePlayerDecks = () => {
         throw new Error('Não é possível excluir o deck ativo. Ative outro deck primeiro.');
       }
 
+      // Verificar se não é o deck inicial (não pode ser deletado)
+      if (deckToDelete?.is_starter_deck) {
+        throw new Error('O deck inicial não pode ser excluído.');
+      }
+
       const { error } = await supabase
         .from('player_decks')
         .delete()
@@ -201,6 +316,8 @@ export const usePlayerDecks = () => {
 
       if (error) throw error;
 
+      console.log(`Deck deletado: ${deckToDelete?.name}`);
+      
       // Recarregar decks
       await fetchPlayerDecks();
     } catch (err: any) {
@@ -214,23 +331,32 @@ export const usePlayerDecks = () => {
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
 
-      // Primeiro, desativar todos os decks
-      const { error: deactivateError } = await supabase
-        .from('player_decks')
-        .update({ is_active: false })
-        .eq('player_id', user.data.user.id);
+      // Usar a função segura do Supabase para ativar o deck
+      const { error } = await supabase.rpc('activate_player_deck', {
+        deck_id: deckId
+      });
 
-      if (deactivateError) throw deactivateError;
+      if (error) {
+        console.error('Erro ao ativar deck via RPC:', error);
+        // Fallback para o método anterior se a função RPC não existir
+        const { error: deactivateError } = await supabase
+          .from('player_decks')
+          .update({ is_active: false })
+          .eq('player_id', user.data.user.id);
 
-      // Ativar o deck selecionado
-      const { error: activateError } = await supabase
-        .from('player_decks')
-        .update({ is_active: true })
-        .eq('id', deckId)
-        .eq('player_id', user.data.user.id);
+        if (deactivateError) throw deactivateError;
 
-      if (activateError) throw activateError;
+        const { error: activateError } = await supabase
+          .from('player_decks')
+          .update({ is_active: true })
+          .eq('id', deckId)
+          .eq('player_id', user.data.user.id);
 
+        if (activateError) throw activateError;
+      }
+
+      console.log(`Deck ativado: ${deckId}`);
+      
       // Recarregar decks
       await fetchPlayerDecks();
     } catch (err: any) {

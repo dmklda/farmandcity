@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, Zap, Lock } from 'lucide-react';
 import { Card } from '../types/card';
+import { getCardTypeIconPNG } from './IconComponentsPNG';
+import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from './IconComponentsPNG';
 
 interface EnhancedHandProps {
   hand: Card[];
@@ -9,6 +11,7 @@ interface EnhancedHandProps {
   selectedCardId?: string;
   canPlayCard?: (card: Card) => { playable: boolean; reason?: string };
   sidebarVisible?: boolean;
+  deckSize?: number;
 }
 
 interface CardDetailModalProps {
@@ -68,16 +71,28 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
             <h4 className="font-semibold text-text-primary">Custos:</h4>
             <div className="flex gap-3 text-sm">
               {(card.cost.coins || 0) > 0 && (
-                <span className="resource-chip text-secondary">💰 {card.cost.coins}</span>
+                <span className="resource-chip text-secondary flex items-center gap-1">
+                  <CoinsIconPNG size={16} />
+                  {card.cost.coins}
+                </span>
               )}
               {(card.cost.food || 0) > 0 && (
-                <span className="resource-chip text-farm-color">🌾 {card.cost.food}</span>
+                <span className="resource-chip text-farm-color flex items-center gap-1">
+                  <FoodsIconPNG size={16} />
+                  {card.cost.food}
+                </span>
               )}
               {(card.cost.materials || 0) > 0 && (
-                <span className="resource-chip text-event-color">🏗️ {card.cost.materials}</span>
+                <span className="resource-chip text-event-color flex items-center gap-1">
+                  <MaterialsIconPNG size={16} />
+                  {card.cost.materials}
+                </span>
               )}
               {(card.cost.population || 0) > 0 && (
-                <span className="resource-chip text-city-color">👥 {card.cost.population}</span>
+                <span className="resource-chip text-city-color flex items-center gap-1">
+                  <PopulationIconPNG size={16} />
+                  {card.cost.population}
+                </span>
               )}
             </div>
           </div>
@@ -173,28 +188,28 @@ const EnhancedCardComponent: React.FC<{
         {/* Center Content */}
         <div className="flex-1 flex flex-col items-center justify-center">
           {/* Type Indicator */}
-          <div className="text-xs mb-1">
-            {card.type === 'farm' && '🌾'}
-            {card.type === 'city' && '🏢'}
-            {card.type === 'magic' && '✨'}
-            {card.type === 'event' && '⚡'}
-          </div>
+                  <div className="text-xs mb-1">
+          {getCardTypeIconPNG(card.type, 16)}
+        </div>
           
           {/* Costs */}
           <div className="flex flex-wrap gap-0.5 justify-center">
             {(card.cost.coins || 0) > 0 && (
-              <span className="text-[8px] bg-secondary/30 text-secondary px-1 py-0.5 rounded">
-                💰{card.cost.coins}
+              <span className="text-[8px] bg-secondary/30 text-secondary px-1 py-0.5 rounded flex items-center gap-0.5">
+                <CoinsIconPNG size={8} />
+                {card.cost.coins}
               </span>
             )}
             {(card.cost.food || 0) > 0 && (
-              <span className="text-[8px] bg-farm-color/30 text-farm-color px-1 py-0.5 rounded">
-                🌾{card.cost.food}
+              <span className="text-[8px] bg-farm-color/30 text-farm-color px-1 py-0.5 rounded flex items-center gap-0.5">
+                <FoodsIconPNG size={8} />
+                {card.cost.food}
               </span>
             )}
             {(card.cost.materials || 0) > 0 && (
-              <span className="text-[8px] bg-event-color/30 text-event-color px-1 py-0.5 rounded">
-                🏗️{card.cost.materials}
+              <span className="text-[8px] bg-event-color/30 text-event-color px-1 py-0.5 rounded flex items-center gap-0.5">
+                <MaterialsIconPNG size={8} />
+                {card.cost.materials}
               </span>
             )}
           </div>
@@ -232,9 +247,19 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
   onSelectCard, 
   selectedCardId, 
   canPlayCard = () => ({ playable: true }),
-  sidebarVisible = false
+  sidebarVisible = false,
+  deckSize = 0
 }) => {
-  const [detailCard, setDetailCard] = useState<Card | null>(null);
+  console.log('🎮 EnhancedHand renderizado:', {
+    handLength: hand.length,
+    handCards: hand.map(c => c.name),
+    selectedCardId,
+    deckSize,
+    sidebarVisible,
+    handProps: hand
+  });
+
+  const [selectedCardForDetail, setSelectedCardForDetail] = useState<Card | null>(null);
 
   return (
     <>
@@ -253,7 +278,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
                 title="Deck"
               >
                 <div className="text-sm text-primary">🂠</div>
-                <div className="text-xs text-primary font-medium">23</div>
+                <div className="text-xs text-primary font-medium">{deckSize}</div>
               </div>
             </div>
 
@@ -275,7 +300,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
                     return typeof result === 'object' ? result.playable : result;
                   })()}
                   onSelect={() => onSelectCard(card)}
-                  onShowDetail={() => setDetailCard(card)}
+                  onShowDetail={() => setSelectedCardForDetail(card)}
                 />
               </div>
             ))}
@@ -312,9 +337,9 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
 
       {/* Detail Modal */}
       <CardDetailModal
-        card={detailCard}
-        isOpen={!!detailCard}
-        onClose={() => setDetailCard(null)}
+        card={selectedCardForDetail}
+        isOpen={!!selectedCardForDetail}
+        onClose={() => setSelectedCardForDetail(null)}
       />
     </>
   );
