@@ -27,7 +27,7 @@ interface SidebarProps {
     production: number;
     landmarks: number;
     turn: number;
-    mode: 'reputation' | 'landmarks' | 'elimination' | 'infinite';
+    mode: 'reputation' | 'landmarks' | 'elimination' | 'infinite' | 'complex';
     value: number;
   };
   history: string[];

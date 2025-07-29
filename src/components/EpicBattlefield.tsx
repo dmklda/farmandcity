@@ -4,6 +4,7 @@ import { Swords, Shield, Cloud, Plus, Eye, EyeOff, Trophy, Target, Zap } from 'l
 import { CardDetailModal } from './EnhancedHand';
 import { Card } from '../types/card';
 import { getCardTypeIconPNG, CityIconPNG, FarmIconPNG, LandmarkIconPNG, EventIconPNG, GameLogoPNG } from './IconComponentsPNG';
+import { CityTileGrid, FarmTileGrid, LandmarkTileGrid, EventTileGrid } from './TileGridComponents';
 import backgroundImage from '../assets/grid-board-background.jpg';
 import cityBackground from '../assets/grids_background/City_background.png';
 import farmBackground from '../assets/grids_background/Farm_background.png';
@@ -160,9 +161,19 @@ const CardSlot = ({
         transition={{ duration: 0.3 }}
       >
         {!hasCard ? (
-          <div className="flex flex-col items-center justify-center h-full text-white/60">
-            {getSlotIcon()}
-            <span className="text-xs mt-1 capitalize">{type}</span>
+          <div className="relative flex flex-col items-center justify-center h-full text-white/60">
+            {/* Tile background */}
+            <div className="absolute inset-0 rounded-lg overflow-hidden opacity-30">
+              {type === 'city' && <CityTileGrid />}
+              {type === 'farm' && <FarmTileGrid />}
+              {type === 'landmark' && <LandmarkTileGrid />}
+              {type === 'event' && <EventTileGrid />}
+            </div>
+            {/* Content overlay */}
+            <div className="relative z-10 flex flex-col items-center">
+              {getSlotIcon()}
+              <span className="text-xs mt-1 capitalize">{type}</span>
+            </div>
           </div>
         ) : (
           <div className="p-2 h-full flex flex-col">

@@ -144,6 +144,26 @@ Este documento detalha as melhorias implementadas no Epic Battlefield após a ve
 - **Bordas**: Mantidas as bordas coloridas específicas de cada tipo
 - **Backdrop**: Mantido backdrop-blur-sm para efeito de transparência
 
+## 🎨 Tiles dos Grids
+
+### Conversão SVG para PNG
+- **Arquivos originais**: City_grid.svg, Farm_grid.svg, Landmark_grid.svg, Event_grid.svg
+- **Script**: convert-tile-grids.js criado especificamente para os tiles
+- **Tamanhos otimizados**: Convertidos para as dimensões exatas dos slots
+
+### Tiles Aplicados nos Slots
+- **🏙️ City Slots**: City_grid_mobile.png (80×96px) / City_grid_desktop.png (96×112px)
+- **🌾 Farm Slots**: Farm_grid_mobile.png (80×96px) / Farm_grid_desktop.png (96×112px)
+- **🏛️ Landmark Slots**: Landmark_grid_mobile.png (96×128px) / Landmark_grid_desktop.png (112×160px)
+- **⚡ Event Slots**: Event_grid_mobile.png (96×128px) / Event_grid_desktop.png (112×160px)
+
+### Implementação nos Slots
+- **Componentes**: TileGridComponents.tsx com suporte a mobile/desktop
+- **Aplicação**: Tiles aplicados como background dos slots vazios
+- **Opacidade**: 30% para não interferir com o conteúdo
+- **Responsivo**: Tiles diferentes para mobile e desktop
+- **Overlay**: Conteúdo (ícone + texto) sobreposto aos tiles
+
 ## 🔧 Implementação Técnica
 
 ### Componentes Atualizados
