@@ -944,6 +944,20 @@ export function useGameState() {
   const [actionThisTurn, setActionThisTurn] = useState(false);
   const [discardedCards, setDiscardedCards] = useState<Card[]>([]);
   const [history, setHistory] = useState<string[]>([]);
+
+  // Função para adicionar entrada ao histórico removendo duplicatas
+  const addToHistory = (entry: string) => {
+    setHistory(prev => {
+      const newHistory = [...prev, entry];
+      // Remover duplicatas consecutivas
+      const filteredHistory = newHistory.filter((item, index, array) => {
+        if (index === 0) return true;
+        return item !== array[index - 1];
+      });
+      // Manter apenas as últimas 10 entradas para evitar lista muito longa
+      return filteredHistory.slice(-10);
+    });
+  };
   const [builtCountThisTurn, setBuiltCountThisTurn] = useState(0);
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
@@ -1095,7 +1109,7 @@ export function useGameState() {
     if (game.hand.length > HAND_LIMIT && !discardMode && !victory && !defeat) {
       setDiscardMode(true);
       setError(`Descarte obrigatório: você tem ${game.hand.length} cartas, máximo é ${HAND_LIMIT}`);
-      setHistory(prev => [...prev, `🗑️ Descarte obrigatório ativado: ${game.hand.length} cartas na mão`]);
+              addToHistory(`🗑️ Descarte obrigatório ativado: ${game.hand.length} cartas na mão`);
     }
   }, [game.hand.length, discardMode, victory, defeat, gameLoading]);
 
@@ -1116,7 +1130,7 @@ export function useGameState() {
     // Escalonar a cada 10 turnos
     if (game.turn % 10 === 0 && game.turn > 0) {
       const cycle = Math.floor(game.turn / 10);
-      setHistory(prev => [...prev, `🌊 Ciclo ${cycle}: Eventos e custos aumentaram!`]);
+              addToHistory(`🌊 Ciclo ${cycle}: Eventos e custos aumentaram!`);
       
       // Futuro: implementar escalonamento de eventos/crises e custos
       // Por exemplo:
@@ -1150,7 +1164,7 @@ export function useGameState() {
     // Mostrar mensagens para condições recém-completadas
     newlyCompleted.forEach(condition => {
       const typeText = condition.type === 'major' ? '🏆 Vitória Maior' : '⭐ Vitória Menor';
-      setHistory(prev => [...prev, `${typeText}: ${condition.name} completada!`]);
+              addToHistory(`${typeText}: ${condition.name} completada!`);
       setHighlight(`${typeText}: ${condition.name}!`);
       setTimeout(() => setHighlight(null), 2000);
     });
@@ -1161,7 +1175,7 @@ export function useGameState() {
       const minorCompleted = updatedVictorySystem.conditions.filter(c => c.type === 'minor' && c.completed).length;
       
       setVictory(`🏆 VITÓRIA COMPLETA! ${majorCompleted} vitórias maiores e ${minorCompleted} vitórias menores alcançadas!`);
-      setHistory(prev => [...prev, '🏆 VITÓRIA COMPLETA! Todas as condições necessárias foram atendidas!']);
+              addToHistory('🏆 VITÓRIA COMPLETA! Todas as condições necessárias foram atendidas!');
     }
   }, [game, victory, gameLoading]);
 
@@ -1170,7 +1184,7 @@ export function useGameState() {
     if (gameLoading) return;
     if (game.resources.population <= 0 && !defeat) {
       setDefeat('Derrota: Sua população chegou a 0!');
-      setHistory(prev => [...prev, '❌ Derrota: população chegou a 0!']);
+              addToHistory('❌ Derrota: população chegou a 0!');
     }
   }, [game.resources.population, defeat, gameLoading]);
 
@@ -1180,7 +1194,7 @@ export function useGameState() {
     if (game.phase === 'end' && game.hand.length > 0 && !discardMode && !victory && !defeat && !discardedThisTurn) {
       setDiscardMode(true);
       setDiscardedThisTurn(true);
-      setHistory(prev => [...prev, '🗑️ Descarte obrigatório: escolha uma carta para descartar.']);
+              addToHistory('🗑️ Descarte obrigatório: escolha uma carta para descartar.');
     }
     if (game.phase !== 'end' && discardedThisTurn) {
       setDiscardedThisTurn(false);
@@ -1197,7 +1211,7 @@ export function useGameState() {
         playerStats: { ...g.playerStats, reputation: Math.max(0, g.playerStats.reputation - 1) },
       }));
       setHighlight('⚠️ Faltou comida! -1 população, -1 reputação');
-      setHistory(prev => [...prev, '⚠️ Faltou comida! -1 população, -1 reputação']);
+              addToHistory('⚠️ Faltou comida! -1 população, -1 reputação');
       setTimeout(() => setHighlight(null), 1500);
     }
   }, [game.phase, game.resources.food, defeat, gameLoading]);
@@ -1221,7 +1235,7 @@ export function useGameState() {
           playerStats: { ...g.playerStats, reputation: Math.min(10, g.playerStats.reputation + diversityBonus) },
         }));
         setHighlight('✨ Bônus de diversidade! +1 reputação');
-        setHistory(prev => [...prev, '✨ Bônus de diversidade! +1 reputação']);
+        addToHistory('✨ Bônus de diversidade! +1 reputação');
         setTimeout(() => setHighlight(null), 1500);
       }
     }
@@ -1253,7 +1267,7 @@ export function useGameState() {
         return newState;
       });
       setHighlight(`🗑️ Carta descartada: ${discarded.name}`);
-      setHistory(prev => [...prev, `🗑️ Carta descartada automaticamente: ${discarded.name}`]);
+              addToHistory(`🗑️ Carta descartada automaticamente: ${discarded.name}`);
       setTimeout(() => setHighlight(null), 1500);
     }
   }, [game.phase, gameLoading]);
@@ -1292,7 +1306,7 @@ export function useGameState() {
             return newState;
           });
           setHighlight('🃏 Carta comprada!');
-          setHistory(prev => [...prev, `🃏 Comprou carta: ${game.deck[0]?.name || '???'}`]);
+          addToHistory(`🃏 Comprou carta: ${game.deck[0]?.name || '???'}`);
           setTimeout(() => setHighlight(null), 900);
         } else {
           // Penalidade deck vazio - só se não estiver carregando
@@ -1302,7 +1316,7 @@ export function useGameState() {
               playerStats: { ...g.playerStats, reputation: Math.max(0, g.playerStats.reputation - 1) },
             }));
             setHighlight('⚠️ Deck vazio! -1 reputação');
-            setHistory(prev => [...prev, '⚠️ Deck vazio! -1 reputação']);
+            addToHistory('⚠️ Deck vazio! -1 reputação');
             setTimeout(() => setHighlight(null), 1500);
           }
         }
@@ -1350,9 +1364,9 @@ export function useGameState() {
   const handleNextPhase = useCallback(() => {
     if (victory || discardMode) return;
     
-    // Verificar se o dado foi usado na fase de ação
-    if (game.phase === 'action' && !diceUsed) {
-      setError('Você deve jogar o dado antes de avançar para a fase de construção!');
+    // Verificar se o dado foi usado na fase de construção
+    if (game.phase === 'build' && !diceUsed) {
+      setError('Você deve jogar o dado na fase de construção antes de avançar!');
       return;
     }
     
@@ -1361,8 +1375,13 @@ export function useGameState() {
     setError(null);
     setActionSummary(null);
     
-    // Só limpar o dado quando avança para um novo turno
+    // Limpar o dado quando avança para um novo turno ou quando sai da fase de construção
     if (game.phase === 'end') {
+      setDiceResult(null);
+      setDiceUsed(false);
+      setDiceProductionSummary(null);
+    } else if (game.phase === 'build') {
+      // Limpar o dado quando sai da fase de construção
       setDiceResult(null);
       setDiceUsed(false);
       setDiceProductionSummary(null);
@@ -1440,7 +1459,7 @@ export function useGameState() {
         };
       });
       setActionSummary(`Ação: ${card.name} (${details.join(', ') || 'efeito aplicado'})`);
-      setHistory(prev => [...prev, `⚡ Usou ação: ${card.name}`]);
+              addToHistory(`⚡ Usou ação: ${card.name}`);
       setSelectedCard(null);
       setSelectedGrid(null);
       setError(null);
@@ -1719,19 +1738,19 @@ export function useGameState() {
       
       if (isStacked) {
         setHighlight(`⬆️ Carta empilhada! Nível ${targetCell.level}`);
-        setHistory(prev => [...prev, `⬆️ ${selectedCard.name} empilhada! Nível ${targetCell.level}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`]);
+        addToHistory(`⬆️ ${selectedCard.name} empilhada! Nível ${targetCell.level}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`);
         setTimeout(() => setHighlight(null), 1500);
       } else if (isLandmark) {
         setLandmarkBuiltThisTurn(true);
         setHighlight('🏛️ Marco histórico construído!');
-        setHistory(prev => [...prev, `🏛️ Marco histórico construído: ${selectedCard.name}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`]);
+        addToHistory(`🏛️ Marco histórico construído: ${selectedCard.name}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`);
         setTimeout(() => setHighlight(null), 1500);
       } else if (comboMsg) {
         setHighlight(`✨ ${comboMsg}`);
-        setHistory(prev => [...prev, `✨ ${comboMsg}`]);
+        addToHistory(`✨ ${comboMsg}`);
         setTimeout(() => setHighlight(null), 1500);
       } else {
-        setHistory(prev => [...prev, `🏗️ Construiu: ${selectedCard.name}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`]);
+        addToHistory(`🏗️ Construiu: ${selectedCard.name}${effectDetails.length > 0 ? ` (${effectDetails.join(', ')})` : ''}`);
       }
       
       const newState = {
@@ -1816,7 +1835,7 @@ export function useGameState() {
       return newState;
     });
     setActionSummary(`Magia ativada: ${card.name} (${details.join(', ') || 'efeito aplicado'})`);
-    setHistory(prev => [...prev, `✨ Usou magia: ${card.name}`]);
+            addToHistory(`✨ Usou magia: ${card.name}`);
     setSelectedCard(null);
     setSelectedGrid(null);
     setError(null);
@@ -1869,7 +1888,7 @@ export function useGameState() {
       };
     });
     setActionSummary(`Defesa ativada: ${card.name} (${details.join(', ') || 'efeito aplicado'})`);
-    setHistory(prev => [...prev, `🛡️ Usou defesa: ${card.name}`]);
+            addToHistory(`🛡️ Usou defesa: ${card.name}`);
     setPendingDefense(null);
     setSelectedCard(null);
     setSelectedGrid(null);
@@ -1906,7 +1925,7 @@ export function useGameState() {
     setError(null);
     
     // Adicionar ao histórico
-    setHistory(prev => [...prev, `🗑️ Descartou: ${card.name}`]);
+            addToHistory(`🗑️ Descartou: ${card.name}`);
     
     // Feedback visual
     setHighlight(`🗑️ Carta descartada: ${card.name}`);
@@ -1916,7 +1935,7 @@ export function useGameState() {
   }, [game.hand]);
 
   const handleDiceRoll = useCallback(() => {
-    if (game.phase !== 'action' || diceUsed) return;
+    if (game.phase !== 'build' || diceUsed) return;
     const roll = Math.floor(Math.random() * 6) + 1;
     setDiceResult(roll);
     setDiceUsed(true);
@@ -1957,12 +1976,8 @@ export function useGameState() {
       },
     }));
     
-    // As notificações agora são gerenciadas pelo sistema medieval
-    // Limpar após um tempo para evitar acúmulo
-    setTimeout(() => {
-      setDiceResult(null);
-      setDiceProductionSummary(null);
-    }, 5000);
+    // O resultado do dado persiste até a próxima fase de construção
+    // Não limpar automaticamente - será limpo apenas quando necessário
   }, [game.phase, diceUsed, game.farmGrid, game.cityGrid]);
 
   const handleProduction = useCallback(() => {

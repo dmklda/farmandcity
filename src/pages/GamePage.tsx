@@ -3,10 +3,11 @@ import { supabase } from '../integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
 import AuthPage from '../components/AuthPage';
-import FixedSidebar from '../components/FixedSidebar';
-import EnhancedTopBar from '../components/EnhancedTopBar';
+import MedievalSidebar from '../components/MedievalSidebar';
+import MedievalTopBar from '../components/MedievalTopBar';
 import EpicBattlefield from '../components/EpicBattlefield';
 import EnhancedHand from '../components/EnhancedHand';
+import MedievalDiceButton from '../components/MedievalDiceButton';
 import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
 
@@ -23,7 +24,6 @@ const GamePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Estados de UI
-  const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showStats, setShowStats] = useState(false);
   const [showSavedGames, setShowSavedGames] = useState(false);
   const [handVisible, setHandVisible] = useState(true);
@@ -233,18 +233,40 @@ const GamePage: React.FC = () => {
   // Layout principal para usuários autenticados
   return (
     <div className="h-screen bg-background w-full overflow-hidden">
-      {/* Fixed Sidebar */}
-      <FixedSidebar
-        resources={gameState.sidebarProps.resources}
-        progress={gameState.sidebarProps.progress}
-        victory={gameState.sidebarProps.victory}
+      {/* Medieval Sidebar */}
+      <MedievalSidebar
+        isVisible={true}
+        setIsVisible={() => {}}
+        onToggleSidebar={() => {}}
+        gameStats={{
+          reputation: gameState.game.playerStats.reputation,
+          maxReputation: gameState.sidebarProps.progress.reputationMax,
+          totalProduction: gameState.game.playerStats.totalProduction,
+          maxProduction: gameState.sidebarProps.progress.productionMax,
+          landmarks: gameState.game.playerStats.landmarks,
+          maxLandmarks: gameState.sidebarProps.progress.landmarksMax,
+          turn: gameState.game.turn,
+          maxTurns: gameState.sidebarProps.progress.turnMax
+        }}
+        victoryMode={gameState.sidebarProps.victory.mode}
+        victoryPoints={gameState.sidebarProps.victory.value}
         history={gameState.sidebarProps.history}
-        isVisible={sidebarVisible}
-        setIsVisible={setSidebarVisible}
+        resources={{
+          coins: gameState.game.resources.coins,
+          foods: gameState.game.resources.food,
+          materials: gameState.game.resources.materials,
+          population: gameState.game.resources.population
+        }}
+        productionPerTurn={{
+          coins: gameState.topBarProps.productionPerTurn.coins,
+          foods: gameState.topBarProps.productionPerTurn.food,
+          materials: gameState.topBarProps.productionPerTurn.materials,
+          population: gameState.topBarProps.productionPerTurn.population
+        }}
       />
 
-      {/* Fixed TopBar */}
-      <EnhancedTopBar
+      {/* Medieval TopBar */}
+      <MedievalTopBar
         turn={gameState.topBarProps.turn}
         turnMax={gameState.topBarProps.turnMax}
         buildCount={gameState.topBarProps.buildCount}
@@ -255,27 +277,22 @@ const GamePage: React.FC = () => {
         resources={gameState.topBarProps.resources}
         productionPerTurn={gameState.topBarProps.productionPerTurn}
         productionDetails={gameState.topBarProps.productionDetails}
-        onToggleSidebar={() => setSidebarVisible((v) => !v)}
+        onToggleSidebar={() => {}}
         onShowStats={handleShowStats}
         onShowSavedGames={handleShowSavedGames}
         onGoHome={handleGoHome}
         onLogout={handleLogout}
         userEmail={user?.email}
         activeDeck={activeDeck}
-        // Props do sistema de dado
-        onDiceRoll={gameState.handleDiceRoll}
-        diceUsed={gameState.diceUsed}
-        diceResult={gameState.diceResult}
       />
 
       {/* Main Content Area - Scrollable with proper spacing */}
       <div
         className="h-full overflow-y-auto overflow-x-hidden p-3"
         style={{
-          paddingLeft: sidebarVisible ? '300px' : '24px',
+          paddingLeft: '340px', // Fixed spacing for sidebar
           paddingTop: '64px', // Space for top bar
           paddingBottom: '0px', // Space for hand
-          transition: 'padding-left 0.3s',
         }}
       >
         <EpicBattlefield
@@ -306,18 +323,29 @@ const GamePage: React.FC = () => {
 
       {/* Fixed Hand at Bottom with proper z-index */}
       {handVisible && (
-        <div className="fixed bottom-0 left-0 right-0 z-30">
-          <EnhancedHand
-            key={`hand-${gameState.handProps.deckSize}-${gameState.handProps.hand.length}`}
-            hand={gameState.handProps.hand}
-            onSelectCard={handleSelectCard}
-            selectedCardId={gameState.handProps.selectedCardId}
-            canPlayCard={gameState.handProps.canPlayCard}
-            sidebarVisible={sidebarVisible}
-            deckSize={gameState.handProps.deckSize}
-          />
-        </div>
+      <div className="fixed bottom-0 left-0 right-0 z-30">
+        <EnhancedHand
+          key={`hand-${gameState.handProps.deckSize}-${gameState.handProps.hand.length}`}
+          hand={gameState.handProps.hand}
+          onSelectCard={handleSelectCard}
+          selectedCardId={gameState.handProps.selectedCardId}
+          canPlayCard={gameState.handProps.canPlayCard}
+          sidebarVisible={true}
+          deckSize={gameState.handProps.deckSize}
+        />
+      </div>
       )}
+
+      {/* Medieval Dice Button - Positioned near hand */}
+      <div className="fixed bottom-20 right-6 z-40">
+        <MedievalDiceButton
+          onDiceRoll={gameState.handleDiceRoll}
+          diceUsed={gameState.diceUsed}
+          diceResult={gameState.diceResult || undefined}
+          disabled={false}
+          currentPhase={gameState.game.phase}
+        />
+      </div>
 
       {/* Modal de descarte manual */}
       {gameState.discardModal && (
