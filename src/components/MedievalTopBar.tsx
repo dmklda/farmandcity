@@ -65,8 +65,8 @@ const ResourceChip: React.FC<{
   return (
     <motion.div 
       className="group relative"
-      whileHover={{ scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
     >
       <div className="flex items-center gap-2 px-2.5 py-1.5 bg-gradient-to-br from-stone-800/80 to-stone-900/80 rounded-lg border border-amber-700/50 shadow-lg hover:from-stone-700/80 hover:to-stone-800/80 transition-all duration-300">
         <div className="p-1 bg-gradient-to-br from-amber-800 to-amber-900 rounded-md border border-amber-600">
@@ -150,18 +150,18 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
 
   return (
     <motion.header 
-      initial={{ y: -100, opacity: 0 }}
+      initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 border-b-2 border-amber-800 shadow-2xl"
     >
       <div className="flex items-center justify-between px-4 py-3 h-16">
         {/* Left Section - Resources */}
         <motion.div 
           className="flex items-center gap-2"
-          initial={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
           <ResourceChip
             icon="💰"
@@ -203,9 +203,9 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
         {/* Center Section - Game Info */}
         <motion.div 
           className="flex items-center gap-4"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
           <GameInfoChip
             label="Turno"
@@ -221,8 +221,8 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
           
           <motion.div 
             className={`px-4 py-2 rounded-lg font-bold text-sm border-2 ${getPhaseColor(phase)}`}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
           >
             <span className="capitalize">{phase}</span>
           </motion.div>
@@ -231,9 +231,9 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
         {/* Right Section - Actions */}
         <motion.div 
           className="flex items-center gap-3"
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
 
 

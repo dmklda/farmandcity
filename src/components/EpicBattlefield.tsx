@@ -1,10 +1,12 @@
-import React, { useState, useRef, DragEvent } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Shield, Cloud, Plus, Eye, EyeOff, Trophy, Target, Zap } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, Cloud, Shield, Eye, EyeOff } from "lucide-react";
 import { CardDetailModal } from './EnhancedHand';
 import { Card } from '../types/card';
-import { getCardTypeIconPNG, CityIconPNG, FarmIconPNG, LandmarkIconPNG, EventIconPNG, GameLogoPNG } from './IconComponentsPNG';
+import { getCardTypeIconPNG } from './IconComponentsPNG';
+import { CityIconPNG, FarmIconPNG, LandmarkIconPNG, EventIconPNG, GameLogoPNG } from './IconComponentsPNG';
 import { CityTileGrid, FarmTileGrid, LandmarkTileGrid, EventTileGrid } from './TileGridComponents';
+import { CardMiniature } from './CardMiniature';
 import backgroundImage from '../assets/grid-board-background.jpg';
 import cityBackground from '../assets/grids_background/City_background.png';
 import farmBackground from '../assets/grids_background/Farm_background.png';
@@ -71,7 +73,7 @@ const CardSlot = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [showDetail, setShowDetail] = useState<Card | null>(null);
   
-  const handleDragOver = (e: DragEvent) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     if (highlight && !cell.card) {
       setIsDragOver(true);
@@ -82,7 +84,7 @@ const CardSlot = ({
     setIsDragOver(false);
   };
   
-  const handleDrop = (e: DragEvent) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     if (highlight && !cell.card) {
@@ -132,8 +134,10 @@ const CardSlot = ({
   };
 
   const sizeClasses = size === 'large' 
-    ? 'h-32 w-24 md:h-40 md:w-28' 
-    : 'h-24 w-20 md:h-28 md:w-24';
+    ? 'h-32 w-32 md:h-40 md:w-40' // Landmark: 128×96px mobile, 160×112px desktop
+    : size === 'medium'
+    ? 'h-24 w-24 md:h-28 md:w-28' // Event: tamanho médio
+    : 'h-20 w-24 md:h-24 md:w-28'; // City e Farm: 96×80px mobile, 112×96px desktop
 
   const isPlayable = highlight && !cell.card;
   const hasCard = !!cell.card;
@@ -142,7 +146,7 @@ const CardSlot = ({
     <>
       <motion.div
         className={`
-          relative rounded-lg border-2 transition-all duration-300 backdrop-blur-sm
+          relative rounded-lg border-2 transition-all duration-200 backdrop-blur-sm
           ${sizeClasses}
           ${getSlotBackground()}
           ${getBorderColor()}
@@ -156,9 +160,9 @@ const CardSlot = ({
         onClick={handleClick}
         whileHover={{ scale: isPlayable || hasCard ? 1.02 : 1 }}
         whileTap={{ scale: 0.98 }}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
       >
         {!hasCard ? (
           <div className="relative flex flex-col items-center justify-center h-full text-white/60">
@@ -176,15 +180,15 @@ const CardSlot = ({
             </div>
           </div>
         ) : (
-          <div className="p-2 h-full flex flex-col">
-            <div className="flex-1 bg-gradient-to-b from-white/10 to-white/5 rounded border border-white/20">
-              <div className="p-2 text-center">
-                <div className="mb-1">{getCardTypeIconPNG(cell.card!.type, 16)}</div>
-                <div className="text-xs font-semibold text-white truncate">
-                  {cell.card!.name.slice(0, 8)}
-                </div>
-              </div>
-            </div>
+          <div className="h-full flex items-center justify-center p-1">
+            <CardMiniature
+              card={cell.card!}
+              size={`${type}Grid` as 'cityGrid' | 'farmGrid' | 'landmarkGrid' | 'eventGrid'}
+              showInfo={true}
+              isPlayable={false}
+              onShowDetail={() => setShowDetail(cell.card!)}
+              className="w-full h-full"
+            />
           </div>
         )}
         
@@ -201,8 +205,8 @@ const CardSlot = ({
         {isPlayable && (
           <motion.div
             className="absolute inset-0 rounded-lg bg-yellow-400/10"
-            animate={{ opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ opacity: [0.2, 0.4, 0.2] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
       </motion.div>
@@ -228,9 +232,9 @@ const ZoneHeader = ({
   return (
     <motion.div 
       className={`flex items-center gap-2 mb-2 ${className}`}
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       <div className="flex items-center gap-2">
         {icon}
@@ -276,9 +280,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {/* Background Overlay */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -290,14 +294,14 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
         {/* Epic Header */}
         <motion.div 
           className="text-center mb-3 -mt-4"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <div className="flex items-center justify-center">
             <motion.div
-              whileHover={{ scale: 1.1 }}
-              transition={{ duration: 0.2 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
             >
               <GameLogoPNG size={128} />
             </motion.div>
@@ -309,9 +313,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
           {/* Left Column - City Cards */}
           <motion.div 
             className="order-2 lg:order-1"
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <ZoneHeader 
               title="Cidades" 
@@ -349,9 +353,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
           {/* Center Column - Landmarks & Events */}
           <motion.div 
             className="order-1 lg:order-2 space-y-4"
-            initial={{ opacity: 0, y: -30 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             {/* Landmarks */}
             <div>
@@ -409,7 +413,7 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
                 max={eventMax}
               />
               <div 
-                className="flex justify-center gap-4 p-4 rounded-xl border border-amber-600/30 backdrop-blur-sm"
+                className="flex justify-center gap-32 p-4 rounded-xl border border-amber-600/30 backdrop-blur-sm"
                 style={{
                   backgroundImage: `url(${eventsBackground})`,
                   backgroundSize: 'cover',
@@ -439,9 +443,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
           {/* Right Column - Farm Cards */}
           <motion.div 
             className="order-3"
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <ZoneHeader 
               title="Fazendas" 
@@ -480,9 +484,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
         {/* Defense Zone (Future) - Com espaço extra para evitar sobreposição */}
         <motion.div 
           className="p-6 rounded-xl bg-gradient-to-br from-red-900/20 to-orange-900/20 border border-red-600/20 border-dashed backdrop-blur-sm mb-32"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           whileHover={{ scale: 1.01 }}
         >
           <div className="flex items-center justify-center gap-2 text-white/60">

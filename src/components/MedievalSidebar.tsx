@@ -123,13 +123,13 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
       className="fixed left-0 top-0 h-screen z-30 w-80 bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 border-r border-amber-700/30 shadow-2xl"
       initial={{ x: -320 }}
       animate={{ x: 0 }}
-      transition={{ type: "spring", stiffness: 100, damping: 20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {/* Header */}
       <motion.div 
         className="h-16 bg-gradient-to-r from-amber-900/50 to-amber-800/50 border-b border-amber-700/50 flex items-center justify-center p-3"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
       >
         <div className="flex items-center space-x-2">
           <div className="p-2 bg-gradient-to-br from-amber-600 to-amber-800 rounded-lg">
@@ -145,8 +145,8 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
         {/* Kingdom Status */}
         <motion.div 
           className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
         >
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
@@ -180,8 +180,8 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
         {/* Victory Quest */}
         <motion.div 
           className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
         >
           <div className="flex items-center space-x-2 mb-3">
             <div className={`p-1.5 bg-gradient-to-br ${getVictoryModeColor(victoryMode)} rounded-lg`}>
@@ -213,8 +213,8 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
         {/* Progress Overview */}
         <motion.div 
           className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          whileHover={{ scale: 1.01 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
         >
           <div className="flex items-center space-x-2 mb-3">
             <div className="p-1.5 bg-gradient-to-br from-green-600 to-green-800 rounded-lg">

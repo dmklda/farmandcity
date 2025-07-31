@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { getCardTypeIconPNG } from './IconComponentsPNG';
 import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from './IconComponentsPNG';
-import { Eye, Play } from "lucide-react";
 import { cn } from '../lib/utils';
 import { Card } from '../types/card';
 
@@ -14,6 +12,7 @@ interface CardMiniatureProps {
   onShowDetail?: (card: Card) => void;
   size?: 'tiny' | 'small' | 'medium' | 'large' | 'cityGrid' | 'farmGrid' | 'landmarkGrid' | 'eventGrid';
   showInfo?: boolean;
+  showPlayableIndicator?: boolean;
   className?: string;
 }
 
@@ -112,14 +111,14 @@ const sizeConfig = {
     width: "w-24", // 96px mobile, 112px desktop
     height: "h-20", // 80px mobile, 96px desktop
     textSize: "text-xs",
-    iconSize: 16,
+    iconSize: 12,
     padding: "p-1"
   },
   farmGrid: {
     width: "w-24", // 96px mobile, 112px desktop
     height: "h-20", // 80px mobile, 96px desktop
     textSize: "text-xs",
-    iconSize: 16,
+    iconSize: 12,
     padding: "p-1"
   },
   landmarkGrid: {
@@ -130,8 +129,8 @@ const sizeConfig = {
     padding: "p-1.5"
   },
   eventGrid: {
-    width: "w-32", // 128px mobile, 160px desktop
-    height: "h-24", // 96px mobile, 112px desktop
+    width: "w-32", // 128px mobile, 160px desktop (igual ao landmark)
+    height: "h-24", // 96px mobile, 112px desktop (igual ao landmark)
     textSize: "text-sm",
     iconSize: 16,
     padding: "p-1.5"
@@ -146,6 +145,7 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
   onShowDetail,
   size = 'medium',
   showInfo = true,
+  showPlayableIndicator = true,
   className
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -178,18 +178,11 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
     }
   };
 
-  const handleViewDetail = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onShowDetail) {
-      onShowDetail(card);
-    }
-  };
-
   const hasCost = (card.cost.coins || 0) > 0 || (card.cost.food || 0) > 0 || 
                   (card.cost.materials || 0) > 0 || (card.cost.population || 0) > 0;
 
   return (
-    <motion.div
+    <div
       className={cn(
         "relative rounded-lg overflow-hidden cursor-pointer select-none group",
         sizeSettings.width,
@@ -206,78 +199,37 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
-      whileHover={{ 
-        scale: 1.05, 
-        y: -4,
-        rotateY: 2,
-        rotateX: -1
-      }}
-      whileTap={{ 
-        scale: 0.98,
-        y: -2
-      }}
-      transition={{ 
-        type: "spring", 
-        stiffness: 400, 
-        damping: 20,
-        duration: 0.2
-      }}
     >
       {/* Background with enhanced gradient */}
       <div className={cn("absolute inset-0", typeConfig.bg)} />
       
-      {/* Animated background glow */}
-      <motion.div
-        className="absolute inset-0 rounded-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isHovered ? 0.3 : 0 }}
-        transition={{ duration: 0.3 }}
-        style={{
-          background: `radial-gradient(circle at center, ${typeConfig.color}20, transparent 70%)`
-        }}
-      />
-
       {/* Header - Type Icon and Rarity */}
       <div className={cn("relative flex items-center justify-between", sizeSettings.padding)}>
-        {/* Type Icon with enhanced animation */}
-        <motion.div 
+        {/* Type Icon */}
+        <div 
           className="p-0.5 rounded border"
           style={{ 
             backgroundColor: `${typeConfig.color}20`,
             borderColor: typeConfig.color
           }}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
         >
           {getCardTypeIconPNG(card.type, 16)}
-        </motion.div>
+        </div>
 
-        {/* Rarity Gems with staggered animation */}
+        {/* Rarity Gems */}
         <div className="flex gap-0.5">
           {Array.from({ length: raritySettings.gems }).map((_, index) => (
-            <motion.div 
+            <div 
               key={index}
               className="w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: raritySettings.gemColor }}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ 
-                delay: index * 0.1, 
-                type: "spring", 
-                stiffness: 300 
-              }}
-              whileHover={{ scale: 1.3 }}
             />
           ))}
         </div>
       </div>
 
-      {/* Artwork Area with enhanced effects */}
-      <motion.div 
-        className="relative mx-1 mb-1 h-8 rounded overflow-hidden border border-gray-600"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
+      {/* Artwork Area */}
+      <div className="relative mx-1 mb-1 h-8 rounded overflow-hidden border border-gray-600">
         {card.artworkUrl ? (
           <img 
             src={card.artworkUrl} 
@@ -291,123 +243,52 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
         )}
         {/* Artwork overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-      </motion.div>
+      </div>
 
       {/* Title */}
       {showInfo && (
         <div className="px-1 pb-0.5">
-          <motion.h3 
-            className={cn("font-bold text-white leading-tight truncate", sizeSettings.textSize)}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.3 }}
-          >
+          <h3 className={cn("font-bold text-white leading-tight truncate", sizeSettings.textSize)}>
             {card.name}
-          </motion.h3>
+          </h3>
         </div>
       )}
 
-      {/* Cost Section */}
-      {showInfo && hasCost && (
-        <motion.div 
-          className="px-1 pb-1"
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
-        >
+      {/* Cost Section - Only show for non-grid sizes */}
+      {showInfo && hasCost && !size.includes('Grid') && (
+        <div className="px-1 pb-1">
           <div className="flex justify-center items-center gap-0.5 flex-wrap">
             {(card.cost.coins || 0) > 0 && (
-              <motion.div 
-                className="flex items-center gap-0.5 bg-amber-900/50 border border-amber-600/50 rounded px-0.5 py-0.5"
-                whileHover={{ scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
+              <div className="flex items-center gap-0.5 bg-amber-900/50 border border-amber-600/50 rounded px-0.5 py-0.5">
                 <CoinsIconPNG size={8} />
                 <span className="font-bold text-amber-100 text-[8px]">{card.cost.coins}</span>
-              </motion.div>
+              </div>
             )}
             {(card.cost.food || 0) > 0 && (
-              <motion.div 
-                className="flex items-center gap-0.5 bg-green-900/50 border border-green-600/50 rounded px-0.5 py-0.5"
-                whileHover={{ scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
+              <div className="flex items-center gap-0.5 bg-green-900/50 border border-green-600/50 rounded px-0.5 py-0.5">
                 <FoodsIconPNG size={8} />
                 <span className="font-bold text-green-100 text-[8px]">{card.cost.food}</span>
-              </motion.div>
+              </div>
             )}
             {(card.cost.materials || 0) > 0 && (
-              <motion.div 
-                className="flex items-center gap-0.5 bg-blue-900/50 border border-blue-600/50 rounded px-0.5 py-0.5"
-                whileHover={{ scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
+              <div className="flex items-center gap-0.5 bg-blue-900/50 border border-blue-600/50 rounded px-0.5 py-0.5">
                 <MaterialsIconPNG size={8} />
                 <span className="font-bold text-blue-100 text-[8px]">{card.cost.materials}</span>
-              </motion.div>
+              </div>
             )}
             {(card.cost.population || 0) > 0 && (
-              <motion.div 
-                className="flex items-center gap-0.5 bg-purple-900/50 border border-purple-600/50 rounded px-0.5 py-0.5"
-                whileHover={{ scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
+              <div className="flex items-center gap-0.5 bg-purple-900/50 border border-purple-600/50 rounded px-0.5 py-0.5">
                 <PopulationIconPNG size={8} />
                 <span className="font-bold text-purple-100 text-[8px]">{card.cost.population}</span>
-              </motion.div>
+              </div>
             )}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Action Buttons - Only show on hover */}
-      <AnimatePresence>
-        {isHovered && (
-          <motion.div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {/* Play Button */}
-            {isPlayable && (
-              <motion.button
-                onClick={handleClick}
-                className="p-1.5 bg-green-600 hover:bg-green-500 rounded-full text-white shadow-lg"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                title="Jogar carta"
-              >
-                <Play className="w-3 h-3" />
-              </motion.button>
-            )}
-            
-            {/* View Detail Button */}
-            <motion.button
-              onClick={handleViewDetail}
-              className="p-1.5 bg-blue-600 hover:bg-blue-500 rounded-full text-white shadow-lg"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              title="Ver detalhes"
-            >
-              <Eye className="w-3 h-3" />
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Enhanced Hover Info */}
+      {/* Simple Hover Info */}
       {isHovered && (
-        <motion.div
-          className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50"
-          initial={{ opacity: 0, y: 10, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        >
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50">
           <div className="bg-black/95 backdrop-blur-sm border border-gray-600 rounded-lg p-2 shadow-xl min-w-[140px] text-center">
             <div className="text-xs font-bold text-white mb-1">{card.name}</div>
             <div className="text-[10px] text-gray-300 capitalize">{card.type}</div>
@@ -416,34 +297,13 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
               {isPlayable ? "Clique para jogar • Olho para detalhes" : "Olho para detalhes"}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Enhanced Playable Indicator */}
-      {isPlayable && (
-        <motion.div 
-          className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.7, 1, 0.7]
-          }}
-          transition={{ 
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
+      {/* Playable Indicator */}
+      {isPlayable && showPlayableIndicator && (
+        <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-green-500 rounded-full" />
       )}
-
-      {/* Selection Ring Animation */}
-      {isSelected && (
-        <motion.div
-          className="absolute inset-0 rounded-lg ring-2 ring-blue-400 ring-offset-1 pointer-events-none"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        />
-      )}
-    </motion.div>
+    </div>
   );
 }; 

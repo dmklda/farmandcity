@@ -8,7 +8,8 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card as UICard } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import CardComponent from './CardComponent';
+import { CardMiniature } from './CardMiniature';
+import { CardDetailModal } from './EnhancedHand';
 
 interface DeckBuilderProps {
   deckId?: string;
@@ -88,6 +89,13 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
 
     // Verificar se cada carta pode ser adicionada
     Object.values(cardGroups).forEach(group => {
+      // Verificar se o jogador possui cópias suficientes
+      if (group.inDeck >= group.owned) {
+        group.canAdd = false;
+        group.reason = `Você possui apenas ${group.owned} cópia${group.owned > 1 ? 's' : ''} desta carta`;
+        return;
+      }
+      
       const currentDeck = deckCardsObjects.filter(c => c.id !== group.card.id);
       const canAdd = canAddCardToDeck(group.card, currentDeck);
       group.canAdd = canAdd.canAdd;
@@ -225,11 +233,12 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                 {availableCards.map(({ card, owned, inDeck, canAdd, reason }) => (
                   <div key={card.id} className="space-y-2">
                     <div className="relative">
-                      <CardComponent
+                      <CardMiniature
                         card={card}
+                        onSelect={() => addCardToDeck(card.id)}
+                        isPlayable={canAdd && deckCards.length < (gameSettings.deckMaxCards || 40)}
                         size="small"
-                        onClick={() => addCardToDeck(card.id)}
-                        playable={canAdd && deckCards.length < (gameSettings.deckMaxCards || 40)}
+                        showInfo={true}
                       />
                       <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs">
                         {owned}
@@ -305,7 +314,11 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                     ).map(([cardId, { card, count }]) => (
                       <div key={cardId} className="flex items-center justify-between p-2 border rounded">
                         <div className="flex items-center gap-3">
-                          <CardComponent card={card} size="small" />
+                          <CardMiniature 
+                            card={card} 
+                            size="small"
+                            showInfo={true}
+                          />
                           <div>
                             <p className="font-medium">{card.name}</p>
                             <p className="text-sm text-muted-foreground">

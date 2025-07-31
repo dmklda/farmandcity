@@ -85,8 +85,13 @@ const addCardCopy = (baseId: string) => {
 2. **Limites por Raridade**:
    - Common: 4 cópias
    - Uncommon: 3 cópias  
-   - Rare/Ultra: 2 cópias
-   - Outros: 1 cópia
+   - Rare: 2 cópias
+   - Ultra: 2 cópias
+   - Secret: 1 cópia
+   - Legendary: 1 cópia
+   - Crisis: 1 cópia
+   - Booster: 1 cópia
+   - Landmark: 1 cópia (especial)
 3. **Deck**: Permite adicionar até o limite de cópias
 
 ### **Fluxo de Adição**:

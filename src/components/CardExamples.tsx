@@ -219,6 +219,112 @@ const CardExamples: React.FC = () => {
           </div>
         </div>
 
+        {/* Grid Miniatures Test */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-amber-100">Teste Miniaturas de Grid</h2>
+          
+          {/* City Grid Test */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-amber-100">City Grid (4×3) - Medium</h3>
+            <div className="bg-black/20 rounded-xl p-4 border border-amber-600/30">
+              <div className="grid grid-cols-4 gap-2">
+                {exampleCards.filter(card => card.type === 'city').slice(0, 12).map((card, index) => (
+                  <div key={card.id} className="flex justify-center">
+                    <CardMiniature
+                      card={card}
+                      size="cityGrid"
+                      showInfo={true}
+                      onSelect={() => handleCardSelect(card)}
+                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Farm Grid Test */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-amber-100">Farm Grid (4×3) - Medium</h3>
+            <div className="bg-black/20 rounded-xl p-4 border border-green-600/30">
+              <div className="grid grid-cols-4 gap-2">
+                {exampleCards.filter(card => card.type === 'farm').slice(0, 12).map((card, index) => (
+                  <div key={card.id} className="flex justify-center">
+                    <CardMiniature
+                      card={card}
+                      size="farmGrid"
+                      showInfo={true}
+                      onSelect={() => handleCardSelect(card)}
+                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Landmark Grid Test */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-amber-100">Landmark Grid (1×3) - Large</h3>
+            <div className="bg-black/20 rounded-xl p-4 border border-blue-600/30">
+              <div className="flex justify-center gap-4">
+                {exampleCards.filter(card => card.type === 'landmark').slice(0, 3).map((card, index) => (
+                  <div key={card.id} className="flex justify-center">
+                    <CardMiniature
+                      card={card}
+                      size="landmarkGrid"
+                      showInfo={true}
+                      onSelect={() => handleCardSelect(card)}
+                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Event Grid Test */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-amber-100">Event Grid (1×2) - Large</h3>
+            <div className="bg-black/20 rounded-xl p-4 border border-red-600/30">
+              <div className="flex justify-center gap-4">
+                {exampleCards.filter(card => card.type === 'event').slice(0, 2).map((card, index) => (
+                  <div key={card.id} className="flex justify-center">
+                    <CardMiniature
+                      card={card}
+                      size="eventGrid"
+                      showInfo={true}
+                      onSelect={() => handleCardSelect(card)}
+                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Debug Test - Single Card */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-amber-100">Debug - Carta Única</h2>
+          <div className="bg-black/20 rounded-xl p-4 border border-amber-600/30">
+            <div className="flex justify-center">
+              <CardMiniature
+                card={exampleCards[0]}
+                size="cityGrid"
+                showInfo={true}
+                onSelect={() => handleCardSelect(exampleCards[0])}
+                onShowDetail={() => console.log('Ver detalhes:', exampleCards[0].name)}
+              />
+            </div>
+            <div className="mt-4 text-center text-amber-200">
+              <p>Carta: {exampleCards[0].name}</p>
+              <p>Tipo: {exampleCards[0].type}</p>
+              <p>Raridade: {exampleCards[0].rarity}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Instructions */}
         <div className="bg-blue-900/20 border border-blue-600/30 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-blue-100 mb-4">📋 Instruções de Uso</h3>

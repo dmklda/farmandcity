@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, X } from 'lucide-react';
 import { Card } from '../types/card';
-import CardComponent from './CardComponent';
+import { CardMiniature } from './CardMiniature';
+import { CardDetailModal } from './EnhancedHand';
 import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from './IconComponentsPNG';
 
 interface HandProps {
@@ -41,7 +42,7 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
               }}
               title={playInfo.playable ? '' : playInfo.reason || 'Não pode jogar esta carta agora'}
             >
-              <CardComponent
+              <CardMiniature
                 card={card}
                 onClick={() => playInfo.playable && onSelectCard(card)}
                 selected={card.id === selectedCardId}
@@ -71,100 +72,11 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
       </div>
       
       {/* Card detail modal */}
-      {showDetail && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowDetail(null)}
-        >
-          <div 
-            className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 min-w-[400px] max-w-[600px] border border-slate-600 relative shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal background effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(59,130,246,0.1),transparent_50%)] rounded-2xl"></div>
-            
-            {/* Close button */}
-            <button 
-              className="absolute top-4 right-4 w-8 h-8 bg-slate-700/50 hover:bg-slate-600/50 text-white border border-slate-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110 z-10"
-              onClick={() => setShowDetail(null)}
-              title="Fechar detalhes da carta"
-            >
-              <X size={16} />
-            </button>
-
-            {/* Content */}
-            <div className="relative z-10 flex flex-col items-center gap-6">
-              {/* Card title */}
-              <div className="text-center">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent mb-2">
-                  {showDetail.name}
-                </h3>
-                <div className="w-16 h-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto rounded-full"></div>
-              </div>
-              
-              {/* Large card visual */}
-              <div className="relative">
-                <CardComponent
-                  card={showDetail}
-                  size="large"
-                />
-                {/* Card glow effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-xl -z-10"></div>
-              </div>
-              
-              {/* Card details */}
-              <div className="w-full space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-600">
-                    <div className="text-sm text-slate-400 mb-1">Tipo</div>
-                    <div className="text-white font-semibold">{showDetail.type}</div>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-600">
-                    <div className="text-sm text-slate-400 mb-1">Raridade</div>
-                    <div className="text-white font-semibold">{showDetail.rarity}</div>
-                  </div>
-                </div>
-
-                {/* Cost section */}
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
-                  <div className="text-sm text-slate-400 mb-3">Custo</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2">
-                      <CoinsIconPNG size={16} />
-                      <span className="text-white">{showDetail.cost.coins ?? 0}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <FoodsIconPNG size={16} />
-                      <span className="text-white">{showDetail.cost.food ?? 0}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MaterialsIconPNG size={16} />
-                      <span className="text-white">{showDetail.cost.materials ?? 0}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PopulationIconPNG size={16} />
-                      <span className="text-white">{showDetail.cost.population ?? 0}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Effect section */}
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
-                  <div className="text-sm text-slate-400 mb-2">Efeito</div>
-                  <div className="text-white leading-relaxed">{showDetail.effect.description}</div>
-                </div>
-
-                {/* Activation section */}
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-600">
-                  <div className="text-sm text-slate-400 mb-2">Ativação</div>
-                  <div className="text-white font-semibold">{showDetail.activation}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CardDetailModal
+        card={showDetail}
+        isOpen={!!showDetail}
+        onClose={() => setShowDetail(null)}
+      />
     </div>
   );
 };

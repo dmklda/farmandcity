@@ -276,14 +276,14 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        <button
-          onClick={onClose}
+              <button
+                onClick={onClose}
           className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
           title="Fechar modal"
           aria-label="Fechar modal"
-        >
+              >
           <X className="w-5 h-5" />
-        </button>
+              </button>
 
         <div className="flex h-full">
           {/* Card Display - Centered */}
@@ -345,13 +345,13 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
                         </span>
                       </div>
                     </div>
-                  </div>
+            </div>
 
                   {/* Rarity gems */}
                   <div className="flex gap-1">
                     {renderGems()}
-                  </div>
-                </div>
+            </div>
+          </div>
 
                 {/* Title */}
                 <h3 className="font-bold text-lg text-foreground leading-tight">
@@ -367,7 +367,7 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
                     style={{ color: raritySettings.gemColor }}
                   >
                     {card.rarity}
-                  </span>
+                </span>
                 </div>
               </div>
 
@@ -410,27 +410,27 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
                       <CoinsIconPNG size={16} />
                       <span className="font-bold text-amber-100 text-sm">{card.cost.coins}</span>
                     </div>
-                  )}
-                  {(card.cost.food || 0) > 0 && (
+              )}
+              {(card.cost.food || 0) > 0 && (
                     <div className="flex items-center gap-1 bg-green-900/50 border border-green-600/50 rounded px-2 py-1">
-                      <FoodsIconPNG size={16} />
+                  <FoodsIconPNG size={16} />
                       <span className="font-bold text-green-100 text-sm">{card.cost.food}</span>
                     </div>
-                  )}
-                  {(card.cost.materials || 0) > 0 && (
+              )}
+              {(card.cost.materials || 0) > 0 && (
                     <div className="flex items-center gap-1 bg-blue-900/50 border border-blue-600/50 rounded px-2 py-1">
-                      <MaterialsIconPNG size={16} />
+                  <MaterialsIconPNG size={16} />
                       <span className="font-bold text-blue-100 text-sm">{card.cost.materials}</span>
                     </div>
-                  )}
-                  {(card.cost.population || 0) > 0 && (
+              )}
+              {(card.cost.population || 0) > 0 && (
                     <div className="flex items-center gap-1 bg-purple-900/50 border border-purple-600/50 rounded px-2 py-1">
-                      <PopulationIconPNG size={16} />
+                  <PopulationIconPNG size={16} />
                       <span className="font-bold text-purple-100 text-sm">{card.cost.population}</span>
                     </div>
-                  )}
-                </div>
-              </div>
+              )}
+            </div>
+          </div>
 
               {/* Description */}
               <div className="px-4 pb-4">
@@ -621,8 +621,8 @@ const EnhancedCardComponent: React.FC<{
         <div className="flex-1 flex flex-col items-center justify-center">
           {/* Type Indicator */}
           <div className="mb-1">
-            {getCardTypeIconPNG(card.type, 16)}
-          </div>
+          {getCardTypeIconPNG(card.type, 16)}
+        </div>
           
           {/* Rarity Stars */}
           <div className="flex justify-center space-x-0.5 mb-1">
@@ -760,10 +760,10 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
     <>
       {/* Hand Container */}
       <motion.div 
-        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300"
-        initial={{ opacity: 0, y: 50 }}
+        className="fixed bottom-4 left-1/3 transform -translate-x-1/2 z-20 transition-all duration-200"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
       >
         {/* Main Container with Medieval Design */}
         <div className="relative">
@@ -790,7 +790,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
             </div>
             <div className="absolute bottom-2 left-2">
               <Sword className="w-4 h-4 text-amber-400" />
-            </div>
+              </div>
             <div className="absolute bottom-2 right-2">
               <Shield className="w-4 h-4 text-amber-400" />
             </div>
@@ -799,8 +799,9 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
               {/* Deck Area - Left Side */}
               <motion.div 
                 className="flex-shrink-0"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
               >
                 <div className="relative">
                   {/* Deck Glow */}
@@ -826,64 +827,82 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
               {/* Hand Cards - Center */}
               <div className="flex items-end gap-2 flex-wrap justify-center">
                 <AnimatePresence>
-                  {hand.map((card) => (
-                    <CardMiniature
+                  {hand.map((card, index) => (
+                    <motion.div
                       key={card.id}
-                      card={card}
-                      isSelected={selectedCardId === card.id}
-                      isPlayable={(() => {
-                        const result = canPlayCard(card);
-                        return typeof result === 'object' ? result.playable : result;
-                      })()}
-                      onSelect={() => onSelectCard(card)}
-                      onShowDetail={() => setSelectedCardForDetail(card)}
-                      size="small"
-                      showInfo={true}
-                      className="transition-all duration-200"
-                    />
-                  ))}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ 
+                        duration: 0.2, 
+                        delay: index * 0.05,
+                        ease: "easeOut"
+                      }}
+                      whileHover={{ 
+                        scale: 1.05, 
+                        y: -5,
+                        transition: { duration: 0.15, ease: "easeOut" }
+                      }}
+                      whileTap={{ scale: 0.98 }}
+                      layout
+                    >
+                      <CardMiniature
+                  card={card}
+                  isSelected={selectedCardId === card.id}
+                  isPlayable={(() => {
+                    const result = canPlayCard(card);
+                    return typeof result === 'object' ? result.playable : result;
+                  })()}
+                  onSelect={() => onSelectCard(card)}
+                  onShowDetail={() => setSelectedCardForDetail(card)}
+                        size="small"
+                        showInfo={true}
+                        className="transition-all duration-200"
+                />
+                    </motion.div>
+            ))}
                 </AnimatePresence>
-                
-                {hand.length === 0 && (
+            
+            {hand.length === 0 && (
                   <motion.div 
                     className="flex items-center justify-center py-8 px-12 text-amber-300/60"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   >
-                    <div className="text-center">
+                <div className="text-center">
                       <div className="text-3xl mb-2">🃏</div>
                       <p className="text-sm font-medium">Mão vazia</p>
                       <p className="text-xs text-amber-400/60 mt-1">Aguarde as próximas cartas</p>
-                    </div>
+                </div>
                   </motion.div>
                 )}
-              </div>
             </div>
+          </div>
 
-            {/* Hand Info */}
-            {hand.length > 0 && (
+          {/* Hand Info */}
+          {hand.length > 0 && (
               <motion.div 
                 className="flex items-center justify-center mt-3 gap-6 text-xs text-amber-200"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               >
                 <span className="font-bold">{hand.length} cartas</span>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
                     <Zap className="w-3 h-3 text-green-400" />
-                    <span>Jogável</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-red-400" />
-                    <span>Bloqueada</span>
-                  </div>
+                  <span>Jogável</span>
                 </div>
+                <div className="flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-red-400" />
+                  <span>Bloqueada</span>
+                </div>
+              </div>
               </motion.div>
-            )}
-          </div>
+          )}
         </div>
+      </div>
       </motion.div>
 
       {/* Detail Modal */}

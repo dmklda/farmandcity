@@ -68,7 +68,7 @@ if (indexToRemove !== -1) {
 
 ## 🔧 Validações Mantidas
 
-✅ **Limite de Raridade**: Common (4), Uncommon (3), Rare/Ultra (2)
+✅ **Limite de Raridade**: Common (4), Uncommon (3), Rare (2), Ultra (2), Secret (1), Legendary (1), Crisis (1), Booster (1), Landmark (1)
 ✅ **Cópias Possuídas**: Não pode adicionar mais do que possui
 ✅ **Deck Cheio**: Máximo 28 cartas
 ✅ **Deck Ativo**: Precisa ter um deck selecionado
