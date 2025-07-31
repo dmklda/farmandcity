@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GameState, GamePhase, GridCell } from '../types/gameState';
 import { Resources } from '../types/resources';
 import { Card, CardType } from '../types/card';
@@ -20,8 +20,8 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 function parseProduction(card: Card): Partial<Resources> {
   const effect = card.effect.description.toLowerCase();
   
-  console.log('🔍 parseProduction para:', card.name);
-  console.log('Efeito:', effect);
+  //console.log('🔍 parseProduction para:', card.name);
+  //console.log('Efeito:', effect);
   
   // Padrões para produção por turno com múltiplos recursos
   const productionPatterns = [
@@ -92,13 +92,13 @@ function parseProduction(card: Card): Partial<Resources> {
       );
       
       if (isAlreadyProcessed) {
-        console.log('✅ Pulando padrão já processado em posição', matchStart, '-', matchEnd);
+        //console.log('✅ Pulando padrão já processado em posição', matchStart, '-', matchEnd);
         continue;
       }
       
-      console.log('✅ Padrão encontrado:', pattern);
-      console.log('Match:', match);
-      console.log('Posição:', matchStart, '-', matchEnd);
+      //console.log('✅ Padrão encontrado:', pattern);
+      //console.log('Match:', match);
+      //console.log('Posição:', matchStart, '-', matchEnd);
       
       // Marcar esta parte do texto como processada
       processedRanges.push({ start: matchStart, end: matchEnd });
@@ -119,10 +119,10 @@ function parseProduction(card: Card): Partial<Resources> {
         const value4 = parseInt(match[7], 10);
         const resourceType4 = match[8];
         
-        console.log('🔄 Efeito bidirecional:', { 
+        /*console.log('🔄 Efeito bidirecional:', { 
           value1, resourceType1, value2, resourceType2, 
           value3, resourceType3, value4, resourceType4 
-        });
+        });*/
         
         // Para efeitos bidirecionais, aplicar ambas as opções
         // Opção 1: X recurso1 → Y recurso2
@@ -206,7 +206,7 @@ function parseProduction(card: Card): Partial<Resources> {
             break;
         }
         
-        console.log('🔄 Efeito bidirecional aplicado:', prod);
+        //console.log('🔄 Efeito bidirecional aplicado:', prod);
         continue; // Pular para o próximo padrão
       }
       
@@ -217,7 +217,7 @@ function parseProduction(card: Card): Partial<Resources> {
                          pattern.source.includes('deduz');
       const multiplier = isDeduction ? -1 : 1;
       
-      console.log('É dedução?', isDeduction, 'Multiplicador:', multiplier);
+      //console.log('É dedução?', isDeduction, 'Multiplicador:', multiplier);
       
       // Verificar se é padrão com múltiplos recursos (tem 4 grupos de captura)
       if (match.length >= 5) {
@@ -227,7 +227,7 @@ function parseProduction(card: Card): Partial<Resources> {
         const value2 = parseInt(match[3], 10);
         const resourceType2 = match[4];
         
-        console.log('Múltiplos recursos:', { value1, resourceType1, value2, resourceType2 });
+        //console.log('Múltiplos recursos:', { value1, resourceType1, value2, resourceType2 });
         
         // Adicionar primeiro recurso
         switch (resourceType1) {
@@ -273,7 +273,7 @@ function parseProduction(card: Card): Partial<Resources> {
         const value = parseInt(match[1], 10);
         const resourceType = match[2];
         
-        console.log('Recurso único:', { value, resourceType });
+        //console.log('Recurso único:', { value, resourceType });
         
         switch (resourceType) {
           case 'comida':
@@ -297,15 +297,15 @@ function parseProduction(card: Card): Partial<Resources> {
     }
   }
   
-  console.log('🎯 Produção parseada:', prod);
+  //console.log('🎯 Produção parseada:', prod);
   return prod;
 }
 
 function parseInstantEffect(card: Card): Partial<Resources> {
   const effect = card.effect.description.toLowerCase();
   
-  console.log('🔍 parseInstantEffect para:', card.name);
-  console.log('Efeito:', effect);
+  //  console.log('🔍 parseInstantEffect para:', card.name);
+  //console.log('Efeito:', effect);
   
   // Padrões mais abrangentes para reconhecer diferentes formas de expressar ganho
   const patterns = [
@@ -391,8 +391,8 @@ function parseInstantEffect(card: Card): Partial<Resources> {
     const matches = effect.matchAll(new RegExp(pattern, 'g'));
     
     for (const match of matches) {
-      console.log('✅ Padrão instantâneo encontrado:', pattern);
-      console.log('Match:', match);
+      //console.log('✅ Padrão instantâneo encontrado:', pattern);
+      //console.log('Match:', match);
       
       // Verificar se é efeito bidirecional (tem 8 grupos de captura)
       const isBidirectional = pattern.source.includes('transforme') || 
@@ -410,10 +410,10 @@ function parseInstantEffect(card: Card): Partial<Resources> {
         const value4 = parseInt(match[7], 10);
         const resourceType4 = match[8];
         
-        console.log('🔄 Efeito bidirecional instantâneo:', { 
+        /*console.log('🔄 Efeito bidirecional instantâneo:', { 
           value1, resourceType1, value2, resourceType2, 
           value3, resourceType3, value4, resourceType4 
-        });
+        });*/
         
         // Para efeitos bidirecionais, aplicar ambas as opções
         // Opção 1: X recurso1 → Y recurso2
@@ -497,7 +497,7 @@ function parseInstantEffect(card: Card): Partial<Resources> {
             break;
         }
         
-        console.log('🔄 Efeito bidirecional instantâneo aplicado:', prod);
+        //console.log('🔄 Efeito bidirecional instantâneo aplicado:', prod);
         continue; // Pular para o próximo padrão
       }
       
@@ -509,7 +509,7 @@ function parseInstantEffect(card: Card): Partial<Resources> {
         const value2 = parseInt(match[3], 10);
         const resourceType2 = match[4];
         
-        console.log('Múltiplos recursos instantâneos:', { value1, resourceType1, value2, resourceType2 });
+        //  console.log('Múltiplos recursos instantâneos:', { value1, resourceType1, value2, resourceType2 });
         
         // Adicionar primeiro recurso
         switch (resourceType1) {
@@ -555,7 +555,7 @@ function parseInstantEffect(card: Card): Partial<Resources> {
         const value = parseInt(match[1], 10);
         const resourceType = match[2];
         
-        console.log('Recurso único instantâneo:', { value, resourceType });
+        //console.log('Recurso único instantâneo:', { value, resourceType });
         
         switch (resourceType) {
           case 'comida':
@@ -577,7 +577,7 @@ function parseInstantEffect(card: Card): Partial<Resources> {
     }
   }
   
-  console.log('🎯 Efeito instantâneo parseado:', prod);
+  //  console.log('🎯 Efeito instantâneo parseado:', prod);
   return prod;
 }
 
@@ -719,38 +719,47 @@ function canStackCard(newCard: Card, existingCard: Card): boolean {
   return true;
 }
 
-// Função para calcular efeito de carta empilhada
+
+
+// Função para calcular produção de carta empilhada com multiplicador balanceado
+function calculateStackedProduction(cards: Card[]): Partial<Resources> {
+  if (cards.length === 0) return {};
+  
+  const baseProduction = parseProduction(cards[0]);
+  // Multiplicador balanceado: 1 carta = 1x, 2 cartas = 1.5x, 3 cartas = 2x, 4 cartas = 2.5x
+  const multiplier = 1 + (cards.length - 1) * 0.5;
+  
+  const stackedProduction: Partial<Resources> = {};
+  Object.entries(baseProduction).forEach(([key, value]) => {
+    if (value && value > 0) {
+      stackedProduction[key as keyof Resources] = Math.round(value * multiplier);
+    }
+  });
+  
+  return stackedProduction;
+}
+
+// Função para calcular efeito de carta empilhada com multiplicador balanceado
 function calculateStackedEffect(cards: Card[]): Partial<Resources> {
   if (cards.length === 0) return {};
   
   const baseEffect = parseInstantEffect(cards[0]);
-  const multiplier = cards.length; // Duplica, triplica, etc.
+  // Multiplicador balanceado: 1 carta = 1x, 2 cartas = 1.5x, 3 cartas = 2x, 4 cartas = 2.5x
+  const multiplier = 1 + (cards.length - 1) * 0.5;
   
   const stackedEffect: Partial<Resources> = {};
   Object.entries(baseEffect).forEach(([key, value]) => {
     if (value && value > 0) {
-      stackedEffect[key as keyof Resources] = value * multiplier;
+      stackedEffect[key as keyof Resources] = Math.round(value * multiplier);
     }
   });
   
   return stackedEffect;
 }
 
-// Função para calcular produção de carta empilhada
-function calculateStackedProduction(cards: Card[]): Partial<Resources> {
-  if (cards.length === 0) return {};
-  
-  const baseProduction = parseProduction(cards[0]);
-  const multiplier = cards.length; // Duplica, triplica, etc.
-  
-  const stackedProduction: Partial<Resources> = {};
-  Object.entries(baseProduction).forEach(([key, value]) => {
-    if (value && value > 0) {
-      stackedProduction[key as keyof Resources] = value * multiplier;
-    }
-  });
-  
-  return stackedProduction;
+// Função para calcular o nível de uma carta baseado no número de cartas empilhadas
+function calculateCardLevel(cards: Card[]): number {
+  return Math.min(cards.length, 4); // Máximo nível 4
 }
 
 // Função para processar efeitos dos eventos ativos
@@ -762,11 +771,11 @@ function processEventEffects(eventGrid: GridCell[][]): Partial<Resources> {
   eventGrid.flat().forEach(cell => {
     if (cell.card && cell.card.type === 'event') {
       const eventEffect = parseInstantEffect(cell.card);
-      console.log('🎭 Processando evento:', {
+      /*console.log('🎭 Processando evento:', {
         nome: cell.card.name,
         efeito: cell.card.effect.description,
         efeitoParseado: eventEffect
-      });
+      });*/
       
       // Acumular efeitos
       Object.entries(eventEffect).forEach(([key, value]) => {
@@ -783,7 +792,7 @@ function processEventEffects(eventGrid: GridCell[][]): Partial<Resources> {
   });
   
   if (details.length > 0) {
-    console.log('🎭 Efeitos dos eventos aplicados:', details);
+    //console.log('🎭 Efeitos dos eventos aplicados:', details);
   }
   
   return effect;
@@ -809,39 +818,39 @@ export function useGameState() {
   const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
   
   const getActiveDeck = useCallback(() => {
-    console.log('=== DEBUG: getActiveDeck chamado ===');
-    console.log('activeDeck:', activeDeck);
-    console.log('activeDeck?.cards:', activeDeck?.cards);
-    console.log('activeDeck?.cards?.length:', activeDeck?.cards?.length);
-    console.log('playerCards:', playerCards.length);
-    console.log('starterDeck:', starterDeck.length);
+    //console.log('=== DEBUG: getActiveDeck chamado ===');
+    //console.log('activeDeck:', activeDeck);
+    //console.log('activeDeck?.cards:', activeDeck?.cards);
+    //console.log('activeDeck?.cards?.length:', activeDeck?.cards?.length);
+    //console.log('playerCards:', playerCards.length);
+    //console.log('starterDeck:', starterDeck.length);
     
     // Prioridade: deck ativo do usuário
     if (activeDeck && activeDeck.cards && activeDeck.cards.length > 0) {
-      console.log(`✅ Usando deck ativo: ${activeDeck.name} com ${activeDeck.cards.length} cartas`);
-      console.log('Cartas do deck ativo:', activeDeck.cards.map(c => c.name));
+      //console.log(`✅ Usando deck ativo: ${activeDeck.name} com ${activeDeck.cards.length} cartas`);
+      //console.log('Cartas do deck ativo:', activeDeck.cards.map(c => c.name));
       const result = activeDeck.cards.slice(0, DECK_LIMIT);
-      console.log('Resultado do deck ativo:', result.length, 'cartas');
+      //console.log('Resultado do deck ativo:', result.length, 'cartas');
       return result;
     }
     
     // Fallback: cartas do jogador
     if (playerCards.length > 0) {
-      console.log(`🔄 Usando cartas do jogador: ${playerCards.length} cartas`);
+      //console.log(`🔄 Usando cartas do jogador: ${playerCards.length} cartas`);
       const result = shuffle([...playerCards]).slice(0, DECK_LIMIT);
-      console.log('Resultado das cartas do jogador:', result.length, 'cartas');
+      //console.log('Resultado das cartas do jogador:', result.length, 'cartas');
       return result;
     }
     
     // Fallback final: starter deck
     if (starterDeck.length > 0) {
-      console.log(`🔄 Usando starter deck: ${starterDeck.length} cartas`);
+      //console.log(`🔄 Usando starter deck: ${starterDeck.length} cartas`);
       const result = shuffle([...starterDeck]).slice(0, DECK_LIMIT);
-      console.log('Resultado do starter deck:', result.length, 'cartas');
+      //console.log('Resultado do starter deck:', result.length, 'cartas');
       return result;
     }
     
-    console.log('❌ Nenhuma carta disponível');
+    //console.log('❌ Nenhuma carta disponível');
     return [];
   }, [activeDeck, playerCards, starterDeck]);
 
@@ -854,13 +863,13 @@ export function useGameState() {
         deckActiveId: activeDeck?.id || null
       };
       localStorage.setItem('famand_gameState', JSON.stringify(gameData));
-      console.log('🎮 Estado do jogo salvo:', {
+      /*console.log('🎮 Estado do jogo salvo:', {
         turn: gameState.turn,
         phase: gameState.phase,
         resources: gameState.resources,
         deckLength: gameState.deck.length,
         handLength: gameState.hand.length
-      });
+      });*/
     } catch (error) {
       console.error('Erro ao salvar estado do jogo:', error);
     }
@@ -869,45 +878,45 @@ export function useGameState() {
   // Função para carregar estado do jogo
   const loadGameState = useCallback(() => {
     try {
-      console.log('🔍 loadGameState chamado');
-      console.log('activeDeck?.id:', activeDeck?.id);
+      //  console.log('🔍 loadGameState chamado');
+      //console.log('activeDeck?.id:', activeDeck?.id);
       
       const savedState = localStorage.getItem('famand_gameState');
-      console.log('Estado salvo no localStorage:', savedState ? 'EXISTE' : 'NÃO EXISTE');
+      //console.log('Estado salvo no localStorage:', savedState ? 'EXISTE' : 'NÃO EXISTE');
       
       if (savedState) {
         const parsedState = JSON.parse(savedState);
-        console.log('Estado parseado:', {
+        /*console.log('Estado parseado:', {
           timestamp: parsedState.timestamp,
           deckActiveId: parsedState.deckActiveId,
           turn: parsedState.turn,
           handLength: parsedState.hand?.length
-        });
+        });*/
         
         // Verificar se o estado é válido e não muito antigo (24 horas)
         const isRecent = Date.now() - parsedState.timestamp < 24 * 60 * 60 * 1000;
         const isSameDeck = parsedState.deckActiveId === activeDeck?.id;
         
-        console.log('Validações:', {
+        /*console.log('Validações:', {
           isRecent,
           isSameDeck,
           currentTime: Date.now(),
           savedTime: parsedState.timestamp,
           timeDiff: Date.now() - parsedState.timestamp
-        });
+        });*/
         
         if (isRecent && isSameDeck) {
-          console.log('🎮 Estado do jogo carregado:', {
+          /*console.log('🎮 Estado do jogo carregado:', {
             turn: parsedState.turn,
             phase: parsedState.phase,
             resources: parsedState.resources,
             deckLength: parsedState.deck?.length,
             handLength: parsedState.hand?.length
-          });
+          });*/
           return parsedState;
         } else {
-          console.log('🎮 Estado do jogo ignorado (antigo ou deck diferente)');
-          console.log('Razão:', !isRecent ? 'Muito antigo' : 'Deck diferente');
+          //console.log('🎮 Estado do jogo ignorado (antigo ou deck diferente)');
+          //console.log('Razão:', !isRecent ? 'Muito antigo' : 'Deck diferente');
           localStorage.removeItem('famand_gameState');
         }
       }
@@ -915,7 +924,7 @@ export function useGameState() {
       console.error('Erro ao carregar estado do jogo:', error);
       localStorage.removeItem('famand_gameState');
     }
-    console.log('🔍 loadGameState retornando null');
+    //console.log('🔍 loadGameState retornando null');
     return null;
   }, [activeDeck?.id]);
 
@@ -924,11 +933,11 @@ export function useGameState() {
     const initialState = getInitialState([]);
     initialState.resources = { coins: 5, food: 5, materials: 5, population: 3 };
     // Sistema de vitória será definido baseado no modo selecionado
-    console.log('🎮 Estado inicial do jogo criado:', {
+    /*console.log('🎮 Estado inicial do jogo criado:', {
       deckLength: initialState.deck.length,
       handLength: initialState.hand.length,
       deckCards: initialState.deck.map(c => c.name)
-    });
+    });*/ 
     return initialState;
   });
   
@@ -940,6 +949,7 @@ export function useGameState() {
   const [diceResult, setDiceResult] = useState<number | null>(null);
   const [diceUsed, setDiceUsed] = useState<boolean>(false);
   const [diceProductionSummary, setDiceProductionSummary] = useState<string | null>(null);
+  const [activatedCards, setActivatedCards] = useState<Record<string, number>>({}); // cardId -> diceNumber
   const [victory, setVictory] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [discardMode, setDiscardMode] = useState(false);
@@ -1018,41 +1028,41 @@ export function useGameState() {
 
   // Atualizar deck quando cartas ou deck ativo carregarem
   useEffect(() => {
-    console.log('=== DEBUG: useEffect para atualizar deck executado ===');
-    console.log('cardsLoading:', cardsLoading);
-    console.log('decksLoading:', decksLoading);
-    console.log('starterDeckLoading:', starterDeckLoading);
-    console.log('activeDeck:', activeDeck);
-    console.log('playerCards.length:', playerCards.length);
-    console.log('starterDeck.length:', starterDeck.length);
+    //console.log('=== DEBUG: useEffect para atualizar deck executado ===');
+    //console.log('cardsLoading:', cardsLoading);
+    //console.log('decksLoading:', decksLoading);
+    //console.log('starterDeckLoading:', starterDeckLoading);
+    //console.log('activeDeck:', activeDeck);
+    //console.log('playerCards.length:', playerCards.length);
+    //console.log('starterDeck.length:', starterDeck.length);
     
     // Aguardar TODOS os loadings terminarem E ter um deck ativo válido
     if (!cardsLoading && !decksLoading && !starterDeckLoading) {
-      console.log('Todos os loadings finalizados, verificando deck ativo...');
+      //console.log('Todos os loadings finalizados, verificando deck ativo...');
       
       // Se não há deck ativo ainda, aguardar
       if (!activeDeck || !activeDeck.cards || activeDeck.cards.length === 0) {
-        console.log('⏳ Aguardando deck ativo carregar...');
+        //console.log('⏳ Aguardando deck ativo carregar...');
         setGameLoading(true);
         return;
       }
       
       // TEMPORÁRIO: Remover verificação de estado salvo para debug
-      console.log('🆕 Inicializando novo jogo (debug mode)...');
-      console.log('✅ Deck ativo encontrado, chamando getActiveDeck...');
+      //console.log('🆕 Inicializando novo jogo (debug mode)...');
+      //console.log('✅ Deck ativo encontrado, chamando getActiveDeck...');
       const newDeck = getActiveDeck();
-      console.log('Novo deck obtido:', newDeck.length, 'cartas');
-      console.log('Cartas do deck:', newDeck.map(c => c.name));
+      //console.log('Novo deck obtido:', newDeck.length, 'cartas');
+      //console.log('Cartas do deck:', newDeck.map(c => c.name));
       
       if (newDeck.length > 0) {
         const shuffledDeck = shuffle([...newDeck]);
         const initialHand = shuffledDeck.slice(0, 5);
         
-        console.log('Atualizando jogo com:', {
+        /*console.log('Atualizando jogo com:', {
           deckSize: shuffledDeck.length,
           handSize: initialHand.length,
           handCards: initialHand.map(c => c.name)
-        });
+        });*/
         
         setGame(prev => {
           const newState = {
@@ -1060,37 +1070,37 @@ export function useGameState() {
             deck: shuffledDeck.slice(5), // Remover as 5 cartas da mão inicial
             hand: initialHand
           };
-          console.log('🎮 setGame chamado - novo estado:', {
+          /*console.log('🎮 setGame chamado - novo estado:', {
             deckLength: newState.deck.length,
             handLength: newState.hand.length,
             deckCards: newState.deck.map(c => c.name)
-          });
-          console.log('🎮 setGame - estado anterior:', {
-            deckLength: prev.deck.length,
-            handLength: prev.hand.length
-          });
-          console.log('🎮 setGame - hand cards:', newState.hand.map(c => c.name));
+          });*/
+          //console.log('🎮 setGame - estado anterior:', {
+          //  deckLength: prev.deck.length,
+          //  handLength: prev.hand.length
+          //});
+          //console.log('🎮 setGame - hand cards:', newState.hand.map(c => c.name));
           return newState;
         });
         
         // Verificar se o estado foi atualizado
         setTimeout(() => {
-          console.log('🎮 Verificação pós-setGame:', {
+          /*console.log('🎮 Verificação pós-setGame:', {
             gameHandLength: game.hand.length,
             gameDeckLength: game.deck.length
-          });
+          });*/
         }, 100);
         
-        console.log('✅ Jogo atualizado - novo deck size:', shuffledDeck.slice(5).length);
-        console.log('✅ Jogo atualizado - nova hand size:', initialHand.length);
+        //console.log('✅ Jogo atualizado - novo deck size:', shuffledDeck.slice(5).length);
+        //console.log('✅ Jogo atualizado - nova hand size:', initialHand.length);
         
         setGameLoading(false);
       } else {
-        console.log('❌ Nenhuma carta disponível para o deck');
+        //console.log('❌ Nenhuma carta disponível para o deck');
         setGameLoading(false);
       }
     } else {
-      console.log('⏳ Ainda carregando:', { cardsLoading, decksLoading, starterDeckLoading });
+      //console.log('⏳ Ainda carregando:', { cardsLoading, decksLoading, starterDeckLoading });
       setGameLoading(true);
     }
   }, [cardsLoading, decksLoading, starterDeckLoading, activeDeck, playerCards, starterDeck, getActiveDeck]);
@@ -1141,7 +1151,7 @@ export function useGameState() {
       // - Aumentar chance de eventos de crise
       // - Aumentar custos de cartas em 10%
       // - Reduzir produção em 5%
-      console.log(`🔄 Modo infinito - Ciclo ${cycle}: Escalonamento ativado`);
+      //  console.log(`🔄 Modo infinito - Ciclo ${cycle}: Escalonamento ativado`);
     }
   }, [game.turn, gameLoading, gameSettings]);
 
@@ -1159,38 +1169,44 @@ export function useGameState() {
       condition.completed && !game.victorySystem!.conditions.find(c => c.id === condition.id)?.completed
     );
     
-    // Atualizar o estado do jogo com o sistema de vitória atualizado
-    setGame(prev => ({
-      ...prev,
-      victorySystem: updatedVictorySystem
-    }));
-    
-    // Mostrar mensagens para condições recém-completadas
-    newlyCompleted.forEach(condition => {
-      const typeText = condition.type === 'major' ? '🏆 Vitória Maior' : '⭐ Vitória Menor';
-              addToHistory(`${typeText}: ${condition.name} completada!`);
-      setHighlight(`${typeText}: ${condition.name}!`);
-      setTimeout(() => setHighlight(null), 2000);
-    });
-    
     // Verificar vitória final
     if (updatedVictorySystem.victoryAchieved) {
       const majorCompleted = updatedVictorySystem.conditions.filter(c => c.type === 'major' && c.completed).length;
       const minorCompleted = updatedVictorySystem.conditions.filter(c => c.type === 'minor' && c.completed).length;
       
       setVictory(`🏆 VITÓRIA COMPLETA! ${majorCompleted} vitórias maiores e ${minorCompleted} vitórias menores alcançadas!`);
-              addToHistory('🏆 VITÓRIA COMPLETA! Todas as condições necessárias foram atendidas!');
+      addToHistory('🏆 VITÓRIA COMPLETA! Todas as condições necessárias foram atendidas!');
     }
-  }, [game, victory, gameLoading]);
+    
+    // Atualizar o estado do jogo com o sistema de vitória atualizado (apenas se houve mudanças)
+    if (newlyCompleted.length > 0 || updatedVictorySystem.victoryAchieved) {
+      setGame(prev => ({
+        ...prev,
+        victorySystem: updatedVictorySystem
+      }));
+      
+      // Mostrar mensagens para condições recém-completadas
+      newlyCompleted.forEach(condition => {
+        const typeText = condition.type === 'major' ? '🏆 Vitória Maior' : '⭐ Vitória Menor';
+        addToHistory(`${typeText}: ${condition.name} completada!`);
+        setHighlight(`${typeText}: ${condition.name}!`);
+        setTimeout(() => setHighlight(null), 2000);
+      });
+    }
+  }, [game.turn, game.resources, game.farmGrid, game.cityGrid, game.eventGrid, game.landmarksGrid, victory, gameLoading]);
 
-  // Efeito: derrota se população chegar a 0 (banner)
+  // Efeito: derrota se população chegar a 0 ou reputação chegar a -1
   useEffect(() => {
     if (gameLoading) return;
     if (game.resources.population <= 0 && !defeat) {
       setDefeat('Derrota: Sua população chegou a 0!');
-              addToHistory('❌ Derrota: população chegou a 0!');
+      addToHistory('❌ Derrota: população chegou a 0!');
     }
-  }, [game.resources.population, defeat, gameLoading]);
+    if (game.playerStats.reputation <= -1 && !defeat) {
+      setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
+      addToHistory('💀 Derrota por reputação -1: baralho vazio');
+    }
+  }, [game.resources.population, game.playerStats.reputation, defeat, gameLoading]);
 
   // Efeito: descarte obrigatório manual na fase 'end' (apenas 1 vez por turno)
   useEffect(() => {
@@ -1206,24 +1222,30 @@ export function useGameState() {
   }, [game.phase, game.hand.length, discardMode, victory, defeat, discardedThisTurn, gameLoading]);
 
   // Efeito: penalidade por falta de comida no fim do turno
+  const foodPenaltyProcessed = useRef(false);
   useEffect(() => {
     if (gameLoading) return;
-    if (game.phase === 'end' && game.resources.food < 0 && !defeat) {
+    if (game.phase === 'end' && game.resources.food < 0 && !defeat && !foodPenaltyProcessed.current) {
+      foodPenaltyProcessed.current = true;
       setGame((g) => ({
         ...g,
         resources: { ...g.resources, food: 0, population: Math.max(0, g.resources.population - 1) },
         playerStats: { ...g.playerStats, reputation: Math.max(0, g.playerStats.reputation - 1) },
       }));
       setHighlight('⚠️ Faltou comida! -1 população, -1 reputação');
-              addToHistory('⚠️ Faltou comida! -1 população, -1 reputação');
+      addToHistory('⚠️ Faltou comida! -1 população, -1 reputação');
       setTimeout(() => setHighlight(null), 1500);
+    }
+    if (game.phase !== 'end') {
+      foodPenaltyProcessed.current = false;
     }
   }, [game.phase, game.resources.food, defeat, gameLoading]);
 
   // Efeito: bônus de diversidade no fim do turno
+  const diversityBonusProcessed = useRef(false);
   useEffect(() => {
     if (gameLoading) return;
-    if (game.phase === 'end') {
+    if (game.phase === 'end' && !diversityBonusProcessed.current) {
       const allCards = [
         ...game.farmGrid.flat().map((cell) => cell.card).filter(Boolean),
         ...game.cityGrid.flat().map((cell) => cell.card).filter(Boolean),
@@ -1234,6 +1256,7 @@ export function useGameState() {
       });
       const diversityBonus = Object.keys(typeCounts).length >= 3 ? 1 : 0;
       if (diversityBonus > 0) {
+        diversityBonusProcessed.current = true;
         setGame((g) => ({
           ...g,
           playerStats: { ...g.playerStats, reputation: Math.min(10, g.playerStats.reputation + diversityBonus) },
@@ -1242,6 +1265,9 @@ export function useGameState() {
         addToHistory('✨ Bônus de diversidade! +1 reputação');
         setTimeout(() => setHighlight(null), 1500);
       }
+    }
+    if (game.phase !== 'end') {
+      diversityBonusProcessed.current = false;
     }
   }, [game.phase, gameLoading]);
 
@@ -1253,9 +1279,11 @@ export function useGameState() {
   }, [defeat]);
 
   // Efeito: descarte automático se mão exceder limite na fase 'end'
+  const autoDiscardProcessed = useRef(false);
   useEffect(() => {
     if (gameLoading) return;
-    if (game.phase === 'end' && game.hand.length > HAND_LIMIT && !discardMode && !victory && !defeat) {
+    if (game.phase === 'end' && game.hand.length > HAND_LIMIT && !discardMode && !victory && !defeat && !autoDiscardProcessed.current) {
+      autoDiscardProcessed.current = true;
       const idx = Math.floor(Math.random() * game.hand.length);
       const discarded = game.hand[idx];
       setGame((g) => {
@@ -1263,23 +1291,66 @@ export function useGameState() {
           ...g,
           hand: g.hand.filter((_, i) => i !== idx),
         };
-        console.log('🗑️ Carta descartada - novo estado:', {
+        /*console.log('🗑️ Carta descartada - novo estado:', {
           deckLength: newState.deck.length,
           handLength: newState.hand.length,
           cartaDescartada: discarded.name
-        });
+        });*/
         return newState;
       });
       setHighlight(`🗑️ Carta descartada: ${discarded.name}`);
-              addToHistory(`🗑️ Carta descartada automaticamente: ${discarded.name}`);
+      addToHistory(`🗑️ Carta descartada automaticamente: ${discarded.name}`);
       setTimeout(() => setHighlight(null), 1500);
+    }
+    if (game.phase !== 'end') {
+      autoDiscardProcessed.current = false;
     }
   }, [game.phase, gameLoading]);
 
-  // Efeito: compra automática de carta no início da fase 'draw', penalidade se deck vazio
+  // Efeito: penalidade por baralho vazio no fim do turno
+  const emptyDeckPenaltyProcessed = useRef(false);
   useEffect(() => {
     if (gameLoading) return;
-    if (game.phase === 'draw') {
+    
+    // Calcular cartas restantes no baralho
+    const totalDeckCards = activeDeck?.cards?.length || game.deck.length;
+    const cardsInHand = game.hand.length;
+    const remainingDeckCards = Math.max(0, totalDeckCards - cardsInHand);
+    
+    if (game.phase === 'end' && remainingDeckCards === 0 && !defeat && !emptyDeckPenaltyProcessed.current) {
+      emptyDeckPenaltyProcessed.current = true;
+      
+      // Reduzir reputação
+      setGame((g) => ({
+        ...g,
+        playerStats: { ...g.playerStats, reputation: g.playerStats.reputation - 1 },
+      }));
+      
+      const newReputation = game.playerStats.reputation - 1;
+      
+      if (newReputation <= -1) {
+        // Derrota automática se reputação chegar a -1 ou menos
+        setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
+        addToHistory('💀 Derrota por reputação -1: baralho vazio');
+      } else {
+        // Apenas penalidade de reputação
+        setHighlight('⚠️ Baralho vazio! -1 reputação');
+        addToHistory(`⚠️ Baralho vazio! -1 reputação (${newReputation}/10)`);
+        setTimeout(() => setHighlight(null), 2000);
+      }
+    }
+    
+    if (game.phase !== 'end') {
+      emptyDeckPenaltyProcessed.current = false;
+    }
+  }, [game.phase, game.hand.length, activeDeck?.cards?.length, game.deck.length, defeat, gameLoading, game.playerStats.reputation]);
+
+  // Efeito: compra automática de carta no início da fase 'draw', penalidade se deck vazio
+  const drawPhaseProcessed = useRef(false);
+  useEffect(() => {
+    if (gameLoading) return;
+    if (game.phase === 'draw' && !drawPhaseProcessed.current) {
+      drawPhaseProcessed.current = true;
       setBuiltThisTurn({ farm: false, city: false });
       setBuiltCountThisTurn(0);
       setActionThisTurn(false);
@@ -1288,11 +1359,11 @@ export function useGameState() {
       setGame(g => ({ ...g, actionUsedThisTurn: false, builtCountThisTurn: 0 }));
       if (game.hand.length < 6) {
         if (game.deck.length > 0) {
-          console.log('🃏 Compra de carta iniciada:', {
+          /*console.log('🃏 Compra de carta iniciada:', {
             deckLength: game.deck.length,
             handLength: game.hand.length,
             cartaTopo: game.deck[0]?.name
-          });
+          });*/
           
           setGame((g) => {
             const cartaComprada = g.deck[0];
@@ -1301,12 +1372,12 @@ export function useGameState() {
               hand: [...g.hand, cartaComprada],
               deck: g.deck.slice(1),
             };
-            console.log('🃏 Carta comprada - novo estado:', {
+            /*console.log('🃏 Carta comprada - novo estado:', {
               deckLength: newState.deck.length,
               handLength: newState.hand.length,
               cartaComprada: cartaComprada?.name,
               handCards: newState.hand.map(c => c.name)
-            });
+            });*/ 
             return newState;
           });
           setHighlight('🃏 Carta comprada!');
@@ -1326,6 +1397,9 @@ export function useGameState() {
         }
       }
     }
+    if (game.phase !== 'draw') {
+      drawPhaseProcessed.current = false;
+    }
   }, [game.phase, gameLoading]);
 
   // NOVO: Detectar evento/crise e sugerir defesa
@@ -1341,27 +1415,27 @@ export function useGameState() {
 
   // Monitorar mudanças no deck
   useEffect(() => {
-    console.log('🔄 Deck mudou - novo tamanho:', game.deck.length);
+    //console.log('🔄 Deck mudou - novo tamanho:', game.deck.length);
   }, [game.deck.length]);
 
   // Monitorar mudanças no game.deck
   useEffect(() => {
-    console.log('🔄 game.deck mudou:', {
+    /*console.log('🔄 game.deck mudou:', {
       length: game.deck.length,
       cards: game.deck.map(c => c.name)
-    });
+    });*/
   }, [game.deck]);
 
   // Monitorar mudanças no estado do jogo para debug
   useEffect(() => {
-    console.log('🎮 Estado do jogo atualizado:', {
+    /*console.log('🎮 Estado do jogo atualizado:', {
       turn: game.turn,
       phase: game.phase,
       handLength: game.hand.length,
       deckLength: game.deck.length,
       handCards: game.hand.map(c => c.name),
       deckCards: game.deck.map(c => c.name)
-    });
+    });*/
   }, [game]);
 
   // Handlers funcionais
@@ -1395,7 +1469,7 @@ export function useGameState() {
     const nextPhaseIndex = (currentPhaseIndex + 1) % phaseOrder.length;
     const nextPhase = phaseOrder[nextPhaseIndex];
     
-    console.log(`Mudando fase: ${game.phase} -> ${nextPhase}`);
+    //console.log(`Mudando fase: ${game.phase} -> ${nextPhase}`);
     
     if (game.phase === 'end') {
       // Avança para novo turno e volta para 'draw'
@@ -1456,12 +1530,12 @@ export function useGameState() {
   const handleSelectCard = useCallback((card: Card) => {
     if (victory) return;
     
-    console.log('=== DEBUG: Carta selecionada ===');
-    console.log('Nome:', card.name);
-    console.log('Tipo:', card.type);
-    console.log('Efeito:', card.effect.description);
-    console.log('Fase atual:', game.phase);
-    console.log('Custos:', card.cost);
+    //console.log('=== DEBUG: Carta selecionada ===');
+    //console.log('Nome:', card.name);
+    //console.log('Tipo:', card.type);
+    //  console.log('Efeito:', card.effect.description);
+    //console.log('Fase atual:', game.phase);
+    //console.log('Custos:', card.cost);
     
     // Se já está selecionada, desmarcar
     if (selectedCard && selectedCard.id === card.id) {
@@ -1472,11 +1546,11 @@ export function useGameState() {
     }
     
     const canPlay = canPlayCardUI(card);
-    console.log('Pode jogar:', canPlay);
+    //console.log('Pode jogar:', canPlay);
     
     // Para cartas de efeito imediato (action, magic, defense)
     if (card.type === 'action' && game.phase === 'action' && canPlay.playable) {
-      console.log('=== PROCESSANDO CARTA DE AÇÃO ===');
+      //console.log('=== PROCESSANDO CARTA DE AÇÃO ===');
       const cost: Resources = {
         coins: card.cost.coins ?? 0,
         food: card.cost.food ?? 0,
@@ -1484,24 +1558,29 @@ export function useGameState() {
         population: card.cost.population ?? 0,
       };
       const effect = parseInstantEffect(card);
-      console.log('Efeito parseado:', effect);
+      //console.log('Efeito parseado:', effect);
       
       let details: string[] = [];
       Object.entries(effect).forEach(([key, value]) => {
         if (value && value > 0) details.push(`+${value} ${key}`);
       });
-      console.log('Detalhes do efeito:', details);
+      //console.log('Detalhes do efeito:', details);
       
       setGame((g) => {
-        const newHand = g.hand.filter((c) => c.id !== card.id);
+        // Remover apenas a primeira carta com este ID (não todas)
+        const cardIndex = g.hand.findIndex((c) => c.id === card.id);
+        const newHand = cardIndex !== -1 
+          ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
+          : g.hand;
+        
         const newResources: Resources = {
           coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
           food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
           materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
           population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
         };
-        console.log('Recursos antes:', g.resources);
-        console.log('Recursos depois:', newResources);
+        //console.log('Recursos antes:', g.resources);
+        //console.log('Recursos depois:', newResources);
         return {
           ...g,
           hand: newHand,
@@ -1545,7 +1624,7 @@ export function useGameState() {
   const handleSelectFarm = useCallback((x: number, y: number) => {
     if (victory) return;
     
-    console.log('Fazenda selecionada:', x, y);
+    //console.log('Fazenda selecionada:', x, y);
     setSelectedGrid('farm');
     
     // Se há uma carta selecionada, tentar jogá-la
@@ -1557,7 +1636,7 @@ export function useGameState() {
   const handleSelectCity = useCallback((x: number, y: number) => {
     if (victory) return;
     
-    console.log('Cidade selecionada:', x, y);
+    //console.log('Cidade selecionada:', x, y);
     setSelectedGrid('city');
     
     // Se há uma carta selecionada, tentar jogá-la
@@ -1716,7 +1795,11 @@ export function useGameState() {
           return cell;
         })
       );
-      const newHand = g.hand.filter((c) => c.id !== selectedCard.id);
+      // Remover apenas a primeira carta com este ID (não todas)
+      const cardIndex = g.hand.findIndex((c) => c.id === selectedCard.id);
+      const newHand = cardIndex !== -1 
+        ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
+        : g.hand;
       
       // Processar o efeito da carta construída (considerando empilhamento)
       const targetCell = newGrid[y][x];
@@ -1725,13 +1808,13 @@ export function useGameState() {
         ? calculateStackedEffect(cards)
         : parseInstantEffect(selectedCard);
       
-      console.log('🏗️ Efeito da carta construída:', {
+      /*console.log('🏗️ Efeito da carta construída:', {
         nome: selectedCard.name,
         efeito: selectedCard.effect.description,
         efeitoParseado: effect,
         nivel: targetCell.level || 1,
         empilhada: targetCell.level && targetCell.level > 1
-      });
+      });*/
       
       const newResources: Resources = {
         coins: g.resources.coins - (selectedCard.cost.coins ?? 0) + (effect.coins ?? 0),
@@ -1740,7 +1823,7 @@ export function useGameState() {
         population: g.resources.population - (selectedCard.cost.population ?? 0) + (effect.population ?? 0),
       };
       
-      console.log('🏗️ Recursos atualizados:', {
+      /*console.log('🏗️ Recursos atualizados:', {
         antes: g.resources,
         depois: newResources,
         custo: {
@@ -1750,7 +1833,7 @@ export function useGameState() {
           population: selectedCard.cost.population ?? 0,
         },
         efeito: effect
-      });
+      });*/
       
       const isLandmark = selectedCard.type === 'landmark';
       // Combo simples: 3 cartas do mesmo tipo em sequência (considerando empilhamento)
@@ -1818,13 +1901,13 @@ export function useGameState() {
           landmarks: g.playerStats.landmarks + (isLandmark ? 1 : 0),
         },
       };
-      console.log('🏗️ Carta jogada em grid - novo estado:', {
+      /*console.log('🏗️ Carta jogada em grid - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
         cartaJogada: selectedCard.name,
         gridType: gridType,
         efeitosAplicados: effectDetails
-      });
+      });*/
       return newState;
     });
     setSelectedCard(null);
@@ -1835,9 +1918,9 @@ export function useGameState() {
 
   // NOVO: Handler de ativação de magia
   const handleActivateMagic = useCallback((card: Card) => {
-    console.log('=== PROCESSANDO CARTA DE MAGIA ===');
-    console.log('Nome:', card.name);
-    console.log('Efeito:', card.effect.description);
+    //console.log('=== PROCESSANDO CARTA DE MAGIA ===');
+    //console.log('Nome:', card.name);
+    //console.log('Efeito:', card.effect.description);
     
     const cost: Resources = {
       coins: card.cost.coins ?? 0,
@@ -1852,24 +1935,29 @@ export function useGameState() {
     
     // Processar o efeito da carta de magia
     const effect = parseInstantEffect(card);
-    console.log('Efeito parseado:', effect);
+    //console.log('Efeito parseado:', effect);
     
     let details: string[] = [];
     Object.entries(effect).forEach(([key, value]) => {
       if (value && value > 0) details.push(`+${value} ${key}`);
     });
-    console.log('Detalhes do efeito:', details);
+    //console.log('Detalhes do efeito:', details);
     
     setGame((g) => {
-      const newHand = g.hand.filter((c) => c.id !== card.id);
+      // Remover apenas a primeira carta com este ID (não todas)
+      const cardIndex = g.hand.findIndex((c) => c.id === card.id);
+      const newHand = cardIndex !== -1 
+        ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
+        : g.hand;
+      
       const newResources: Resources = {
         coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
         food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
         materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
         population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
       };
-      console.log('Recursos antes:', g.resources);
-      console.log('Recursos depois:', newResources);
+      //console.log('Recursos antes:', g.resources);
+      //console.log('Recursos depois:', newResources);
       
       const newState = {
         ...g,
@@ -1877,11 +1965,11 @@ export function useGameState() {
         resources: newResources,
         comboEffects: [...g.comboEffects, card.effect.description],
       };
-      console.log('✨ Magia ativada - novo estado:', {
+      /*console.log('✨ Magia ativada - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
         cartaUsada: card.name
-      });
+      });*/
       return newState;
     });
     setActionSummary(`Magia ativada: ${card.name} (${details.join(', ') || 'efeito aplicado'})`);
@@ -1894,9 +1982,9 @@ export function useGameState() {
 
   // NOVO: Handler de ativação de defesa (reação a evento)
   const handleActivateDefense = useCallback((card: Card) => {
-    console.log('=== PROCESSANDO CARTA DE DEFESA ===');
-    console.log('Nome:', card.name);
-    console.log('Efeito:', card.effect.description);
+    //console.log('=== PROCESSANDO CARTA DE DEFESA ===');
+    //console.log('Nome:', card.name);
+    //console.log('Efeito:', card.effect.description);
     
     const cost: Resources = {
       coins: card.cost.coins ?? 0,
@@ -1911,24 +1999,29 @@ export function useGameState() {
     
     // Processar o efeito da carta de defesa
     const effect = parseInstantEffect(card);
-    console.log('Efeito parseado:', effect);
+    //console.log('Efeito parseado:', effect);
     
     let details: string[] = [];
     Object.entries(effect).forEach(([key, value]) => {
       if (value && value > 0) details.push(`+${value} ${key}`);
     });
-    console.log('Detalhes do efeito:', details);
+    //console.log('Detalhes do efeito:', details);
     
     setGame((g) => {
-      const newHand = g.hand.filter((c) => c.id !== card.id);
+      // Remover apenas a primeira carta com este ID (não todas)
+      const cardIndex = g.hand.findIndex((c) => c.id === card.id);
+      const newHand = cardIndex !== -1 
+        ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
+        : g.hand;
+      
       const newResources: Resources = {
         coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
         food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
         materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
         population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
       };
-      console.log('Recursos antes:', g.resources);
-      console.log('Recursos depois:', newResources);
+      //console.log('Recursos antes:', g.resources);
+      //console.log('Recursos depois:', newResources);
       
       return {
       ...g,
@@ -1947,7 +2040,7 @@ export function useGameState() {
   }, [game]);
 
   const handleDiscardCard = useCallback((card: Card) => {
-    console.log(`Descartando carta: ${card.name}`);
+    //console.log(`Descartando carta: ${card.name}`);
     
     // Remover carta da mão
     const cardIndex = game.hand.findIndex(c => c.id === card.id);
@@ -1962,11 +2055,11 @@ export function useGameState() {
         ...prev,
         hand: newHand
       };
-      console.log('🗑️ Carta descartada manualmente - novo estado:', {
+      /*console.log('🗑️ Carta descartada manualmente - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
         cartaDescartada: card.name
-      });
+      });*/
       return newState;
     });
     
@@ -1981,7 +2074,7 @@ export function useGameState() {
     setHighlight(`🗑️ Carta descartada: ${card.name}`);
     setTimeout(() => setHighlight(null), 2000);
     
-    console.log(`Carta ${card.name} descartada`);
+    //console.log(`Carta ${card.name} descartada`);
   }, [game.hand]);
 
   const handleDiceRoll = useCallback(() => {
@@ -1996,15 +2089,30 @@ export function useGameState() {
       ...game.farmGrid.flat().map((cell) => cell.card).filter(Boolean),
       ...game.cityGrid.flat().map((cell) => cell.card).filter(Boolean),
     ] as Card[];
+    const activatedCardIds: string[] = [];
     allCards.forEach((card) => {
       const diceProd = parseDiceProduction(card);
       if (diceProd && diceProd.dice === roll) {
+        // Rastrear cartas ativadas
+        activatedCardIds.push(card.id);
+        
         Object.entries(diceProd.prod).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
         });
       }
     });
+    
+    // Atualizar estado de cartas ativadas
+    if (activatedCardIds.length > 0) {
+      setActivatedCards(prev => {
+        const newState = { ...prev };
+        activatedCardIds.forEach(cardId => {
+          newState[cardId] = roll;
+        });
+        return newState;
+      });
+    }
     if (prod.coins || prod.food || prod.materials) {
       setDiceProductionSummary(
         `Dado: ${roll} | Produção: ${details.join(', ')}.`
@@ -2029,6 +2137,13 @@ export function useGameState() {
     // O resultado do dado persiste até a próxima fase de construção
     // Não limpar automaticamente - será limpo apenas quando necessário
   }, [game.phase, diceUsed, game.farmGrid, game.cityGrid]);
+  
+  // Limpar cartas ativadas quando o turno muda
+  useEffect(() => {
+    if (game.phase === 'draw') {
+      setActivatedCards({});
+    }
+  }, [game.phase]);
 
   const handleProduction = useCallback(() => {
     let prod: Resources = { coins: 0, food: 0, materials: 0, population: 0 };
@@ -2169,12 +2284,18 @@ export function useGameState() {
   };
   
   const handProps = useMemo(() => {
-    console.log('🎮 handProps useMemo executado:', {
+    /*console.log('🎮 handProps useMemo executado:', {
       handLength: game.hand.length,
       handCards: game.hand.map(c => c.name),
       deckLength: game.deck.length,
+      activeDeckLength: activeDeck?.cards?.length,
       selectedCardId: selectedCard?.id
-    });
+    });*/
+    
+    // Calcular cartas restantes no baralho: total do deck ativo - cartas na mão
+    const totalDeckCards = activeDeck?.cards?.length || game.deck.length;
+    const cardsInHand = game.hand.length;
+    const remainingDeckCards = Math.max(0, totalDeckCards - cardsInHand);
     
     return {
       hand: game.hand,
@@ -2183,9 +2304,9 @@ export function useGameState() {
       canPlayCard: canPlayCardUI,
       onDiscardCard: handleDiscardCard,
       discardMode,
-      deckSize: game.deck.length,
+      deckSize: remainingDeckCards,
     };
-  }, [game.hand, game.deck.length, selectedCard?.id, discardMode, handleSelectCard, canPlayCardUI, handleDiscardCard]);
+  }, [game.hand, game.deck.length, activeDeck?.cards?.length, selectedCard?.id, discardMode, handleSelectCard, canPlayCardUI, handleDiscardCard]);
 
   const discardModal = discardMode;
 
@@ -2193,50 +2314,51 @@ export function useGameState() {
   const clearSavedGame = useCallback(() => {
     try {
       localStorage.removeItem('famand_gameState');
-      console.log('🎮 Estado do jogo salvo foi limpo');
+      //console.log('🎮 Estado do jogo salvo foi limpo');
     } catch (error) {
       console.error('Erro ao limpar estado do jogo:', error);
     }
   }, []);
 
-  return {
-    sidebarProps,
-    topBarProps,
-    gridBoardProps,
-    handProps,
-    discardModal,
-    // Estados e handlers adicionais
-    game,
-    selectedCard,
-    selectedGrid,
-    error,
-    setError,
-    victory,
-    defeat,
-    history,
-    highlight,
-    productionSummary,
-    actionSummary,
-    diceResult,
-    diceUsed,
-    diceProductionSummary,
-    pendingDefense,
-    // Estado de loading
-    loading: gameLoading,
-    // Handlers
-    handleNextPhase,
-    handleSelectCard,
-    handleSelectCell,
-    handleSelectFarm,
-    handleSelectCity,
-    handleDiscardCard,
-    handleDiceRoll,
-    handleProduction,
-    handleActivateMagic,
-    handleActivateDefense,
-    canPlayCardUI,
-    // Funções de persistência
-    saveGameState,
-    clearSavedGame,
-  };
+      return {
+      sidebarProps,
+      topBarProps,
+      gridBoardProps,
+      handProps,
+      discardModal,
+      // Estados e handlers adicionais
+      game,
+      selectedCard,
+      selectedGrid,
+      error,
+      setError,
+      victory,
+      defeat,
+      history,
+      highlight,
+      productionSummary,
+      actionSummary,
+      diceResult,
+      diceUsed,
+      diceProductionSummary,
+      pendingDefense,
+      activatedCards, // Cartas ativadas por dado
+      // Estado de loading
+      loading: gameLoading,
+      // Handlers
+      handleNextPhase,
+      handleSelectCard,
+      handleSelectCell,
+      handleSelectFarm,
+      handleSelectCity,
+      handleDiscardCard,
+      handleDiceRoll,
+      handleProduction,
+      handleActivateMagic,
+      handleActivateDefense,
+      canPlayCardUI,
+      // Funções de persistência
+      saveGameState,
+      clearSavedGame,
+    };
 }

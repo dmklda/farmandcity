@@ -110,23 +110,32 @@ const DecksPage: React.FC = () => {
     
     try {
       setIsProcessing(true);
+      console.log('🃏 DecksPage: Tentando salvar deck...', { deckName, selectedCards: selectedCards.length, selectedDeck });
       
       if (selectedDeck) {
         await updateDeck(selectedDeck, {
           name: deckName,
           card_ids: selectedCards
         });
+                  console.log('🃏 DecksPage: Deck atualizado com sucesso');
       } else {
+                  console.log('🃏 DecksPage: Criando novo deck...');
         const newDeck = await createDeck(deckName, selectedCards);
+                  console.log('🃏 DecksPage: Resposta do createDeck:', newDeck);
+        
         if (!newDeck || !newDeck.id) {
-          setErrorMsg('Erro ao criar deck. Tente novamente.');
+          const errorMsg = 'Erro ao criar deck. Resposta inválida do servidor.';
+          console.error('🃏 DecksPage: Erro - resposta inválida:', newDeck);
+          setErrorMsg(errorMsg);
           return;
         }
+                    console.log('🃏 DecksPage: Novo deck criado com sucesso:', newDeck.id);
         setSelectedDeck(newDeck.id);
       }
     } catch (err: any) {
-      setErrorMsg('Erro ao salvar deck: ' + (err?.message || err));
-      console.error('Error saving deck:', err);
+      const errorMsg = 'Erro ao salvar deck: ' + (err?.message || err);
+      console.error('🃏 DecksPage: Erro ao salvar deck:', err);
+      setErrorMsg(errorMsg);
     } finally {
       setIsProcessing(false);
     }

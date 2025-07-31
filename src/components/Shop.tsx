@@ -3,16 +3,16 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Separator } from './ui/separator';
 import { useShop } from '../hooks/useShop';
 import { useAppContext } from '../contexts/AppContext';
-import { ShoppingCart, Coins, Gem, Package, Zap, Star } from 'lucide-react';
+import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './ui/toast';
 import { SpecialPacksDisplay } from './SpecialPacksDisplay';
 import { getRarityIconPNG } from './IconComponentsPNG';
 
 export const Shop: React.FC = () => {
-  console.log('Shop component montado/remontado - timestamp:', new Date().toISOString());
   const { 
     shopItems, 
     dailyRotationCards, 
@@ -31,13 +31,6 @@ export const Shop: React.FC = () => {
   } = useShop();
   const { currency, currencyLoading, refreshCurrency } = useAppContext();
   const { showToast, ToastContainer } = useToast();
-  
-  console.log('Shop: currency do contexto:', currency, 'loading:', currencyLoading);
-  
-  // Log específico para detectar mudanças no currency
-  useEffect(() => {
-    console.log('Shop: currency mudou para:', currency);
-  }, [currency]);
 
   // Memoizar o valor do currency para evitar re-renders desnecessários
   const memoizedCurrency = useMemo(() => currency, [currency?.coins, currency?.gems]);
@@ -54,27 +47,14 @@ export const Shop: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setAuthStatus(`Autenticado: ${user.email}`);
-        console.log('Usuário autenticado:', user);
       } else {
         setAuthStatus('Não autenticado');
-        console.log('Usuário não autenticado');
       }
     } catch (err) {
       setAuthStatus('Erro na autenticação');
       console.error('Erro na autenticação:', err);
     }
   };
-
-  console.log('Shop component render:', { 
-    shopItems: shopItems?.length, 
-    purchases: purchases?.length,
-    purchasesData: purchases,
-    loading, 
-    error, 
-    currencyLoading,
-    currency,
-    authStatus
-  });
 
   const handlePurchase = async (itemId: string) => {
     try {
@@ -101,50 +81,48 @@ export const Shop: React.FC = () => {
   };
 
   const handleReload = async () => {
-    console.log('Recarregando loja...');
+    try {
     await fetchShopItems();
+      await refreshCurrency();
+    } catch (err) {
+      console.error('Erro ao recarregar:', err);
+    }
   };
 
   const testDirectQuery = async () => {
     try {
-      console.log('Testando query direta...');
       const { data, error } = await supabase
         .from('shop_items')
         .select('*')
-        .eq('is_active', true)
-        .limit(1);
+        .limit(5);
       
-      console.log('Resultado da query direta:', { data, error });
-      showToast(`Query direta: ${data?.length || 0} itens encontrados`, 'info');
+      if (error) {
+        console.error('Erro na query direta:', error);
+      } else {
+        console.log('Query direta bem-sucedida:', data);
+      }
     } catch (err) {
-      console.error('Erro na query direta:', err);
-      showToast(`Erro na query: ${err}`, 'error');
+      console.error('Erro no teste direto:', err);
     }
   };
 
   const testRefreshCurrency = async () => {
     try {
-      console.log('Testando refresh manual de moedas...');
       await refreshCurrency();
-      console.log('Refresh manual concluído');
-      showToast('Refresh manual de moedas executado!', 'success');
+      console.log('Refresh de moeda executado');
     } catch (err) {
-      console.error('Erro no refresh manual:', err);
-      showToast(`Erro no refresh: ${err}`, 'error');
+      console.error('Erro no refresh de moeda:', err);
     }
   };
 
   const getRarityColor = (rarity?: string) => {
     switch (rarity) {
-      case 'common': return 'bg-gray-500';
-      case 'uncommon': return 'bg-green-500';
-      case 'rare': return 'bg-blue-500';
-      case 'ultra': return 'bg-purple-500';
-      case 'secret': return 'bg-yellow-500';
-      case 'legendary': return 'bg-orange-500';
-      case 'crisis': return 'bg-red-500';
-      case 'booster': return 'bg-pink-500';
-      default: return 'bg-gray-500';
+      case 'common': return 'from-gray-600 to-gray-800';
+      case 'rare': return 'from-blue-600 to-blue-800';
+      case 'epic': return 'from-purple-600 to-purple-800';
+      case 'legendary': return 'from-yellow-500 to-orange-600';
+      case 'landmark': return 'from-amber-600 to-yellow-600';
+      default: return 'from-gray-600 to-gray-800';
     }
   };
 
@@ -153,82 +131,106 @@ export const Shop: React.FC = () => {
     return getRarityIconPNG(rarity, 16);
   };
 
+  const getRarityIcon = (rarity?: string) => {
+    switch (rarity) {
+      case 'common': return <Shield className="w-4 h-4" />;
+      case 'rare': return <Sword className="w-4 h-4" />;
+      case 'epic': return <Crown className="w-4 h-4" />;
+      case 'legendary': return <Gem className="w-4 h-4" />;
+      case 'landmark': return <Star className="w-4 h-4" />;
+      default: return <Shield className="w-4 h-4" />;
+    }
+  };
+
   const renderShopItem = (item: any) => (
-    <Card key={item.id} className="p-4 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {getRarityIconComponent(item.rarity)}
-          <h3 className="font-semibold text-lg">{item.name}</h3>
-        </div>
-        {item.rarity && (
-          <Badge className={getRarityColor(item.rarity)}>
-            {item.rarity.toUpperCase()}
+    <Card key={item.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
+      {/* Glow effect */}
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getRarityColor(item.rarity)} blur-xl -z-10`} />
+      
+      {/* Rarity badge */}
+      <div className="absolute top-3 right-3 z-10">
+        <Badge className={`bg-gradient-to-r text-white border-0 ${getRarityColor(item.rarity)}`}>
+          {getRarityIcon(item.rarity)}
+          <span className="ml-1 capitalize">{item.rarity}</span>
           </Badge>
-        )}
       </div>
       
-      <p className="text-gray-600 mb-4">{item.description}</p>
-      
-      <div className="flex items-center gap-2 mb-4">
+      <div className="p-6">
+        {/* Item Icon */}
+        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
+          {item.item_type === 'pack' && <Package className="w-8 h-8 text-white" />}
+          {item.item_type === 'booster' && <Zap className="w-8 h-8 text-white" />}
+          {item.item_type === 'currency' && <Coins className="w-8 h-8 text-white" />}
+          {item.item_type === 'card' && <Star className="w-8 h-8 text-white" />}
+        </div>
+
+        <h3 className="text-xl font-bold text-white mb-2 text-center">
+          {item.name}
+        </h3>
+        
+        <p className="text-gray-300 text-sm mb-4 text-center min-h-[40px]">
+          {item.description}
+        </p>
+
+        <Separator className="my-4 bg-yellow-600/30" />
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
         {item.price_coins > 0 && (
-          <div className="flex items-center gap-1 text-yellow-600">
-            <Coins className="h-4 w-4" />
-            <span>{item.price_coins}</span>
+              <div className="flex items-center gap-1">
+                <Coins className="w-5 h-5 text-yellow-500" />
+                <span className="text-xl font-bold text-yellow-400">{item.price_coins}</span>
           </div>
         )}
         {item.price_gems > 0 && (
-          <div className="flex items-center gap-1 text-purple-600">
-            <Gem className="h-4 w-4" />
-            <span>{item.price_gems}</span>
+              <div className="flex items-center gap-1">
+                <Gem className="w-5 h-5 text-purple-500" />
+                <span className="text-xl font-bold text-purple-400">{item.price_gems}</span>
           </div>
         )}
       </div>
-
       {item.is_limited && item.stock_quantity && (
-        <div className="text-sm text-gray-500 mb-3">
-          Estoque: {item.stock_quantity - item.sold_quantity}/{item.stock_quantity}
+            <Badge variant="destructive" className="bg-red-600">
+              {item.stock_quantity - item.sold_quantity}/{item.stock_quantity}
+            </Badge>
+          )}
         </div>
-      )}
 
       <Button 
         onClick={() => handlePurchase(item.id)}
         disabled={purchasing || (item.is_limited && item.stock_quantity && item.sold_quantity >= item.stock_quantity)}
-        className="w-full"
+          className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
       >
+          <ShoppingCart className="w-4 h-4 mr-2" />
         {purchasing ? 'Comprando...' : 'Comprar'}
       </Button>
+      </div>
     </Card>
   );
 
   // Mostrar loading se qualquer um dos hooks estiver carregando
   if (loading || currencyLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="text-lg">
-          {loading ? 'Carregando loja...' : 'Carregando moeda...'}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
         </div>
-        <div className="text-sm text-gray-500">
+        
+        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg text-white">
+            {loading ? 'Carregando loja...' : 'Carregando moeda...'}
+          </div>
+          <div className="text-sm text-gray-400">
           Status: {authStatus}
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleReload} variant="outline">
+            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Recarregar
           </Button>
-          <Button onClick={testDirectQuery} variant="outline">
+            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Testar Query
           </Button>
-          <Button onClick={() => {
-            console.log('Forçando busca de compras...');
-            fetchShopItems();
-          }} variant="outline">
-            Buscar Compras
-          </Button>
-          <Button onClick={() => {
-            console.log('Testando fetchPurchases...');
-            testFetchPurchases();
-          }} variant="outline">
-            Testar Fetch
-          </Button>
+          </div>
         </div>
       </div>
     );
@@ -237,20 +239,26 @@ export const Shop: React.FC = () => {
   // Mostrar erro se houver
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="text-lg text-red-600">
-          Erro ao carregar loja: {error}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
         </div>
-        <div className="text-sm text-gray-500">
+        
+        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg text-red-400">
+            Erro ao carregar loja: {error}
+          </div>
+          <div className="text-sm text-gray-400">
           Status: {authStatus}
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleReload} variant="outline">
+            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Tentar Novamente
           </Button>
-          <Button onClick={testDirectQuery} variant="outline">
+            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Testar Query
           </Button>
+          </div>
         </div>
       </div>
     );
@@ -259,82 +267,88 @@ export const Shop: React.FC = () => {
   // Se não há itens, mostrar mensagem
   if (!shopItems || shopItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="text-lg text-gray-600">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+        <div className="fixed inset-0 opacity-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg text-gray-400">
           Nenhum item disponível na loja
         </div>
         <div className="text-sm text-gray-500">
           Status: {authStatus}
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleReload} variant="outline">
+            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Recarregar
           </Button>
-          <Button onClick={testDirectQuery} variant="outline">
+            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Testar Query
           </Button>
-          <Button onClick={testRefreshCurrency} variant="outline">
+            <Button onClick={testRefreshCurrency} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
             Testar Refresh Moedas
           </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Header da Loja */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-6 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">🏪 Loja de Cartas</h1>
-            <p className="text-blue-100">Compre packs, boosters e muito mais!</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+      {/* Background texture */}
+      <div className="fixed inset-0 opacity-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-yellow-500/20 rounded-lg px-3 py-2">
-              <Coins className="h-5 w-5 text-yellow-300" />
-              <span className="font-semibold">{memoizedCurrency?.coins || 0}</span>
+
+      <div className="relative z-10 max-w-7xl mx-auto p-4">
+        {/* Coin Display */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-amber-700 px-4 py-2 rounded-full shadow-lg">
+              <Coins className="w-5 w-5 text-yellow-200" />
+              <span className="font-semibold text-yellow-100">{memoizedCurrency?.coins || 0}</span>
             </div>
-            <div className="flex items-center gap-2 bg-purple-500/20 rounded-lg px-3 py-2">
-              <Gem className="h-5 w-5 text-purple-300" />
-              <span className="font-semibold">{memoizedCurrency?.gems || 0}</span>
-            </div>
+            <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 rounded-full shadow-lg">
+              <Gem className="w-5 w-5 text-purple-200" />
+              <span className="font-semibold text-purple-100">{memoizedCurrency?.gems || 0}</span>
           </div>
         </div>
       </div>
 
       {/* Tabs da Loja */}
               <Tabs defaultValue="special" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
-          <TabsTrigger value="special" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            Especiais
-          </TabsTrigger>
-          <TabsTrigger value="packs" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Packs
-          </TabsTrigger>
-          <TabsTrigger value="boosters" className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Boosters
-          </TabsTrigger>
-          <TabsTrigger value="daily" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            Diárias
-          </TabsTrigger>
-          <TabsTrigger value="currency" className="flex items-center gap-2">
-            <Coins className="h-4 w-4" />
-            Moedas
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <Zap className="h-4 w-4" />
-            Eventos
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            Histórico
-          </TabsTrigger>
-        </TabsList>
+                                           <TabsList className="grid w-full grid-cols-7 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
+             <TabsTrigger value="special" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Star className="h-4 w-4" />
+               Especiais
+             </TabsTrigger>
+             <TabsTrigger value="packs" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Package className="h-4 w-4" />
+               Packs
+             </TabsTrigger>
+             <TabsTrigger value="boosters" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Zap className="h-4 w-4" />
+               Boosters
+             </TabsTrigger>
+             <TabsTrigger value="daily" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Star className="h-4 w-4" />
+               Diárias
+             </TabsTrigger>
+             <TabsTrigger value="currency" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Coins className="h-4 w-4" />
+               Moedas
+             </TabsTrigger>
+             <TabsTrigger value="events" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Zap className="h-4 w-4" />
+               Eventos
+             </TabsTrigger>
+             <TabsTrigger value="history" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <History className="h-4 w-4" />
+               Histórico
+             </TabsTrigger>
+           </TabsList>
 
         <TabsContent value="special" className="mt-6">
           <SpecialPacksDisplay
@@ -348,248 +362,143 @@ export const Shop: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="packs" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getAvailablePacks().map(renderShopItem)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {shopItems
+                .filter(item => item.item_type === 'pack')
+                .map(item => renderShopItem(item))}
           </div>
         </TabsContent>
 
         <TabsContent value="boosters" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getAvailableBoosters().map(renderShopItem)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {shopItems
+                .filter(item => item.item_type === 'booster')
+                .map(item => renderShopItem(item))}
           </div>
         </TabsContent>
 
         <TabsContent value="daily" className="mt-6">
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 mb-6 text-white">
-            <h2 className="text-2xl font-bold mb-2">🎯 Cartas em Rotação Diária</h2>
-            <p className="text-purple-100">Novas cartas todos os dias! Volte amanhã para ver novas ofertas.</p>
-          </div>
-          
-          {dailyRotationCards && dailyRotationCards.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dailyRotationCards.map((card) => (
-                <Card key={card.card_id} className="p-4 hover:shadow-lg transition-shadow border-2 border-purple-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      {getRarityIconComponent(card.card_rarity)}
-                      <h3 className="font-semibold text-lg">{card.card_name}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {dailyRotationCards?.map(card => (
+                <Card key={card.card_id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
+                  <div className="p-6">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
+                      <Star className="w-8 h-8 text-white" />
                     </div>
-                    <Badge className={getRarityColor(card.card_rarity)}>
-                      {card.card_rarity.toUpperCase()}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-4">Tipo: {card.card_type}</p>
-                  
-                  <div className="flex items-center gap-2 mb-4">
-                    {card.price_coins > 0 && (
-                      <div className="flex items-center gap-1 text-yellow-600">
-                        <Coins className="h-4 w-4" />
-                        <span>{card.price_coins}</span>
-                      </div>
-                    )}
-                    {card.price_gems > 0 && (
-                      <div className="flex items-center gap-1 text-purple-600">
-                        <Gem className="h-4 w-4" />
-                        <span>{card.price_gems}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {card.discount_percentage > 0 && (
-                    <div className="text-sm text-green-600 mb-3">
-                      Desconto: {card.discount_percentage}%
+                    <h3 className="text-xl font-bold text-white mb-2 text-center">{card.card_name}</h3>
+                    <p className="text-gray-300 text-sm mb-4 text-center">Tipo: {card.card_type}</p>
+                    <Separator className="my-4 bg-yellow-600/30" />
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <Coins className="w-5 h-5 text-yellow-500" />
+                      <span className="text-xl font-bold text-yellow-400">{card.price_coins || 100}</span>
                     </div>
-                  )}
-
                   <Button 
                     onClick={() => handlePurchaseCard(card.card_id)}
                     disabled={purchasing}
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                      className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
                   >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
                     {purchasing ? 'Comprando...' : 'Comprar Carta'}
                   </Button>
+                  </div>
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Nenhuma carta em rotação hoje</p>
-              <p className="text-sm text-gray-500">Volte amanhã para novas ofertas!</p>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="currency" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getAvailableCurrency().map(renderShopItem)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {shopItems
+                .filter(item => item.item_type === 'currency')
+                .map(item => renderShopItem(item))}
           </div>
         </TabsContent>
 
         <TabsContent value="events" className="mt-6">
-          <div className="bg-gradient-to-r from-orange-600 to-red-600 rounded-lg p-6 mb-6 text-white">
-            <h2 className="text-2xl font-bold mb-2">🎉 Eventos Especiais</h2>
-            <p className="text-orange-100">Aproveite os descontos e ofertas especiais!</p>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+               {shopEvents?.map(event => (
+                 <Card key={event.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
+                   <div className="p-6">
+                     <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                       <Zap className="w-8 h-8 text-white" />
           </div>
-          
-          {shopEvents && shopEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {shopEvents.map((event) => (
-                <Card key={event.id} className="p-4 hover:shadow-lg transition-shadow border-2 border-orange-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-orange-500" />
-                      <h3 className="font-semibold text-lg">{event.name}</h3>
+                     <h3 className="text-xl font-bold text-white mb-2 text-center">{event.name}</h3>
+                     <p className="text-gray-300 text-sm mb-4 text-center">{event.description}</p>
+                     <Separator className="my-4 bg-yellow-600/30" />
+                     <div className="flex items-center justify-center gap-2 mb-4">
+                       <span className="text-sm text-gray-400">Desconto: {event.discount_percentage}%</span>
                     </div>
-                    <Badge className="bg-orange-500">
-                      {event.event_type.toUpperCase()}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-4">{event.description}</p>
-                  
-                  <div className="text-sm text-gray-500 mb-4">
-                    <p>Início: {new Date(event.start_date).toLocaleDateString('pt-BR')}</p>
-                    <p>Fim: {new Date(event.end_date).toLocaleDateString('pt-BR')}</p>
-                  </div>
-
-                  {event.discount_percentage > 0 && (
-                    <div className="text-lg font-bold text-green-600 mb-3">
-                      Desconto: {event.discount_percentage}%
-                    </div>
-                  )}
-
-                  <div className="text-xs text-gray-500">
-                    Evento ativo
+                     <Button 
+                       onClick={() => handlePurchase(event.id)}
+                       disabled={purchasing}
+                       className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+                     >
+                       <ShoppingCart className="w-4 h-4 mr-2" />
+                       {purchasing ? 'Comprando...' : 'Participar'}
+                     </Button>
                   </div>
                 </Card>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Zap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Nenhum evento ativo no momento</p>
-              <p className="text-sm text-gray-500">Fique atento aos próximos eventos!</p>
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Histórico de Compras</h3>
-            
-            {/* Debug info */}
-            <div className="mb-4 p-3 bg-blue-100 rounded text-sm">
-              <p><strong>Debug Info:</strong></p>
-              <p>Purchases length: {purchases?.length || 0}</p>
-              <p>Loading: {loading ? 'true' : 'false'}</p>
-              <p>Error: {error || 'none'}</p>
-              <p>Auth Status: {authStatus}</p>
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <History className="w-6 h-6 text-yellow-500" />
+                  Histórico de Compras
+                </h2>
+                
+                {(!purchases || purchases.length === 0) && (!cardPurchases || cardPurchases.length === 0) ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400 text-lg">Nenhuma compra realizada ainda</p>
             </div>
-            
-            {purchases && purchases.length > 0 ? (
+                ) : (
               <div className="space-y-4">
-                <h4 className="text-lg font-semibold mb-3">Compras de Itens ({purchases.length})</h4>
-                {purchases.map((purchase) => {
-                  const item = shopItems.find(i => i.id === purchase.item_id);
-                  return (
-                    <Card key={purchase.id} className="p-4">
-                      <div className="flex items-center justify-between">
+                     {purchases?.map((purchase) => (
+                       <div key={purchase.id} className="flex items-center justify-between p-4 bg-black/20 rounded-lg border border-yellow-600/20">
+                         <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center">
+                             <Package className="w-5 h-5 text-white" />
+                           </div>
                         <div>
-                          <h4 className="font-semibold">
-                            {item ? item.name : `Item ${purchase.item_id}`}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Quantidade: {purchase.quantity}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(purchase.purchased_at).toLocaleString('pt-BR')}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            ID: {purchase.id}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          {purchase.total_price_coins > 0 && (
-                            <div className="flex items-center gap-1 text-yellow-600">
-                              <Coins className="h-4 w-4" />
-                              <span>{purchase.total_price_coins}</span>
+                              <h3 className="text-white font-semibold">{purchase.item_name}</h3>
+                              <p className="text-gray-400 text-sm">{new Date(purchase.purchased_at).toLocaleDateString()}</p>
                             </div>
-                          )}
-                          {purchase.total_price_gems > 0 && (
-                            <div className="flex items-center gap-1 text-purple-600">
-                              <Gem className="h-4 w-4" />
-                              <span>{purchase.total_price_gems}</span>
                             </div>
-                          )}
+                         <div className="flex items-center gap-2">
+                           <Coins className="w-4 h-4 text-yellow-500" />
+                           <span className="text-yellow-400 font-bold">{purchase.total_price_coins || 0}</span>
                         </div>
                       </div>
-                      {purchase.items_received && Object.keys(purchase.items_received).length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
-                          <p className="text-xs text-gray-600">
-                            Recebido: {JSON.stringify(purchase.items_received)}
-                          </p>
+                     ))}
+                     {cardPurchases?.map((purchase) => (
+                       <div key={purchase.id} className="flex items-center justify-between p-4 bg-black/20 rounded-lg border border-yellow-600/20">
+                         <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                             <Star className="w-5 h-5 text-white" />
                         </div>
-                      )}
-                    </Card>
-                  );
-                })}
+                           <div>
+                             <h3 className="text-white font-semibold">Carta {purchase.card_id}</h3>
+                             <p className="text-gray-400 text-sm">{new Date(purchase.purchased_at).toLocaleDateString()}</p>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Nenhuma compra encontrada</p>
-                <p className="text-sm text-gray-500">Debug: purchases array is {purchases ? 'defined' : 'undefined'} with length {purchases?.length || 0}</p>
               </div>
-            )}
-
-            {cardPurchases && cardPurchases.length > 0 ? (
-              <div className="space-y-4 mt-6">
-                <h4 className="text-lg font-semibold mb-3">Compras de Cartas Individuais</h4>
-                {cardPurchases.map((purchase) => (
-                  <Card key={purchase.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold">
-                          Carta ID: {purchase.card_id}
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {new Date(purchase.purchased_at).toLocaleString('pt-BR')}
-                        </p>
+                         <div className="flex items-center gap-2">
+                           <Coins className="w-4 h-4 text-yellow-500" />
+                           <span className="text-yellow-400 font-bold">{purchase.price_coins || 0}</span>
                       </div>
-                      <div className="text-right">
-                        {purchase.price_coins > 0 && (
-                          <div className="flex items-center gap-1 text-yellow-600">
-                            <Coins className="h-4 w-4" />
-                            <span>{purchase.price_coins}</span>
+                          </div>
+                     ))}
                           </div>
                         )}
-                        {purchase.price_gems > 0 && (
-                          <div className="flex items-center gap-1 text-purple-600">
-                            <Gem className="h-4 w-4" />
-                            <span>{purchase.price_gems}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
               </div>
-            ) : null}
-
-            {/* Seção removida - já tratada acima */}
-          </div>
+            </Card>
         </TabsContent>
       </Tabs>
-
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
         </div>
-      )}
       
-      {/* Container de Toasts */}
       <ToastContainer />
     </div>
   );

@@ -2,7 +2,7 @@
 
 export type CardType = 'farm' | 'city' | 'action' | 'landmark' | 'event' | 'defense' | 'magic' | 'trap';
 
-export type CardRarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'crisis' | 'booster' | 'ultra' | 'secret';
+export type CardRarity = 'common' | 'uncommon' | 'rare' | 'legendary' | 'crisis' | 'booster' | 'ultra' | 'secret' | 'landmark';
 
 export interface ResourceCost {
   coins?: number;

@@ -125,12 +125,12 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   diceResult
 }) => {
   // Debug das props do dado
-  console.log('🎲 EnhancedTopBar - Props do dado:', {
-    onDiceRoll: !!onDiceRoll,
-    diceUsed,
-    diceResult,
-    phase
-  });
+  // console.log('🎲 EnhancedTopBar - Props do dado:', {
+  //   onDiceRoll: !!onDiceRoll,
+  //   diceUsed,
+  //   diceResult,
+  //   phase
+  // });
 
   const getPhaseColor = (phase: string) => {
     switch (phase.toLowerCase()) {
@@ -254,7 +254,7 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={onDiceRoll || (() => console.log('🎲 Dado clicado mas onDiceRoll não está definido'))}
+            onClick={onDiceRoll || (() => {/* // console.log('🎲 Dado clicado mas onDiceRoll não está definido') */})}
             disabled={diceUsed || phase !== 'action' || !onDiceRoll}
             className={`h-6 px-1.5 text-xs ${
               diceUsed || phase !== 'action' || !onDiceRoll

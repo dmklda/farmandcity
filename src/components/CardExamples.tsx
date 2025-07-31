@@ -73,7 +73,7 @@ const CardExamples: React.FC = () => {
 
   const handleCardSelect = (card: Card) => {
     setSelectedCardId(card.id);
-    console.log('Carta selecionada:', card.name);
+    //// console.log('Carta selecionada:', card.name);
   };
 
   return (
@@ -102,7 +102,7 @@ const CardExamples: React.FC = () => {
                   isSelected={selectedCardId === card.id}
                   isPlayable={true}
                   onSelect={() => handleCardSelect(card)}
-                  onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                  onShowDetail={() => // console.log('Ver detalhes:', card.name)}
                   size="small"
                   artworkUrl={card.artworkUrl}
                 />
@@ -159,7 +159,7 @@ const CardExamples: React.FC = () => {
                     card={card}
                     size="tiny"
                     showInfo={false}
-                    onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    onShowDetail={() => {}}
                   />
                 ))}
               </div>
@@ -175,7 +175,7 @@ const CardExamples: React.FC = () => {
                     card={card}
                     size="small"
                     showInfo={true}
-                    onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    onShowDetail={() => {}}
                   />
                 ))}
               </div>
@@ -191,7 +191,7 @@ const CardExamples: React.FC = () => {
                     card={card}
                     size="medium"
                     showInfo={true}
-                    onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    onShowDetail={() => {}}
                   />
                 ))}
               </div>
@@ -211,7 +211,7 @@ const CardExamples: React.FC = () => {
                     size="small"
                     showInfo={true}
                     onSelect={() => handleCardSelect(card)}
-                    onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                    onShowDetail={() => {}}
                   />
                 </div>
               ))}
@@ -235,7 +235,7 @@ const CardExamples: React.FC = () => {
                       size="cityGrid"
                       showInfo={true}
                       onSelect={() => handleCardSelect(card)}
-                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                      onShowDetail={() => {}}
                     />
                   </div>
                 ))}
@@ -255,7 +255,7 @@ const CardExamples: React.FC = () => {
                       size="farmGrid"
                       showInfo={true}
                       onSelect={() => handleCardSelect(card)}
-                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                      onShowDetail={() => {}}
                     />
                   </div>
                 ))}
@@ -275,7 +275,7 @@ const CardExamples: React.FC = () => {
                       size="landmarkGrid"
                       showInfo={true}
                       onSelect={() => handleCardSelect(card)}
-                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                      onShowDetail={() => {}}
                     />
                   </div>
                 ))}
@@ -295,7 +295,7 @@ const CardExamples: React.FC = () => {
                       size="eventGrid"
                       showInfo={true}
                       onSelect={() => handleCardSelect(card)}
-                      onShowDetail={() => console.log('Ver detalhes:', card.name)}
+                      onShowDetail={() => {}}
                     />
                   </div>
                 ))}
@@ -314,7 +314,7 @@ const CardExamples: React.FC = () => {
                 size="cityGrid"
                 showInfo={true}
                 onSelect={() => handleCardSelect(exampleCards[0])}
-                onShowDetail={() => console.log('Ver detalhes:', exampleCards[0].name)}
+                onShowDetail={() => {}}
               />
             </div>
             <div className="mt-4 text-center text-amber-200">

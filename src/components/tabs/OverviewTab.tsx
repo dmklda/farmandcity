@@ -1,6 +1,7 @@
 import React from 'react';
 import { GamingHero } from '../GamingHero';
 import { AdvancedStats } from '../AdvancedStats';
+import { StarterPackDisplay } from '../StarterPackDisplay';
 
 interface OverviewTabProps {
   onStartGame: () => void;
@@ -39,6 +40,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         playerCards={playerCards}
         decks={decks}
       />
+
+      {/* Starter Pack Section */}
+      <StarterPackDisplay />
 
       {/* Advanced Stats Section */}
       <AdvancedStats

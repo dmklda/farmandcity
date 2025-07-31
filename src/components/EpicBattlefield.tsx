@@ -43,6 +43,7 @@ interface EpicBattlefieldProps {
   highlightLandmark: boolean;
   onToggleHand?: () => void;
   handVisible?: boolean;
+  activatedCards?: Record<string, number>; // cardId -> diceNumber
 }
 
 interface CardSlotProps {
@@ -55,6 +56,7 @@ interface CardSlotProps {
   onSelect: (x: number, y: number) => void;
   highlight: boolean;
   className?: string;
+  activatedCards?: Record<string, number>; // cardId -> diceNumber
 }
 
 
@@ -68,7 +70,8 @@ const CardSlot = ({
   y, 
   onSelect, 
   highlight, 
-  className 
+  className,
+  activatedCards = {}
 }: CardSlotProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [showDetail, setShowDetail] = useState<Card | null>(null);
@@ -188,6 +191,7 @@ const CardSlot = ({
               isPlayable={false}
               onShowDetail={() => setShowDetail(cell.card!)}
               className="w-full h-full"
+              activatedDiceNumber={activatedCards[cell.card!.id]}
             />
           </div>
         )}
@@ -269,7 +273,8 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
   highlightEvent,
   highlightLandmark,
   onToggleHand,
-  handVisible = true
+  handVisible = true,
+  activatedCards = {}
 }) => {
   return (
     <motion.div 

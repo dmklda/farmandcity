@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -103,16 +103,16 @@ const GamePage: React.FC = () => {
 
   const handleLoadGame = () => {
     // TODO: Implementar carregamento de jogo
-    console.log('Carregar jogo');
+    // // console.log('Carregar jogo');
   };
 
   // Setup de autenticação
   useEffect(() => {
-    console.log('GamePage: Iniciando setup de autenticação');
+    // // console.log('GamePage: Iniciando setup de autenticação');
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: string, session: Session | null) => {
-        console.log('GamePage: Auth state change:', event, session?.user?.email);
+        // // console.log('GamePage: Auth state change:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -120,7 +120,7 @@ const GamePage: React.FC = () => {
     );
 
     supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-      console.log('GamePage: Session inicial:', session?.user?.email);
+      // // console.log('GamePage: Session inicial:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -131,64 +131,83 @@ const GamePage: React.FC = () => {
 
   // Logs de debug para estados
   useEffect(() => {
-    console.log('GamePage: Estado atualizado:', {
-      loading,
-      user: user?.email,
-      gameStateLoading: gameState.loading,
-      decksLoading,
-      activeDeck: activeDeck?.name,
-      activeDeckCards: activeDeck?.cards?.length
-    });
+    // // console.log('GamePage: Estado atualizado:', {
+    //   loading,
+    //   user: user?.email,
+    //   gameStateLoading: gameState.loading,
+    //   decksLoading,
+    //   activeDeck: activeDeck?.name,
+    //   activeDeckCards: activeDeck?.cards?.length
+    // });
   }, [loading, user, gameState.loading, decksLoading, activeDeck]);
 
-  // Sistema de Notificações Medievais
+  // Sistema de Notificações Medievais - usando refs para evitar loops infinitos
+  const notificationRefs = useRef({
+    error: '',
+    highlight: '',
+    productionSummary: '',
+    actionSummary: '',
+    diceResult: null as number | null,
+    diceProductionSummary: '',
+    pendingDefense: '',
+    victory: ''
+  });
+
   useEffect(() => {
-    if (gameState.error) {
+    if (gameState.error && gameState.error !== notificationRefs.current.error) {
+      notificationRefs.current.error = gameState.error;
       notify('error', 'Erro no Jogo', gameState.error, undefined, 6000);
     }
-  }, [gameState.error, notify]);
+  }, [gameState.error]);
 
   useEffect(() => {
-    if (gameState.highlight) {
+    if (gameState.highlight && gameState.highlight !== notificationRefs.current.highlight) {
+      notificationRefs.current.highlight = gameState.highlight;
       notify('info', 'Informação', gameState.highlight, undefined, 4000);
     }
-  }, [gameState.highlight, notify]);
+  }, [gameState.highlight]);
 
   useEffect(() => {
-    if (gameState.productionSummary) {
+    if (gameState.productionSummary && gameState.productionSummary !== notificationRefs.current.productionSummary) {
+      notificationRefs.current.productionSummary = gameState.productionSummary;
       notify('production', 'Produção Ativada', gameState.productionSummary, undefined, 5000);
     }
-  }, [gameState.productionSummary, notify]);
+  }, [gameState.productionSummary]);
 
   useEffect(() => {
-    if (gameState.actionSummary) {
+    if (gameState.actionSummary && gameState.actionSummary !== notificationRefs.current.actionSummary) {
+      notificationRefs.current.actionSummary = gameState.actionSummary;
       notify('action', 'Ação Executada', gameState.actionSummary, undefined, 4000);
     }
-  }, [gameState.actionSummary, notify]);
+  }, [gameState.actionSummary]);
 
   useEffect(() => {
-    if (gameState.diceResult) {
+    if (gameState.diceResult && gameState.diceResult !== notificationRefs.current.diceResult) {
+      notificationRefs.current.diceResult = gameState.diceResult;
       notify('dice', 'Dados Lançados', `Você rolou ${gameState.diceResult}!`, { diceValue: gameState.diceResult }, 4000);
     }
-  }, [gameState.diceResult, notify]);
+  }, [gameState.diceResult]);
 
   useEffect(() => {
-    if (gameState.diceProductionSummary) {
+    if (gameState.diceProductionSummary && gameState.diceProductionSummary !== notificationRefs.current.diceProductionSummary) {
+      notificationRefs.current.diceProductionSummary = gameState.diceProductionSummary;
       notify('production', 'Produção do Dado', gameState.diceProductionSummary, undefined, 5000);
     }
-  }, [gameState.diceProductionSummary, notify]);
+  }, [gameState.diceProductionSummary]);
 
   useEffect(() => {
-    if (gameState.pendingDefense) {
+    if (gameState.pendingDefense && gameState.pendingDefense.name !== notificationRefs.current.pendingDefense) {
+      notificationRefs.current.pendingDefense = gameState.pendingDefense.name;
       notify('error', 'Crise Detectada!', `Use carta de defesa: ${gameState.pendingDefense.name}`, undefined, 8000);
     }
-  }, [gameState.pendingDefense, notify]);
+  }, [gameState.pendingDefense]);
 
   useEffect(() => {
-    if (gameState.victory) {
+    if (gameState.victory && gameState.victory !== notificationRefs.current.victory) {
+      notificationRefs.current.victory = gameState.victory;
       notify('victory', 'Vitória Conquistada!', gameState.victory, undefined, 10000);
     }
-  }, [gameState.victory, notify]);
+  }, [gameState.victory]);
 
   // Loading state
   if (loading || gameState.loading || decksLoading) {
@@ -330,6 +349,7 @@ const GamePage: React.FC = () => {
           highlightLandmark={gameState.gridBoardProps.highlightLandmark}
           onToggleHand={() => setHandVisible(!handVisible)}
           handVisible={handVisible}
+          activatedCards={gameState.activatedCards}
         />
       </div>
 
@@ -344,6 +364,7 @@ const GamePage: React.FC = () => {
           canPlayCard={gameState.handProps.canPlayCard}
           sidebarVisible={true}
           deckSize={gameState.handProps.deckSize}
+          activatedCards={gameState.activatedCards}
         />
       </div>
       )}

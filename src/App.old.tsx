@@ -270,7 +270,7 @@ const App: React.FC = () => {
     // Simulação: pode ser trocado por assets reais
     // Exemplo: new window.Audio('/sounds/buy.mp3').play();
     // Aqui só loga para debug
-    // console.log('SOM:', type);
+    // // console.log('SOM:', type);
   }
 
   // Checa condições de vitória

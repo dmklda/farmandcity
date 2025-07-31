@@ -32,6 +32,7 @@ interface EnhancedHandProps {
   canPlayCard?: (card: Card) => { playable: boolean; reason?: string };
   sidebarVisible?: boolean;
   deckSize?: number;
+  activatedCards?: Record<string, number>; // cardId -> diceNumber
 }
 
 interface CardDetailModalProps {
@@ -743,16 +744,17 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
   selectedCardId, 
   canPlayCard = () => ({ playable: true }),
   sidebarVisible = false,
-  deckSize = 0
+  deckSize = 0,
+  activatedCards = {}
 }) => {
-  console.log('🎮 EnhancedHand renderizado:', {
-    handLength: hand.length,
-    handCards: hand.map(c => c.name),
-    selectedCardId,
-    deckSize,
-    sidebarVisible,
-    handProps: hand
-  });
+  // // console.log('🎮 EnhancedHand renderizado:', {
+  //   handLength: hand.length,
+  //   handCards: hand.map(c => c.name),
+  //   selectedCardId,
+  //   deckSize,
+  //   sidebarVisible,
+  //   handProps: hand
+  // });
 
   const [selectedCardForDetail, setSelectedCardForDetail] = useState<Card | null>(null);
 
@@ -858,6 +860,7 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
                         size="small"
                         showInfo={true}
                         className="transition-all duration-200"
+                        activatedDiceNumber={activatedCards[card.id]}
                 />
                     </motion.div>
             ))}

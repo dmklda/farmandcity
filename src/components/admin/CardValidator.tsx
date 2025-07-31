@@ -193,15 +193,15 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
         );
         
         if (isAlreadyProcessed) {
-          console.log('🔍 CardValidator - Pulando padrão já processado:', name, 'em posição', matchStart, '-', matchEnd);
+          // // console.log('🔍 CardValidator - Pulando padrão já processado:', name, 'em posição', matchStart, '-', matchEnd);
           continue;
         }
         
-        console.log('🔍 CardValidator - Padrão encontrado:', name);
-        console.log('🔍 CardValidator - Match:', match);
-        console.log('🔍 CardValidator - Match length:', match.length);
-        console.log('🔍 CardValidator - Posição:', matchStart, '-', matchEnd);
-        console.log('🔍 CardValidator - É bidirecional?', isBidirectional);
+        // // console.log('🔍 CardValidator - Padrão encontrado:', name);
+        // // console.log('🔍 CardValidator - Match:', match);
+        // // console.log('🔍 CardValidator - Match length:', match.length);
+        // // console.log('🔍 CardValidator - Posição:', matchStart, '-', matchEnd);
+        // // console.log('🔍 CardValidator - É bidirecional?', isBidirectional);
         
         recognizedPattern = name;
         
@@ -220,10 +220,10 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
           const value4 = parseInt(match[7], 10);
           const resourceType4 = match[8];
           
-          console.log('🔍 CardValidator - Efeito bidirecional:', { 
+          /*// console.log('🔍 CardValidator - Efeito bidirecional:', { 
             value1, resourceType1, value2, resourceType2, 
             value3, resourceType3, value4, resourceType4 
-          });
+          });*/
           
           // Para efeitos bidirecionais, mostrar ambas as opções
           // Opção 1: X recurso1 → Y recurso2
@@ -314,11 +314,11 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
           const value2 = parseInt(match[3], 10);
           const resourceType2 = match[4];
           
-          console.log('🔍 CardValidator - Múltiplos recursos:', { value1, resourceType1, value2, resourceType2 });
+          // // console.log('🔍 CardValidator - Múltiplos recursos:', { value1, resourceType1, value2, resourceType2 });
           
           // Aplicar multiplicador para deduções
           const multiplier = isDeduction ? -1 : 1;
-          console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
+          // console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
           
           // Adicionar primeiro recurso
           switch (resourceType1) {
@@ -367,11 +367,11 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
           const value = parseInt(match[1], 10);
           const resourceType = match[2];
           
-          console.log('🔍 CardValidator - Recurso único:', { value, resourceType });
+          // console.log('🔍 CardValidator - Recurso único:', { value, resourceType });
           
           // Aplicar multiplicador para deduções
           const multiplier = isDeduction ? -1 : 1;
-          console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
+          // console.log('🔍 CardValidator - É dedução?', isDeduction, 'Multiplicador:', multiplier);
           
           switch (resourceType) {
             case 'comida':
@@ -396,7 +396,7 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
           }
         }
         
-        console.log('🔍 CardValidator - Parsed effect após processamento:', parsedEffect);
+        // console.log('🔍 CardValidator - Parsed effect após processamento:', parsedEffect);
       }
     }
 

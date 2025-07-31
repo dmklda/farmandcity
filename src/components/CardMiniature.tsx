@@ -14,6 +14,7 @@ interface CardMiniatureProps {
   showInfo?: boolean;
   showPlayableIndicator?: boolean;
   className?: string;
+  activatedDiceNumber?: number; // Número do dado que ativou a carta
 }
 
 const cardTypeConfig = {
@@ -146,7 +147,8 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
   size = 'medium',
   showInfo = true,
   showPlayableIndicator = true,
-  className
+  className,
+  activatedDiceNumber
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -203,7 +205,7 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
       {/* Background with enhanced gradient */}
       <div className={cn("absolute inset-0", typeConfig.bg)} />
       
-      {/* Header - Type Icon and Rarity */}
+      {/* Header - Type Icon, Dice Activation, and Rarity */}
       <div className={cn("relative flex items-center justify-between", sizeSettings.padding)}>
         {/* Type Icon */}
         <div 
@@ -215,6 +217,15 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
         >
           {getCardTypeIconPNG(card.type, 16)}
         </div>
+
+        {/* Dice Activation Indicator */}
+        {activatedDiceNumber && (
+          <div className="bg-amber-600/80 border border-amber-400/60 rounded-full w-3 h-3 flex items-center justify-center">
+            <span className="text-[6px] font-bold text-amber-100">
+              {activatedDiceNumber}
+            </span>
+          </div>
+        )}
 
         {/* Rarity Gems */}
         <div className="flex gap-0.5">

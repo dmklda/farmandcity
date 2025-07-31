@@ -79,21 +79,21 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const setCurrentView = (view: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks') => {
     setCurrentViewState(view);
     localStorage.setItem('famand_currentView', view);
-    console.log('Navegação alterada para:', view);
+    // // console.log('Navegação alterada para:', view);
   };
 
   // Log para debug
   useEffect(() => {
-    console.log('AppContext: currency atualizado:', currency);
+    // // console.log('AppContext: currency atualizado:', currency);
   }, [currency]);
 
   useEffect(() => {
-    console.log('AppContext: playerCards atualizado:', playerCards?.length);
+    // // console.log('AppContext: playerCards atualizado:', playerCards?.length);
   }, [playerCards]);
 
   // Log quando currentView muda
   useEffect(() => {
-    console.log('AppContext: currentView atualizado:', currentView);
+    // // console.log('AppContext: currentView atualizado:', currentView);
   }, [currentView]);
 
   const value: AppContextType = {

@@ -127,7 +127,7 @@ export const SystemLogsPage: React.FC = () => {
 
   const exportLogs = async () => {
     // Simular exportação de logs
-    console.log('Exportando logs...', { searchTerm, severityFilter, eventTypeFilter });
+    // console.log('Exportando logs...', { searchTerm, severityFilter, eventTypeFilter });
     // Em produção, implementar download real
   };
 

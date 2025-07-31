@@ -26,6 +26,7 @@ interface CardFrameProps {
   onShowDetail: () => void;
   size?: "small" | "medium" | "large";
   artworkUrl?: string;
+  activatedDiceNumber?: number; // Número do dado que ativou a carta
 }
 
 const cardTypeConfig = {
@@ -147,7 +148,8 @@ const CardFrame: React.FC<CardFrameProps> = ({
   onSelect,
   onShowDetail,
   size = "small",
-  artworkUrl
+  artworkUrl,
+  activatedDiceNumber
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -374,6 +376,18 @@ const CardFrame: React.FC<CardFrameProps> = ({
               {card.name}
             </h4>
           </div>
+          
+          {/* Dice Activation Indicator */}
+          {activatedDiceNumber && (
+            <div className="ml-1 flex items-center">
+              <div className="bg-amber-600/80 border border-amber-400/60 rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-amber-100">
+                  {activatedDiceNumber}
+                </span>
+              </div>
+            </div>
+          )}
+          
           <motion.button
             onClick={(e) => {
               e.stopPropagation();

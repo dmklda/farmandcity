@@ -43,14 +43,14 @@ export const usePlayerDecks = () => {
 
   const fetchPlayerDecks = async () => {
     try {
-      console.log('=== DEBUG: fetchPlayerDecks iniciado ===');
+     // console.log('=== DEBUG: fetchPlayerDecks iniciado ===');
       setLoading(true);
       setError(null);
 
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
       
-      console.log('Usuário autenticado:', user.data.user.id);
+      // console.log('Usuário autenticado:', user.data.user.id);
 
       // Buscar decks do jogador
       const { data: decksData, error: decksError } = await supabase
@@ -61,10 +61,10 @@ export const usePlayerDecks = () => {
 
       if (decksError) throw decksError;
 
-      console.log('Decks encontrados:', decksData);
+      //console.log('Decks encontrados:', decksData);
 
       if (!decksData || decksData.length === 0) {
-        console.log('Usuário não possui decks ainda');
+        //console.log('Usuário não possui decks ainda');
         setDecks([]);
         setActiveDeck(null);
         return;
@@ -74,10 +74,10 @@ export const usePlayerDecks = () => {
       const decksWithCards: DeckWithCards[] = [];
       
       for (const deck of decksData) {
-        console.log(`Processando deck: ${deck.name}, card_ids:`, deck.card_ids);
+        //console.log(`Processando deck: ${deck.name}, card_ids:`, deck.card_ids);
         
         if (!deck.card_ids || deck.card_ids.length === 0) {
-          console.log(`Deck ${deck.name} está vazio`);
+          //console.log(`Deck ${deck.name} está vazio`);
           decksWithCards.push({ 
             ...deck, 
             cards: [],
@@ -103,15 +103,15 @@ export const usePlayerDecks = () => {
           continue;
         }
 
-        console.log(`Cartas encontradas para deck ${deck.name}:`, cardsData?.length);
-        console.log('Dados das cartas:', cardsData);
+        //console.log(`Cartas encontradas para deck ${deck.name}:`, cardsData?.length);
+        //console.log('Dados das cartas:', cardsData);
 
         // Converter cartas para o formato do jogo, respeitando as múltiplas cópias no deck
         const gameCards: Card[] = [];
         deck.card_ids.forEach((cardId, index) => {
-          console.log(`Processando card_id ${index}:`, cardId);
+          //console.log(`Processando card_id ${index}:`, cardId);
           const cardData = cardsData?.find(c => c.id === cardId);
-          console.log('Card data encontrada:', cardData);
+          //console.log('Card data encontrada:', cardData);
           
           if (cardData) {
             const gameCard = {
@@ -130,15 +130,15 @@ export const usePlayerDecks = () => {
               rarity: cardData.rarity,
               activation: getActivationDescription(cardData),
             };
-            console.log('Game card criada:', gameCard);
+            //console.log('Game card criada:', gameCard);
             gameCards.push(gameCard);
           } else {
             console.warn(`❌ Carta não encontrada: ${cardId} no deck ${deck.name}`);
           }
         });
 
-        console.log(`Total de game cards criadas: ${gameCards.length}`);
-        console.log('Primeiras 3 game cards:', gameCards.slice(0, 3));
+        //console.log(`Total de game cards criadas: ${gameCards.length}`);
+        //console.log('Primeiras 3 game cards:', gameCards.slice(0, 3));
 
         const deckWithCards: DeckWithCards = {
           ...deck,
@@ -147,20 +147,20 @@ export const usePlayerDecks = () => {
         };
 
         decksWithCards.push(deckWithCards);
-        console.log(`Deck ${deck.name}: ${gameCards.length} cartas carregadas`);
+        //console.log(`Deck ${deck.name}: ${gameCards.length} cartas carregadas`);
 
         // Se for o deck ativo, definir como activeDeck
         if (deck.is_active) {
-          console.log(`✅ Definindo deck ativo: ${deck.name} com ${gameCards.length} cartas`);
-          console.log('Deck ativo completo:', deckWithCards);
+          //console.log(`✅ Definindo deck ativo: ${deck.name} com ${gameCards.length} cartas`);
+          //console.log('Deck ativo completo:', deckWithCards);
           setActiveDeck(deckWithCards);
         }
       }
 
       setDecks(decksWithCards);
-      console.log('Todos os decks processados:', decksWithCards.map(d => ({ name: d.name, cards: d.cards.length, is_active: d.is_active })));
-      console.log('=== DEBUG: Final do fetchPlayerDecks ===');
-      console.log('activeDeck será definido como:', activeDeck);
+      //console.log('Todos os decks processados:', decksWithCards.map(d => ({ name: d.name, cards: d.cards.length, is_active: d.is_active })));
+      //console.log('=== DEBUG: Final do fetchPlayerDecks ===');
+      //console.log('activeDeck será definido como:', activeDeck);
 
       // Verificar se há apenas um deck ativo
       const activeDecks = decksWithCards.filter(deck => deck.is_active);
@@ -207,7 +207,7 @@ export const usePlayerDecks = () => {
       setDecks([]);
       setActiveDeck(null);
     } finally {
-      console.log('=== DEBUG: fetchPlayerDecks finalizado ===');
+      //console.log('=== DEBUG: fetchPlayerDecks finalizado ===');
       setLoading(false);
     }
   };
@@ -269,7 +269,7 @@ export const usePlayerDecks = () => {
 
       if (error) throw error;
 
-      console.log(`Deck criado: ${name} com ${cardIds.length} cartas`);
+      //console.log(`Deck criado: ${name} com ${cardIds.length} cartas`);
       
       // Recarregar decks
       await fetchPlayerDecks();
@@ -325,7 +325,7 @@ export const usePlayerDecks = () => {
 
       if (error) throw error;
 
-      console.log(`Deck atualizado: ${updates.name || currentDeck.name}`);
+      // console.log(`Deck atualizado: ${updates.name || currentDeck.name}`);
       
       // Recarregar decks
       await fetchPlayerDecks();
@@ -364,7 +364,7 @@ export const usePlayerDecks = () => {
 
       if (error) throw error;
 
-      console.log(`Deck deletado: ${deckToDelete?.name}`);
+      // console.log(`Deck deletado: ${deckToDelete?.name}`);
       
       // Recarregar decks
       await fetchPlayerDecks();
@@ -403,7 +403,7 @@ export const usePlayerDecks = () => {
         if (activateError) throw activateError;
       }
 
-      console.log(`Deck ativado: ${deckId}`);
+      // console.log(`Deck ativado: ${deckId}`);
       
       // Recarregar decks
       await fetchPlayerDecks();

@@ -18,7 +18,7 @@ export const ExampleGameLayout: React.FC = () => {
     buildCount: 2,
     buildMax: 3,
     phase: 'build',
-    onNextPhase: () => console.log('Próxima fase'),
+    onNextPhase: () => {/* // console.log('Próxima fase') */},
     discardMode: false,
     resources: {
       coins: 150,
@@ -81,11 +81,11 @@ export const ExampleGameLayout: React.FC = () => {
     onShowStats: () => setShowStats(true),
     onShowSavedGames: () => setShowSavedGames(true),
     onLogout: () => {
-      console.log('Logout');
+      // // console.log('Logout');
       setCurrentView('home');
     },
     onGoHome: () => {
-      console.log('Voltando para página inicial');
+              // // console.log('Voltando para página inicial');
       setCurrentView('home');
     },
     userEmail: 'marcior631@gmail.com',

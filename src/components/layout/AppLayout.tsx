@@ -127,7 +127,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   activeDeck
 }) => {
   // Debug log para verificar se o activeDeck está chegando no AppLayout
-  console.log('AppLayout - activeDeck:', activeDeck);
+  // // console.log('AppLayout - activeDeck:', activeDeck);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {

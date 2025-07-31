@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { Separator } from './ui/separator';
 import { 
   Package, 
   Star, 
@@ -16,7 +17,13 @@ import {
   Wand2,
   Crosshair,
   AlertTriangle,
-  Gift
+  Gift,
+  Coins,
+  Sword,
+  Castle,
+  Scroll,
+  Flame,
+  Heart
 } from 'lucide-react';
 
 interface SpecialPack {
@@ -43,41 +50,32 @@ interface SpecialPacksDisplayProps {
 }
 
 const getPackIcon = (name: string) => {
-  if (name.includes('Fazendeiro') || name.includes('Colheita')) return <Wheat className="w-6 h-6" />;
-  if (name.includes('Comerciante') || name.includes('Cidade')) return <Building className="w-6 h-6" />;
-  if (name.includes('Magia') || name.includes('Poderosa')) return <Wand2 className="w-6 h-6" />;
-  if (name.includes('Defensor') || name.includes('Defesa')) return <Shield className="w-6 h-6" />;
-  if (name.includes('Lendária') || name.includes('Premium')) return <Crown className="w-6 h-6" />;
-  if (name.includes('Festival') || name.includes('Evento')) return <Gift className="w-6 h-6" />;
-  if (name.includes('Crise') || name.includes('Sobrevivência')) return <AlertTriangle className="w-6 h-6" />;
-  if (name.includes('Ações') || name.includes('Estratégia')) return <Crosshair className="w-6 h-6" />;
-  if (name.includes('Starter') || name.includes('Plus')) return <TrendingUp className="w-6 h-6" />;
-  return <Package className="w-6 h-6" />;
+  if (name.includes('Fazendeiro') || name.includes('Colheita')) return <Wheat className="w-8 h-8" />;
+  if (name.includes('Comerciante') || name.includes('Cidade')) return <Building className="w-8 h-8" />;
+  if (name.includes('Magia') || name.includes('Poderosa')) return <Wand2 className="w-8 h-8" />;
+  if (name.includes('Defensor') || name.includes('Defesa')) return <Shield className="w-8 h-8" />;
+  if (name.includes('Lendária') || name.includes('Premium')) return <Crown className="w-8 h-8" />;
+  if (name.includes('Festival') || name.includes('Evento')) return <Gift className="w-8 h-8" />;
+  if (name.includes('Crise') || name.includes('Sobrevivência')) return <AlertTriangle className="w-8 h-8" />;
+  if (name.includes('Ações') || name.includes('Estratégia')) return <Sword className="w-8 h-8" />;
+  if (name.includes('Starter') || name.includes('Plus')) return <TrendingUp className="w-8 h-8" />;
+  if (name.includes('Castelo') || name.includes('Reino')) return <Castle className="w-8 h-8" />;
+  if (name.includes('Magia') || name.includes('Feitiços')) return <Scroll className="w-8 h-8" />;
+  if (name.includes('Dragão') || name.includes('Fogo')) return <Flame className="w-8 h-8" />;
+  if (name.includes('Vida') || name.includes('Cura')) return <Heart className="w-8 h-8" />;
+  return <Package className="w-8 h-8" />;
 };
 
 const getPackRarityColor = (rarity: string) => {
   switch (rarity.toLowerCase()) {
-    case 'common': return 'bg-gray-500 text-white';
-    case 'uncommon': return 'bg-green-500 text-white';
-    case 'rare': return 'bg-blue-500 text-white';
-    case 'ultra': return 'bg-purple-500 text-white';
-    case 'legendary': return 'bg-yellow-500 text-black';
-    case 'secret': return 'bg-pink-500 text-white';
-    case 'crisis': return 'bg-red-500 text-white';
-    default: return 'bg-gray-500 text-white';
-  }
-};
-
-const getPackGradient = (rarity: string) => {
-  switch (rarity.toLowerCase()) {
-    case 'common': return 'from-gray-400 to-gray-600';
-    case 'uncommon': return 'from-green-400 to-green-600';
-    case 'rare': return 'from-blue-400 to-blue-600';
-    case 'ultra': return 'from-purple-400 to-purple-600';
-    case 'legendary': return 'from-yellow-400 to-yellow-600';
-    case 'secret': return 'from-pink-400 to-pink-600';
-    case 'crisis': return 'from-red-400 to-red-600';
-    default: return 'from-gray-400 to-gray-600';
+    case 'common': return 'from-gray-600 to-gray-800';
+    case 'uncommon': return 'from-green-600 to-green-800';
+    case 'rare': return 'from-blue-600 to-blue-800';
+    case 'ultra': return 'from-purple-600 to-purple-800';
+    case 'legendary': return 'from-yellow-500 to-orange-600';
+    case 'secret': return 'from-pink-600 to-pink-800';
+    case 'crisis': return 'from-red-600 to-red-800';
+    default: return 'from-gray-600 to-gray-800';
   }
 };
 
@@ -116,13 +114,13 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
   const getPriceDisplay = (pack: SpecialPack) => {
     if (pack.currency_type === 'coins') {
       return (
-        <div className="flex items-center gap-1">
-          <span className="text-yellow-500">💰</span>
-          <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : ''}>
+        <div className="flex items-center gap-2">
+          <Coins className="w-5 h-5 text-yellow-500" />
+          <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : 'text-yellow-400 font-bold text-xl'}>
             {pack.price_coins}
           </span>
           {pack.discount_percentage > 0 && (
-            <span className="text-green-500 font-bold">
+            <span className="text-green-400 font-bold text-xl">
               {Math.round(pack.price_coins * (1 - pack.discount_percentage / 100))}
             </span>
           )}
@@ -130,13 +128,13 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
       );
     } else if (pack.currency_type === 'gems') {
       return (
-        <div className="flex items-center gap-1">
-          <Gem className="w-4 h-4 text-purple-500" />
-          <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : ''}>
+        <div className="flex items-center gap-2">
+          <Gem className="w-5 h-5 text-purple-500" />
+          <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : 'text-purple-400 font-bold text-xl'}>
             {pack.price_gems}
           </span>
           {pack.discount_percentage > 0 && (
-            <span className="text-green-500 font-bold">
+            <span className="text-green-400 font-bold text-xl">
               {Math.round(pack.price_gems * (1 - pack.discount_percentage / 100))}
             </span>
           )}
@@ -178,10 +176,10 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-          Packs Especiais
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-amber-600 bg-clip-text text-transparent mb-2">
+          ⚔️ Packs Especiais
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-gray-300">
           Packs únicos e temáticos para expandir sua coleção!
         </p>
       </div>
@@ -200,17 +198,20 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
               key={pack.id}
               className={`
                 relative overflow-hidden transition-all duration-300 hover:scale-105
-                bg-gradient-to-br ${getPackGradient(pack.rarity)} 
+                bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm
+                border-2 border-yellow-600/30 hover:border-yellow-500/60
                 shadow-lg ${getPackGlow(pack.rarity)} hover:shadow-xl
-                border-2 border-white/20 backdrop-blur-sm
-                ${pack.is_limited ? 'ring-2 ring-orange-400' : ''}
-                ${pack.discount_percentage > 0 ? 'ring-2 ring-green-400' : ''}
+                ${pack.is_limited ? 'ring-2 ring-orange-400/50' : ''}
+                ${pack.discount_percentage > 0 ? 'ring-2 ring-green-400/50' : ''}
               `}
             >
+              {/* Glow effect */}
+              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getPackRarityColor(pack.rarity)} blur-xl -z-10`} />
+              
               {/* Discount Badge */}
               {pack.discount_percentage > 0 && (
-                <div className="absolute top-2 right-2 z-10">
-                  <Badge className="bg-green-500 text-white animate-pulse">
+                <div className="absolute top-3 right-3 z-10">
+                  <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0 shadow-lg">
                     -{pack.discount_percentage}%
                   </Badge>
                 </div>
@@ -218,52 +219,52 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
 
               {/* Limited Badge */}
               {pack.is_limited && (
-                <div className="absolute top-2 left-2 z-10">
-                  <Badge className="bg-orange-500 text-white">
+                <div className="absolute top-3 left-3 z-10">
+                  <Badge className="bg-gradient-to-r from-orange-600 to-orange-700 text-white border-0 shadow-lg">
                     <Clock className="w-3 h-3 mr-1" />
                     Limitado
                   </Badge>
                 </div>
               )}
 
-              {/* Stock Indicator */}
-              {stockLeft !== null && (
-                <div className="absolute top-12 left-2 z-10">
-                  <Badge className="bg-red-500 text-white">
-                    {stockLeft} restantes
-                  </Badge>
-                </div>
-              )}
-
               <div className="p-6 text-white">
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-white/20 rounded-lg">
+                {/* Header with Icon and Title */}
+                <div className="text-center mb-4">
+                  <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
                     {getPackIcon(pack.name)}
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg">{pack.name}</h3>
-                    <Badge className={`${getPackRarityColor(pack.rarity)} text-xs`}>
-                      {pack.rarity.toUpperCase()}
-                    </Badge>
-                  </div>
+                  <h3 className="font-bold text-xl mb-2">{pack.name}</h3>
+                  <Badge className={`bg-gradient-to-r ${getPackRarityColor(pack.rarity)} text-white border-0`}>
+                    {pack.rarity.toUpperCase()}
+                  </Badge>
                 </div>
 
+                <Separator className="my-4 bg-yellow-600/30" />
+
                 {/* Description */}
-                <p className="text-white/90 text-sm mb-4 leading-relaxed">
+                <p className="text-gray-300 text-sm mb-4 leading-relaxed text-center">
                   {pack.description}
                 </p>
 
+                {/* Stock Indicator */}
+                {stockLeft !== null && (
+                  <div className="text-center mb-4">
+                    <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-0">
+                      {stockLeft} restantes
+                    </Badge>
+                  </div>
+                )}
+
                 {/* Guaranteed Info */}
                 {guaranteedInfo && guaranteedInfo.length > 0 && (
-                  <div className="mb-4 p-3 bg-white/10 rounded-lg">
-                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-1">
+                  <div className="mb-4 p-3 bg-black/20 rounded-lg border border-yellow-600/20">
+                    <h4 className="font-semibold text-sm mb-2 flex items-center gap-2 justify-center">
                       <Star className="w-4 h-4 text-yellow-400" />
                       Garantias:
                     </h4>
                     <div className="space-y-1">
                       {guaranteedInfo.map((info: string, index: number) => (
-                        <div key={index} className="text-xs text-white/80 flex items-center gap-1">
+                        <div key={index} className="text-xs text-gray-300 flex items-center gap-2 justify-center">
                           <Zap className="w-3 h-3 text-yellow-400" />
                           {info}
                         </div>
@@ -272,14 +273,11 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
                   </div>
                 )}
 
+                <Separator className="my-4 bg-yellow-600/30" />
+
                 {/* Price */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-lg font-bold">
-                    {getPriceDisplay(pack)}
-                  </div>
-                  <div className="text-sm text-white/70">
-                    {pack.item_type === 'pack' ? 'Pack' : 'Booster'}
-                  </div>
+                <div className="text-center mb-4">
+                  {getPriceDisplay(pack)}
                 </div>
 
                 {/* Purchase Button */}
@@ -287,26 +285,27 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
                   onClick={() => onPurchase(pack.id)}
                   disabled={isPurchasing || !affordable || (stockLeft !== null && stockLeft <= 0)}
                   className={`
-                    w-full transition-all duration-200
-                    ${affordable 
-                      ? 'bg-white text-gray-800 hover:bg-gray-100 hover:scale-105' 
-                      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                    }
+                    w-full transition-all duration-300
+                    bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600
+                    text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl
                     ${isPurchasing ? 'animate-pulse' : ''}
+                    ${!affordable || (stockLeft !== null && stockLeft <= 0) ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                 >
                   {isPurchasing ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Comprando...
                     </div>
                   ) : !affordable ? (
                     <div className="flex items-center gap-2">
-                      <span>💰 Insuficiente</span>
+                      <Coins className="w-4 h-4" />
+                      Moedas Insuficientes
                     </div>
                   ) : stockLeft !== null && stockLeft <= 0 ? (
                     <div className="flex items-center gap-2">
-                      <span>Esgotado</span>
+                      <AlertTriangle className="w-4 h-4" />
+                      Esgotado
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
@@ -316,31 +315,10 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
                   )}
                 </Button>
               </div>
-
-              {/* Animated Background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 -translate-x-full animate-shimmer pointer-events-none" />
             </Card>
           );
         })}
       </div>
-
-      {/* CSS Animation */}
-      <style>{`
-        @keyframes shimmer {
-          0% {
-            background-position: -200px 0;
-          }
-          100% {
-            background-position: calc(200px + 100%) 0;
-          }
-        }
-        
-        .animate-shimmer {
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-          background-size: 200px 100%;
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
     </div>
   );
 }; 

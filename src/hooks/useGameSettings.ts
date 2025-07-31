@@ -89,20 +89,20 @@ export const useGameSettings = () => {
 
       // Configurações padrão
       let defaultSettings = {
-        gameName: 'Famand',
-        version: '1.0.0',
-        maintenanceMode: false,
-        allowNewRegistrations: true,
-        maxPlayersPerGame: 1,
-        defaultStartingResources: {
-          coins: 5,
-          food: 3,
-          materials: 2,
-          population: 3
-        },
-        gameRules: 'Regras padrão do jogo Famand...',
-        contactEmail: 'support@famand.com',
-        supportDiscord: 'https://discord.gg/famand',
+          gameName: 'Famand',
+          version: '1.0.0',
+          maintenanceMode: false,
+          allowNewRegistrations: true,
+          maxPlayersPerGame: 1,
+          defaultStartingResources: {
+            coins: 5,
+            food: 3,
+            materials: 2,
+            population: 3
+          },
+          gameRules: 'Regras padrão do jogo Famand...',
+          contactEmail: 'support@famand.com',
+          supportDiscord: 'https://discord.gg/famand',
         victoryMode: 'landmarks' as const,
         victoryValue: 3,
         deckMinCards: 23,

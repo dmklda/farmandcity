@@ -11,7 +11,7 @@ import GameModePage from '../pages/GameModePage';
 const AppRouter: React.FC = () => {
   const { currentView } = useAppContext();
 
-  console.log('AppRouter: renderizando view:', currentView);
+  // // console.log('AppRouter: renderizando view:', currentView);
 
   switch (currentView) {
     case 'home':

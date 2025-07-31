@@ -11,7 +11,7 @@ interface TestDeckDisplayProps {
 }
 
 export const TestDeckDisplay: React.FC<TestDeckDisplayProps> = ({ activeDeck }) => {
-  console.log('TestDeckDisplay - activeDeck:', activeDeck);
+  // // console.log('TestDeckDisplay - activeDeck:', activeDeck);
   
   return (
     <Card className="mb-4">

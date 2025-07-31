@@ -82,13 +82,13 @@ export const PackManager: React.FC = () => {
 
   // Debug: Log formData changes
   useEffect(() => {
-    console.log('FormData atualizado:', formData);
+    // // console.log('FormData atualizado:', formData);
   }, [formData]);
 
   // Debug: Log activeTab and editingPack changes
   useEffect(() => {
-    console.log('ActiveTab mudou para:', activeTab);
-    console.log('EditingPack:', editingPack);
+    // // console.log('ActiveTab mudou para:', activeTab);
+          // // console.log('EditingPack:', editingPack);
   }, [activeTab, editingPack]);
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export const PackManager: React.FC = () => {
 
   const fetchPacks = async () => {
     try {
-      console.log('Buscando packs...');
+      // // console.log('Buscando packs...');
       const { data, error } = await supabase
         .from('shop_items')
         .select('*')
@@ -106,7 +106,7 @@ export const PackManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('Packs encontrados:', data);
+              // // console.log('Packs encontrados:', data);
       setPacks(data || []);
     } catch (err) {
       console.error('Erro ao buscar packs:', err);
@@ -226,10 +226,10 @@ export const PackManager: React.FC = () => {
   };
 
   const editPack = (pack: Pack) => {
-    console.log('Editando pack:', pack);
-    console.log('Pack ID:', pack.id);
-    console.log('Pack name:', pack.name);
-    console.log('Pack card_ids:', pack.card_ids);
+            // // console.log('Editando pack:', pack);
+        // // console.log('Pack ID:', pack.id);
+        // // console.log('Pack name:', pack.name);
+        // // console.log('Pack card_ids:', pack.card_ids);
     
     // Calcular quantidades de cada carta
     const cardQuantities: Record<string, number> = {};
@@ -265,11 +265,11 @@ export const PackManager: React.FC = () => {
       cards_per_pack: pack.cards_per_pack
     });
     
-    console.log('FormData atualizado:', {
+            /*// console.log('FormData atualizado:', {
       name: pack.name,
       card_ids: pack.card_ids || [],
       card_quantities: cardQuantities
-    });
+    });*/
   };
 
   const reactivatePack = async (id: string) => {
@@ -1065,8 +1065,8 @@ export const PackManager: React.FC = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Botão Editar clicado para pack:', pack.id);
-                        console.log('Pack completo:', pack);
+                                // // console.log('Botão Editar clicado para pack:', pack.id);
+        // // console.log('Pack completo:', pack);
                         editPack(pack);
                       }}
                       className="flex-1"

@@ -17,7 +17,7 @@ export const usePlayerCards = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    console.log('usePlayerCards useEffect executado, refreshTrigger:', refreshTrigger);
+      //console.log('usePlayerCards useEffect executado, refreshTrigger:', refreshTrigger);
     // Só buscar cartas se o usuário estiver autenticado
     const checkAuthAndFetch = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -42,7 +42,7 @@ export const usePlayerCards = () => {
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
       
-      console.log('Buscando cartas para usuário:', user.data.user.id);
+      //console.log('Buscando cartas para usuário:', user.data.user.id);
       
       const { data: playerCardsData, error: playerCardsError } = await supabase
         .from('player_cards')
@@ -51,10 +51,10 @@ export const usePlayerCards = () => {
 
       if (playerCardsError) throw playerCardsError;
 
-      console.log('Dados de player_cards encontrados:', playerCardsData);
+      //console.log('Dados de player_cards encontrados:', playerCardsData);
       
       if (!playerCardsData || playerCardsData.length === 0) {
-        console.log('Usuário não possui cartas ainda - tentando criar cartas starter...');
+        //console.log('Usuário não possui cartas ainda - tentando criar cartas starter...');
         await createStarterCardsForUser(user.data.user.id);
         // Tentar buscar novamente após criar as cartas
         await fetchPlayerCardsAfterCreation(user.data.user.id);
@@ -63,7 +63,7 @@ export const usePlayerCards = () => {
 
       // Buscar dados completos das cartas usando UUIDs
       const cardIds = playerCardsData.map((pc: PlayerCard) => pc.card_id);
-      console.log('Card IDs para buscar:', cardIds);
+      //console.log('Card IDs para buscar:', cardIds);
       
       const { data: cardsData, error: cardsError } = await supabase
         .from('cards')
@@ -73,7 +73,7 @@ export const usePlayerCards = () => {
 
       if (cardsError) throw cardsError;
       
-      console.log('Dados de cards encontrados:', cardsData);
+      //console.log('Dados de cards encontrados:', cardsData);
 
       // Converter para formato do jogo, respeitando quantidade
       const gameCards: Card[] = [];
@@ -102,7 +102,7 @@ export const usePlayerCards = () => {
         }
       });
 
-      console.log(`Carregadas ${gameCards.length} cartas do jogador`);
+      //console.log(`Carregadas ${gameCards.length} cartas do jogador`);
       setPlayerCards(gameCards);
     } catch (err: any) {
       console.error('Error fetching player cards:', err);
@@ -117,7 +117,7 @@ export const usePlayerCards = () => {
   // Função para buscar cartas após criação (evita recursão)
   const fetchPlayerCardsAfterCreation = async (userId: string) => {
     try {
-      console.log('Buscando cartas após criação para usuário:', userId);
+      //console.log('Buscando cartas após criação para usuário:', userId);
       
       const { data: playerCardsData, error: playerCardsError } = await supabase
         .from('player_cards')
@@ -127,7 +127,7 @@ export const usePlayerCards = () => {
       if (playerCardsError) throw playerCardsError;
 
       if (!playerCardsData || playerCardsData.length === 0) {
-        console.log('Ainda não há cartas após criação');
+        //console.log('Ainda não há cartas após criação');
         setPlayerCards([]);
         return;
       }
@@ -169,7 +169,7 @@ export const usePlayerCards = () => {
         }
       });
 
-      console.log(`Carregadas ${gameCards.length} cartas do jogador após criação`);
+      //console.log(`Carregadas ${gameCards.length} cartas do jogador após criação`);
       setPlayerCards(gameCards);
     } catch (err: any) {
       console.error('Error fetching player cards after creation:', err);
@@ -180,7 +180,7 @@ export const usePlayerCards = () => {
   // Função para criar cartas starter para um usuário
   const createStarterCardsForUser = async (userId: string) => {
     try {
-      console.log('Criando cartas starter para usuário:', userId);
+      //console.log('Criando cartas starter para usuário:', userId);
       
       // Buscar cartas starter por slug (mesma lógica do trigger)
       const { data: starterCards, error: starterError } = await supabase
@@ -203,7 +203,7 @@ export const usePlayerCards = () => {
         return;
       }
 
-      console.log(`Encontradas ${starterCards.length} cartas starter:`, starterCards);
+      //console.log(`Encontradas ${starterCards.length} cartas starter:`, starterCards);
 
       // Criar entradas na tabela player_cards com as quantidades corretas
       const playerCardsToInsert: Array<{
@@ -244,7 +244,7 @@ export const usePlayerCards = () => {
         });
       });
 
-      console.log('Inserindo cartas:', playerCardsToInsert);
+      //console.log('Inserindo cartas:', playerCardsToInsert);
 
       const { error: insertError } = await supabase
         .from('player_cards')
@@ -255,7 +255,7 @@ export const usePlayerCards = () => {
         return;
       }
 
-      console.log('Cartas starter criadas com sucesso');
+      //console.log('Cartas starter criadas com sucesso');
     } catch (err: any) {
       console.error('Erro ao criar cartas starter:', err);
     }
@@ -343,15 +343,15 @@ export const usePlayerCards = () => {
   };
 
   const refresh = useCallback(async () => {
-    console.log('usePlayerCards refresh chamado, incrementando refreshTrigger...');
+    //console.log('usePlayerCards refresh chamado, incrementando refreshTrigger...');
     setRefreshTrigger(prev => {
       const newValue = prev + 1;
-      console.log('refreshTrigger atualizado:', { prev, newValue });
+      //console.log('refreshTrigger atualizado:', { prev, newValue });
       return newValue;
     });
-    console.log('Chamando fetchPlayerCards...');
+    //console.log('Chamando fetchPlayerCards...');
     await fetchPlayerCards();
-    console.log('fetchPlayerCards concluído');
+    //console.log('fetchPlayerCards concluído');
   }, []);
 
   return {

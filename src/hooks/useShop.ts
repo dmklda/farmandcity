@@ -51,6 +51,7 @@ interface ShopPurchase {
   id: string;
   player_id: string;
   item_id: string;
+  item_name: string;
   item_type: string;
   quantity: number;
   total_price_coins: number;
@@ -250,7 +251,13 @@ export const useShop = () => {
       const [shopPurchasesResult, packPurchasesResult] = await Promise.all([
         supabase
           .from('shop_purchases')
-          .select('*')
+          .select(`
+            *,
+            shop_items (
+              name,
+              description
+            )
+          `)
           .eq('player_id', user.id)
           .order('purchased_at', { ascending: false }),
         supabase
@@ -281,6 +288,7 @@ export const useShop = () => {
       const shopPurchases: ShopPurchase[] = (shopPurchasesResult.data || []).map(purchase => ({
         id: purchase.id,
         item_id: purchase.item_id || '',
+        item_name: purchase.shop_items?.name || `Item ${purchase.item_id}`,
         item_type: purchase.item_type,
         player_id: purchase.player_id || '',
         quantity: purchase.quantity || 1,
@@ -295,6 +303,7 @@ export const useShop = () => {
       const packPurchases: ShopPurchase[] = (packPurchasesResult.data || []).map(purchase => ({
         id: purchase.id,
         item_id: purchase.pack_id || 'unknown',
+        item_name: purchase.booster_packs?.name || `Pack ${purchase.pack_id}`,
         item_type: 'pack',
         player_id: purchase.user_id || '',
         quantity: 1,

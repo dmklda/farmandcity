@@ -80,6 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
+      card_copy_limits: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          max_copies: number
+          rarity: Database["public"]["Enums"]["card_rarity"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_copies: number
+          rarity: Database["public"]["Enums"]["card_rarity"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          max_copies?: number
+          rarity?: Database["public"]["Enums"]["card_rarity"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       card_purchases: {
         Row: {
           card_id: string | null
@@ -206,6 +233,45 @@ export type Database = {
         }
         Relationships: []
       }
+      catastrophes: {
+        Row: {
+          created_at: string | null
+          description: string
+          effect_data: Json
+          effect_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          rarity: string
+          trigger_conditions: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          effect_data: Json
+          effect_type: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rarity: string
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          effect_data?: Json
+          effect_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rarity?: string
+          trigger_conditions?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       daily_rotation_cards: {
         Row: {
           card_id: string | null
@@ -217,6 +283,7 @@ export type Database = {
           price_coins: number | null
           price_gems: number | null
           rotation_date: string
+          slot_type: string | null
         }
         Insert: {
           card_id?: string | null
@@ -228,6 +295,7 @@ export type Database = {
           price_coins?: number | null
           price_gems?: number | null
           rotation_date: string
+          slot_type?: string | null
         }
         Update: {
           card_id?: string | null
@@ -239,6 +307,7 @@ export type Database = {
           price_coins?: number | null
           price_gems?: number | null
           rotation_date?: string
+          slot_type?: string | null
         }
         Relationships: [
           {
@@ -246,6 +315,129 @@ export type Database = {
             columns: ["card_id"]
             isOneToOne: false
             referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_rotation_templates: {
+        Row: {
+          common_card_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          landmark_card_id: string | null
+          legendary_card_id: string | null
+          magic_card_id: string | null
+          rare_card_id: string | null
+          rotation_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          common_card_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          landmark_card_id?: string | null
+          legendary_card_id?: string | null
+          magic_card_id?: string | null
+          rare_card_id?: string | null
+          rotation_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          common_card_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          landmark_card_id?: string | null
+          legendary_card_id?: string | null
+          magic_card_id?: string | null
+          rare_card_id?: string | null
+          rotation_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_rotation_templates_common_card_id_fkey"
+            columns: ["common_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rotation_templates_landmark_card_id_fkey"
+            columns: ["landmark_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rotation_templates_legendary_card_id_fkey"
+            columns: ["legendary_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rotation_templates_magic_card_id_fkey"
+            columns: ["magic_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_rotation_templates_rare_card_id_fkey"
+            columns: ["rare_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_catastrophes: {
+        Row: {
+          catastrophe_id: string | null
+          created_at: string | null
+          effect_applied: Json
+          game_id: string | null
+          id: string
+          resolved: boolean | null
+          resolved_at: string | null
+          turn_triggered: number
+        }
+        Insert: {
+          catastrophe_id?: string | null
+          created_at?: string | null
+          effect_applied: Json
+          game_id?: string | null
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          turn_triggered: number
+        }
+        Update: {
+          catastrophe_id?: string | null
+          created_at?: string | null
+          effect_applied?: Json
+          game_id?: string | null
+          id?: string
+          resolved?: boolean | null
+          resolved_at?: string | null
+          turn_triggered?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_catastrophes_catastrophe_id_fkey"
+            columns: ["catastrophe_id"]
+            isOneToOne: false
+            referencedRelation: "catastrophes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_catastrophes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
             referencedColumns: ["id"]
           },
         ]
@@ -425,6 +617,47 @@ export type Database = {
           rewards?: Json
         }
         Relationships: []
+      }
+      pack_purchase_tracking: {
+        Row: {
+          created_at: string | null
+          first_purchase_at: string | null
+          id: string
+          last_purchase_at: string | null
+          pack_id: string
+          purchase_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          first_purchase_at?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          pack_id: string
+          purchase_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          first_purchase_at?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          pack_id?: string
+          purchase_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_purchase_tracking_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pack_purchases: {
         Row: {
@@ -742,6 +975,7 @@ export type Database = {
       shop_items: {
         Row: {
           card_ids: string[] | null
+          cards_per_pack: number | null
           created_at: string | null
           currency_type: string
           description: string | null
@@ -753,9 +987,13 @@ export type Database = {
           is_daily_rotation: boolean | null
           is_limited: boolean | null
           item_type: string
+          max_purchases_per_user: number | null
           name: string
+          pack_conditions: Json | null
+          pack_type: string | null
           price_coins: number | null
           price_gems: number | null
+          purchase_time_limit: unknown | null
           rarity: string | null
           rotation_date: string | null
           sold_quantity: number | null
@@ -764,6 +1002,7 @@ export type Database = {
         }
         Insert: {
           card_ids?: string[] | null
+          cards_per_pack?: number | null
           created_at?: string | null
           currency_type?: string
           description?: string | null
@@ -775,9 +1014,13 @@ export type Database = {
           is_daily_rotation?: boolean | null
           is_limited?: boolean | null
           item_type: string
+          max_purchases_per_user?: number | null
           name: string
+          pack_conditions?: Json | null
+          pack_type?: string | null
           price_coins?: number | null
           price_gems?: number | null
+          purchase_time_limit?: unknown | null
           rarity?: string | null
           rotation_date?: string | null
           sold_quantity?: number | null
@@ -786,6 +1029,7 @@ export type Database = {
         }
         Update: {
           card_ids?: string[] | null
+          cards_per_pack?: number | null
           created_at?: string | null
           currency_type?: string
           description?: string | null
@@ -797,9 +1041,13 @@ export type Database = {
           is_daily_rotation?: boolean | null
           is_limited?: boolean | null
           item_type?: string
+          max_purchases_per_user?: number | null
           name?: string
+          pack_conditions?: Json | null
+          pack_type?: string | null
           price_coins?: number | null
           price_gems?: number | null
+          purchase_time_limit?: unknown | null
           rarity?: string | null
           rotation_date?: string | null
           sold_quantity?: number | null
@@ -942,6 +1190,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_player_deck: {
+        Args: { deck_id: string }
+        Returns: undefined
+      }
+      add_cards_to_collection: {
+        Args: { p_user_id: string; p_card_ids: string[] }
+        Returns: undefined
+      }
       check_is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -987,19 +1243,17 @@ export type Database = {
         Args: { pack_id: string }
         Returns: Json
       }
-      test_open_pack: {
+      purchase_pack: {
         Args: { pack_id: string }
         Returns: Json
       }
-      purchase_pack: {
+      test_card_copy_limits: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      test_open_pack: {
         Args: { pack_id: string }
-        Returns: {
-          success: boolean
-          purchase_id: string
-          cards_received: Json
-          remaining_coins: number
-          remaining_gems: number
-        }
+        Returns: Json
       }
     }
     Enums: {
@@ -1012,6 +1266,7 @@ export type Database = {
         | "legendary"
         | "crisis"
         | "booster"
+        | "landmark"
       card_type:
         | "farm"
         | "city"
@@ -1158,6 +1413,7 @@ export const Constants = {
         "legendary",
         "crisis",
         "booster",
+        "landmark",
       ],
       card_type: [
         "farm",

@@ -11,24 +11,24 @@ export const usePlayerCurrency = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    console.log('usePlayerCurrency useEffect executado, refreshTrigger:', refreshTrigger);
+    //console.log('usePlayerCurrency useEffect executado, refreshTrigger:', refreshTrigger);
     fetchPlayerCurrency();
   }, [refreshTrigger]);
 
   const fetchPlayerCurrency = async () => {
     try {
-      console.log('fetchPlayerCurrency iniciado...');
+      //console.log('fetchPlayerCurrency iniciado...');
       setLoading(true);
       setError(null);
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('Usuário não autenticado, abortando fetchPlayerCurrency');
+        //console.log('Usuário não autenticado, abortando fetchPlayerCurrency');
         setLoading(false);
         return;
       }
 
-      console.log('Buscando moedas para usuário:', user.id);
+      //console.log('Buscando moedas para usuário:', user.id);
       const { data, error: fetchError } = await supabase
         .from('player_currency')
         .select('*')
@@ -40,7 +40,7 @@ export const usePlayerCurrency = () => {
       }
 
       if (!data) {
-        console.log('Dados de moeda não encontrados, criando moeda inicial...');
+        //console.log('Dados de moeda não encontrados, criando moeda inicial...');
         // Criar moeda inicial para o jogador
         await createInitialCurrency(user.id);
         // Buscar novamente após criar
@@ -51,17 +51,17 @@ export const usePlayerCurrency = () => {
           .single();
         
         if (newError) throw newError;
-        console.log('Moeda inicial criada:', newData);
+        //console.log('Moeda inicial criada:', newData);
         setCurrency({ ...newData });
         setLoading(false);
         return;
       }
 
-      console.log('Moedas encontradas:', data);
-      console.log('Chamando setCurrency com:', data);
+      //console.log('Moedas encontradas:', data);
+      //console.log('Chamando setCurrency com:', data);
       // Forçar nova referência para garantir que o React detecte a mudança
       setCurrency({ ...data });
-      console.log('setCurrency chamado com nova referência');
+      //console.log('setCurrency chamado com nova referência');
     } catch (err: any) {
       console.error('Erro em fetchPlayerCurrency:', err);
       setError(err.message);
@@ -179,15 +179,15 @@ export const usePlayerCurrency = () => {
   };
 
   const refresh = useCallback(async () => {
-    console.log('usePlayerCurrency refresh chamado, incrementando refreshTrigger...');
+    //console.log('usePlayerCurrency refresh chamado, incrementando refreshTrigger...');
     setRefreshTrigger(prev => {
       const newValue = prev + 1;
-      console.log('refreshTrigger atualizado:', { prev, newValue });
+      //console.log('refreshTrigger atualizado:', { prev, newValue });
       return newValue;
     });
-    console.log('Chamando fetchPlayerCurrency...');
+    //console.log('Chamando fetchPlayerCurrency...');
     await fetchPlayerCurrency();
-    console.log('fetchPlayerCurrency concluído');
+    //console.log('fetchPlayerCurrency concluído');
   }, []);
 
   return {
