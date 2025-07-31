@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Card } from '../types/card';
+import { useGameSettings } from './useGameSettings';
 
 interface PlayerDeck {
   id: string;
@@ -18,10 +19,11 @@ interface DeckWithCards extends PlayerDeck {
 }
 
 export const usePlayerDecks = () => {
-  const [decks, setDecks] = useState<DeckWithCards[]>([]);
+  const [decks, setDecks] = useState<PlayerDeck[]>([]);
   const [activeDeck, setActiveDeck] = useState<DeckWithCards | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { settings: gameSettings } = useGameSettings();
 
   useEffect(() => {
     // Só buscar decks se o usuário estiver autenticado
@@ -215,14 +217,41 @@ export const usePlayerDecks = () => {
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
 
-      // Validar limites baseado no tipo de deck
-      if (isStarterDeck) {
-        if (cardIds.length !== 38) {
-          throw new Error('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)');
+      // Verificar se as configurações estão carregadas
+      if (!gameSettings.minDeckCardCount || !gameSettings.maxDeckCardCount) {
+        console.warn('⚠️ Configurações de deck não carregadas, usando valores padrão');
+        // Usar valores padrão se as configurações não estiverem carregadas
+        const defaultMin = 23;
+        const defaultMax = 40;
+        const defaultStarter = 38;
+        
+        if (isStarterDeck) {
+          if (cardIds.length !== defaultStarter) {
+            throw new Error(`Deck inicial deve ter exatamente ${defaultStarter} cartas`);
+          }
+        } else {
+          if (cardIds.length < defaultMin || cardIds.length > defaultMax) {
+            throw new Error(`Deck customizado deve ter entre ${defaultMin} e ${defaultMax} cartas`);
+          }
         }
       } else {
-        if (cardIds.length < 10 || cardIds.length > 28) {
-          throw new Error('Deck customizado deve ter entre 10 e 28 cartas');
+        console.log('🔧 Configurações de deck:', {
+          minDeckCardCount: gameSettings.minDeckCardCount,
+          maxDeckCardCount: gameSettings.maxDeckCardCount,
+          starterDeckCardCount: gameSettings.starterDeckCardCount,
+          cardIdsLength: cardIds.length,
+          isStarterDeck
+        });
+
+        // Validar limites baseado no tipo de deck
+        if (isStarterDeck) {
+          if (cardIds.length !== gameSettings.starterDeckCardCount) {
+            throw new Error(`Deck inicial deve ter exatamente ${gameSettings.starterDeckCardCount} cartas`);
+          }
+        } else {
+          if (cardIds.length < gameSettings.minDeckCardCount || cardIds.length > gameSettings.maxDeckCardCount) {
+            throw new Error(`Deck customizado deve ter entre ${gameSettings.minDeckCardCount} e ${gameSettings.maxDeckCardCount} cartas`);
+          }
         }
       }
 
@@ -259,13 +288,32 @@ export const usePlayerDecks = () => {
 
       // Validar limites baseado no tipo de deck
       if (updates.card_ids) {
-        if (currentDeck.is_starter_deck) {
-          if (updates.card_ids.length !== 38) {
-            throw new Error('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)');
+        // Verificar se as configurações estão carregadas
+        if (!gameSettings.minDeckCardCount || !gameSettings.maxDeckCardCount) {
+          console.warn('⚠️ Configurações de deck não carregadas, usando valores padrão');
+          // Usar valores padrão se as configurações não estiverem carregadas
+          const defaultMin = 23;
+          const defaultMax = 40;
+          const defaultStarter = 38;
+          
+          if (currentDeck.is_starter_deck) {
+            if (updates.card_ids.length !== defaultStarter) {
+              throw new Error(`Deck inicial deve ter exatamente ${defaultStarter} cartas`);
+            }
+          } else {
+            if (updates.card_ids.length < defaultMin || updates.card_ids.length > defaultMax) {
+              throw new Error(`Deck customizado deve ter entre ${defaultMin} e ${defaultMax} cartas`);
+            }
           }
         } else {
-          if (updates.card_ids.length < 10 || updates.card_ids.length > 28) {
-            throw new Error('Deck customizado deve ter entre 10 e 28 cartas');
+          if (currentDeck.is_starter_deck) {
+            if (updates.card_ids.length !== gameSettings.starterDeckCardCount) {
+              throw new Error(`Deck inicial deve ter exatamente ${gameSettings.starterDeckCardCount} cartas`);
+            }
+          } else {
+            if (updates.card_ids.length < gameSettings.minDeckCardCount || updates.card_ids.length > gameSettings.maxDeckCardCount) {
+              throw new Error(`Deck customizado deve ter entre ${gameSettings.minDeckCardCount} e ${gameSettings.maxDeckCardCount} cartas`);
+            }
           }
         }
       }

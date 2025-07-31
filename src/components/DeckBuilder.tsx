@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { usePlayerCards } from '../hooks/usePlayerCards';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
+import { useGameSettings } from '../hooks/useGameSettings';
+import { useCardCopyLimits } from '../hooks/useCardCopyLimits';
 import { Card } from '../types/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -16,10 +18,13 @@ interface DeckBuilderProps {
 export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => {
   const { playerCards, loading: cardsLoading } = usePlayerCards();
   const { decks, updateDeck, createDeck } = usePlayerDecks();
+  const { settings: gameSettings } = useGameSettings();
+  const { validateCompleteDeck, canAddCardToDeck, getDeckStats } = useCardCopyLimits();
   
   const [deckName, setDeckName] = useState('Novo Deck');
   const [deckCards, setDeckCards] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Carregar deck existente para edição
   useEffect(() => {
@@ -32,9 +37,34 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
     }
   }, [deckId, decks]);
 
+  // Converter IDs para objetos Card para validação
+  const deckCardsObjects = React.useMemo(() => {
+    return deckCards.map(cardId => {
+      const card = playerCards.find(c => c.id === cardId);
+      return card;
+    }).filter(Boolean) as Card[];
+  }, [deckCards, playerCards]);
+
+  // Validar deck
+  const deckValidation = React.useMemo(() => {
+    if (deckCardsObjects.length === 0) {
+      return { valid: false, errors: ['Deck deve ter pelo menos uma carta'], stats: null };
+    }
+    
+    const minCards = gameSettings.deckMinCards || 23;
+    const maxCards = gameSettings.deckMaxCards || 40;
+    
+    return validateCompleteDeck(deckCardsObjects, minCards, maxCards);
+  }, [deckCardsObjects, gameSettings.deckMinCards, gameSettings.deckMaxCards, validateCompleteDeck]);
+
+  // Atualizar erros de validação
+  useEffect(() => {
+    setValidationErrors(deckValidation.errors);
+  }, [deckValidation.errors]);
+
   // Agrupar cartas do jogador por ID base (sem considerar cópias)
   const availableCards = React.useMemo(() => {
-    const cardGroups: Record<string, { card: Card; owned: number; inDeck: number }> = {};
+    const cardGroups: Record<string, { card: Card; owned: number; inDeck: number; canAdd: boolean; reason?: string }> = {};
     
     playerCards.forEach(card => {
       const baseId = card.id; // Usar ID completo
@@ -42,27 +72,37 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
         cardGroups[baseId] = {
           card: { ...card, id: baseId }, // Usar ID completo
           owned: 0,
-          inDeck: 0
+          inDeck: 0,
+          canAdd: true
         };
       }
       cardGroups[baseId].owned++;
     });
 
-    // Contar quantas de cada carta estão no deck
+    // Contar quantas de cada carta estão no deck e verificar se pode adicionar
     deckCards.forEach(cardId => {
       if (cardGroups[cardId]) {
         cardGroups[cardId].inDeck++;
       }
     });
 
+    // Verificar se cada carta pode ser adicionada
+    Object.values(cardGroups).forEach(group => {
+      const currentDeck = deckCardsObjects.filter(c => c.id !== group.card.id);
+      const canAdd = canAddCardToDeck(group.card, currentDeck);
+      group.canAdd = canAdd.canAdd;
+      group.reason = canAdd.reason;
+    });
+
     return Object.values(cardGroups);
-  }, [playerCards, deckCards]);
+  }, [playerCards, deckCards, deckCardsObjects, canAddCardToDeck]);
 
   const addCardToDeck = (cardId: string) => {
-    if (deckCards.length >= 28) return;
+    const maxCards = gameSettings.deckMaxCards || 40;
+    if (deckCards.length >= maxCards) return;
     
     const cardGroup = availableCards.find(g => g.card.id === cardId);
-    if (!cardGroup || cardGroup.inDeck >= cardGroup.owned) return;
+    if (!cardGroup || !cardGroup.canAdd) return;
     
     setDeckCards(prev => [...prev, cardId]);
   };
@@ -75,6 +115,11 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
   };
 
   const handleSave = async () => {
+    if (!deckValidation.valid) {
+      setValidationErrors(deckValidation.errors);
+      return;
+    }
+
     try {
       setSaving(true);
       
@@ -97,7 +142,7 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
     }
   };
 
-  const canSave = deckName.trim() && deckCards.length === 28;
+  const canSave = deckName.trim() && deckValidation.valid;
 
   if (cardsLoading) {
     return (
@@ -132,13 +177,25 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                 placeholder="Nome do deck"
               />
               <div className="flex items-center gap-4">
-                <Badge variant={deckCards.length === 28 ? "default" : "secondary"}>
-                  {deckCards.length}/28 cartas
+                <Badge variant={deckValidation.valid ? "default" : "destructive"}>
+                  {deckCards.length}/{gameSettings.deckMaxCards || 40} cartas
                 </Badge>
                 <Badge variant="outline">
                   {availableCards.length} tipos disponíveis
                 </Badge>
+                {deckValidation.stats && (
+                  <Badge variant="secondary">
+                    {deckValidation.stats.uniqueLandmarks} landmarks únicos
+                  </Badge>
+                )}
               </div>
+              {validationErrors.length > 0 && (
+                <div className="text-sm text-destructive space-y-1">
+                  {validationErrors.map((error, index) => (
+                    <div key={index}>• {error}</div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={onClose}>
@@ -165,14 +222,14 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
             {/* Cartas Disponíveis */}
             <TabsContent value="cards" className="flex-1 overflow-y-auto">
               <div className="grid grid-cols-4 gap-4 p-4">
-                {availableCards.map(({ card, owned, inDeck }) => (
+                {availableCards.map(({ card, owned, inDeck, canAdd, reason }) => (
                   <div key={card.id} className="space-y-2">
                     <div className="relative">
                       <CardComponent
                         card={card}
                         size="small"
                         onClick={() => addCardToDeck(card.id)}
-                        playable={inDeck < owned && deckCards.length < 28}
+                        playable={canAdd && deckCards.length < (gameSettings.deckMaxCards || 40)}
                       />
                       <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs">
                         {owned}
@@ -182,16 +239,28 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                           {inDeck}
                         </div>
                       )}
+                      {!canAdd && (
+                        <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center">
+                          <div className="text-white text-xs text-center p-1">
+                            ❌
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="text-center space-y-1">
                       <p className="text-xs font-medium truncate">{card.name}</p>
+                      {reason && (
+                        <p className="text-xs text-muted-foreground truncate" title={reason}>
+                          {reason}
+                        </p>
+                      )}
                       <div className="flex justify-center gap-1">
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-6 px-2 text-xs"
                           onClick={() => addCardToDeck(card.id)}
-                          disabled={inDeck >= owned || deckCards.length >= 28}
+                          disabled={!canAdd || deckCards.length >= (gameSettings.deckMaxCards || 40)}
                         >
                           +
                         </Button>
@@ -215,7 +284,7 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
             <TabsContent value="deck" className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  Cartas no deck ({deckCards.length}/28):
+                  Cartas no deck ({deckCards.length}/{gameSettings.deckMaxCards || 40}):
                 </div>
                 
                 {deckCards.length === 0 ? (

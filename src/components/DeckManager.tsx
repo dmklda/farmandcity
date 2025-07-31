@@ -5,6 +5,9 @@ import { Badge } from './ui/badge';
 import CardComponent from './CardComponent';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
 import { usePlayerCards } from '../hooks/usePlayerCards';
+import { useGameSettings } from '../hooks/useGameSettings';
+import { useCardCopyLimits } from '../hooks/useCardCopyLimits';
+import { useDialog } from './ui/dialog';
 import { Card } from '../types/card';
 import { PlayerDeck } from '../types/admin';
 import { Plus, Minus, Eye, X, Info } from 'lucide-react';
@@ -16,6 +19,9 @@ interface DeckManagerProps {
 export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
   const { decks, activeDeck, createDeck, updateDeck, deleteDeck, setActiveDeckById, loading, error: decksError } = usePlayerDecks();
   const { playerCards, loading: cardsLoading, error: cardsError } = usePlayerCards();
+  const { settings: gameSettings } = useGameSettings();
+  const { validateCompleteDeck } = useCardCopyLimits();
+  const { showAlert, showConfirm } = useDialog();
   
   const [selectedDeck, setSelectedDeck] = useState<PlayerDeck | null>(null);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
@@ -105,8 +111,9 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
 
     if (group.copiesInDeck < group.maxCopies && group.copiesInDeck < group.totalOwned) {
       // Verificar se o deck não está cheio
-      if (selectedCards.length >= 28) {
-        alert('Deck está cheio (máximo 28 cartas)');
+      const maxCards = gameSettings.deckMaxCards || 40;
+      if (selectedCards.length >= maxCards) {
+        showAlert(`Deck está cheio (máximo ${maxCards} cartas)`, 'Deck Cheio', 'warning');
         return;
       }
       
@@ -138,19 +145,23 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
       try {
         setIsProcessing(true);
         if (!deckName.trim()) {
-          throw new Error('Nome do deck é obrigatório');
+          showAlert('Nome do deck é obrigatório', 'error');
+          return;
         }
-        if (selectedCards.length < 10) {
-          throw new Error('Deck deve ter pelo menos 10 cartas');
+        if (selectedCards.length < gameSettings.minDeckCardCount) {
+          await showAlert(`Deck deve ter pelo menos ${gameSettings.minDeckCardCount} cartas`, 'Deck Inválido', 'warning');
+          return;
         }
-        if (selectedCards.length > 28) {
-          throw new Error('Deck não pode ter mais de 28 cartas');
+        const maxCards = gameSettings.deckMaxCards || 40;
+        if (selectedCards.length > maxCards) {
+          await showAlert(`Deck não pode ter mais de ${maxCards} cartas`, 'Deck Inválido', 'warning');
+          return;
         }
         await createDeck(deckName, selectedCards, false);
         setDeckName('');
         setSelectedCards([]);
       } catch (err: any) {
-        alert(err.message); // Usar um alert para feedback
+        showAlert(err.message, 'Erro', 'error');
       } finally {
         setIsProcessing(false);
       }
@@ -162,11 +173,15 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
 
         if (currentDeck.is_starter_deck) {
           if (selectedCards.length !== 38) {
-            throw new Error('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)');
+            await showAlert('Deck inicial deve ter exatamente 38 cartas (28 básicas + 10 adicionais)', 'Deck Inválido', 'warning');
+            return;
           }
         } else {
-          if (selectedCards.length < 10 || selectedCards.length > 28) {
-            throw new Error('Deck customizado deve ter entre 10 e 28 cartas');
+          const minCards = gameSettings.deckMinCards || 23;
+          const maxCards = gameSettings.deckMaxCards || 40;
+          if (selectedCards.length < minCards || selectedCards.length > maxCards) {
+            await showAlert(`Deck customizado deve ter entre ${minCards} e ${maxCards} cartas`, 'Deck Inválido', 'warning');
+            return;
           }
         }
 
@@ -179,7 +194,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
         setDeckName('');
         setSelectedCards([]);
       } catch (err: any) {
-        alert(err.message); // Usar um alert para feedback
+        showAlert(err.message, 'Erro', 'error');
       } finally {
         setIsProcessing(false);
       }
@@ -195,7 +210,7 @@ export const DeckManager: React.FC<DeckManagerProps> = ({ onClose }) => {
       setDeckName('');
       setSelectedCards([]);
     } catch (err: any) {
-      alert(err.message); // Usar um alert para feedback
+      showAlert(err.message, 'Erro', 'error');
     } finally {
       setIsProcessing(false);
     }

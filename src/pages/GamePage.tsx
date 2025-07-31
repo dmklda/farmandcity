@@ -1,6 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
+import { useGameState } from '../hooks/useGameState';
+import { usePlayerCards } from '../hooks/usePlayerCards';
+import { usePlayerDecks } from '../hooks/usePlayerDecks';
+import { useCards } from '../hooks/useCards';
+import { useGameSettings } from '../hooks/useGameSettings';
+import { useStarterDeck } from '../hooks/useStarterDeck';
+import { useUnlockedCards } from '../hooks/useUnlockedCards';
+import { Card } from '../types/card';
+import { MedievalNotificationSystem, useMedievalNotifications } from '../components/MedievalNotificationSystem';
+import { useDialog } from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
+import { Card as UICard } from '../components/ui/card';
+import { Settings, Save, RotateCcw, Home } from 'lucide-react';
 
 import AuthPage from '../components/AuthPage';
 import MedievalSidebar from '../components/MedievalSidebar';
@@ -11,11 +25,7 @@ import MedievalDiceButton from '../components/MedievalDiceButton';
 import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
 
-import { useGameState } from '../hooks/useGameState';
-import { usePlayerDecks } from '../hooks/usePlayerDecks';
 import { useAppContext } from '../contexts/AppContext';
-import { Card } from '../types/card';
-import { MedievalNotificationSystem, useMedievalNotifications } from '../components/MedievalNotificationSystem';
 
 const GamePage: React.FC = () => {
   // Estados de autenticação
@@ -33,10 +43,12 @@ const GamePage: React.FC = () => {
   const { activeDeck, decks, loading: decksLoading } = usePlayerDecks();
   const { setCurrentView } = useAppContext();
   const { notify } = useMedievalNotifications();
+  const { showConfirm, showAlert } = useDialog();
 
   // Função para iniciar novo jogo
-  const handleNewGame = () => {
-    if (window.confirm('Tem certeza que deseja iniciar um novo jogo? O jogo atual será perdido.')) {
+  const handleNewGame = async () => {
+    const confirmed = await showConfirm('Tem certeza que deseja iniciar um novo jogo? O jogo atual será perdido.', 'Novo Jogo', 'warning');
+    if (confirmed) {
       gameState.clearSavedGame();
       window.location.reload(); // Recarregar para iniciar novo jogo
     }
@@ -479,9 +491,9 @@ const GamePage: React.FC = () => {
                 Fechar
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   // TODO: Implementar salvamento automático
-                  alert('Jogo salvo automaticamente!');
+                  await showAlert('Jogo salvo automaticamente!', 'Jogo Salvo', 'success');
                   setShowSavedGames(false);
                 }}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GridCell } from '../types/gameState';
-import CardComponent from './CardComponent';
+import { CardMiniature } from './CardMiniature';
 import { Card } from '../types/card';
 import { CardDetailModal } from './EnhancedHand';
 
@@ -9,10 +9,44 @@ interface GridProps {
   title: string;
   onSelectCell?: (x: number, y: number) => void;
   highlight?: boolean;
+  gridType?: 'city' | 'farm' | 'landmark' | 'event';
 }
 
-const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => {
+const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight, gridType = 'city' }) => {
   const [showDetail, setShowDetail] = useState<Card | null>(null);
+  
+  // Determinar o tamanho baseado no tipo de grid
+  const getGridSize = () => {
+    switch (gridType) {
+      case 'city':
+      case 'farm':
+        return 'cityGrid'; // 96x80px mobile, 112x96px desktop
+      case 'landmark':
+        return 'landmarkGrid'; // 128x96px mobile, 160x112px desktop
+      case 'event':
+        return 'eventGrid'; // 128x96px mobile, 160x112px desktop
+      default:
+        return 'cityGrid';
+    }
+  };
+
+  // Determinar o número de colunas baseado no tipo de grid
+  const getGridCols = () => {
+    switch (gridType) {
+      case 'city':
+      case 'farm':
+        return 4; // 4x3 grid
+      case 'landmark':
+        return 3; // 1x3 grid
+      case 'event':
+        return 2; // 1x2 grid
+      default:
+        return 4;
+    }
+  };
+
+  const gridCols = getGridCols();
+  const cardSize = getGridSize();
   
   return (
     <div style={{ maxWidth: '100%', overflowX: 'auto', marginBottom: 16 }}>
@@ -20,19 +54,19 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${grid[0]?.length || 0}, minmax(60px, 80px))`,
-          gap: 6,
+          gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
+          gap: 8,
           border: highlight ? '2px solid #3B82F6' : 'none',
           borderRadius: 8,
-          padding: 6,
-          minWidth: grid[0]?.length ? `${grid[0].length * 66}px` : undefined,
-          maxWidth: 500,
+          padding: 8,
           background: '#23283a',
+          maxWidth: gridCols === 4 ? '344px' : gridCols === 3 ? '392px' : '268px',
+          minHeight: gridCols === 4 ? '516px' : '192px'
         }}
       >
         {grid.flat().map((cell, idx) => {
-          const x = idx % (grid[0]?.length || 1);
-          const y = Math.floor(idx / (grid[0]?.length || 1));
+          const x = idx % gridCols;
+          const y = Math.floor(idx / gridCols);
           const isPlayable = highlight && !cell.card && onSelectCell;
           
           return (
@@ -40,9 +74,7 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
               key={idx}
               style={{
                 width: '100%',
-                minWidth: 60,
-                maxWidth: 80,
-                height: 90,
+                height: '100%',
                 border: '2px dashed #4a5568',
                 borderRadius: 8,
                 display: 'flex',
@@ -54,6 +86,7 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
                 transition: 'all 0.2s ease',
                 boxShadow: isPlayable ? '0 0 0 2px #3B82F655' : undefined,
                 overflow: 'hidden',
+                minHeight: gridType === 'city' || gridType === 'farm' ? '80px' : '96px'
               }}
               onClick={() => cell.card ? setShowDetail(cell.card) : isPlayable && onSelectCell && onSelectCell(x, y)}
               title={cell.card ? cell.card.name : isPlayable ? 'Clique para jogar carta aqui' : ''}
@@ -71,10 +104,13 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
               }}
             >
               {cell.card ? (
-                <CardComponent
+                <CardMiniature
                   card={cell.card}
-                  size="small"
-                  onClick={() => setShowDetail(cell.card)}
+                  size={cardSize as any}
+                  showInfo={true}
+                  onSelect={() => {}} // Não permitir seleção no grid
+                  onShowDetail={() => setShowDetail(cell.card)}
+                  className="w-full h-full"
                 />
               ) : (
                 <div style={{ 
@@ -91,7 +127,7 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
         })}
       </div>
       
-      {/* Card detail modal (padronizado) */}
+      {/* Card detail modal */}
       <CardDetailModal card={showDetail} isOpen={!!showDetail} onClose={() => setShowDetail(null)} />
     </div>
   );

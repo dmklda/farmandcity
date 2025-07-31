@@ -1,12 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import CardComponent from './CardComponent';
 import { usePlayerCards } from '../hooks/usePlayerCards';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
+import { useGameSettings } from '../hooks/useGameSettings';
+import { useCardCopyLimits } from '../hooks/useCardCopyLimits';
+import { useDialog } from './ui/dialog';
 import { Card, CardType, CardRarity } from '../types/card';
-import { CreditCard, Search, Grid, List, Plus, Minus, Eye, X, Info } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { Card as UICard } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import CardComponent from './CardComponent';
+import { Input } from './ui/input';
+import { Grid, List, Plus, Minus, Eye, X, Info } from 'lucide-react';
 import { getCardTypeIconPNG } from './IconComponentsPNG';
 
 interface CardCollectionProps {
@@ -16,6 +21,9 @@ interface CardCollectionProps {
 export const CardCollection: React.FC<CardCollectionProps> = ({ onClose }) => {
   const { playerCards, loading, error } = usePlayerCards();
   const { activeDeck, decks, updateDeck } = usePlayerDecks();
+  const { settings: gameSettings } = useGameSettings();
+  const { validateCompleteDeck, canAddCardToDeck } = useCardCopyLimits();
+  const { showAlert } = useDialog();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<CardType | 'all'>('all');
@@ -108,7 +116,7 @@ export const CardCollection: React.FC<CardCollectionProps> = ({ onClose }) => {
   // Adicionar carta ao deck ativo
   const handleAddToDeck = async (baseId: string) => {
     if (!activeDeck) {
-      alert('Nenhum deck ativo selecionado');
+      await showAlert('Nenhum deck ativo selecionado', 'Erro', 'error');
       return;
     }
 
@@ -116,36 +124,29 @@ export const CardCollection: React.FC<CardCollectionProps> = ({ onClose }) => {
     if (!group) return;
 
     if (group.copiesInDeck >= group.maxCopies) {
-      alert(`Limite de ${group.maxCopies} cópias atingido para esta carta`);
+      await showAlert(`Limite de ${group.maxCopies} cópias atingido para esta carta`, 'Limite Atingido', 'warning');
       return;
     }
 
     if (group.copiesInDeck >= group.totalOwned) {
-      alert('Você não possui mais cópias desta carta');
+      await showAlert('Você não possui mais cópias desta carta', 'Sem Cópias', 'warning');
       return;
     }
 
     // Verificar se o deck não está cheio
-    if (activeDeck.card_ids && activeDeck.card_ids.length >= 28) {
-      alert('Deck está cheio (máximo 28 cartas)');
+    const maxCards = gameSettings.deckMaxCards || 40;
+    if (activeDeck.card_ids && activeDeck.card_ids.length >= maxCards) {
+      await showAlert(`Deck está cheio (máximo ${maxCards} cartas)`, 'Deck Cheio', 'warning');
       return;
     }
 
     try {
       setIsUpdatingDeck(true);
-      
-      // Para cartas com múltiplas cópias, simplesmente adicionar o ID base
-      // O sistema de deck vai gerenciar as cópias
       const newCardIds = [...(activeDeck.card_ids || []), baseId];
-      
-      await updateDeck(activeDeck.id, {
-        card_ids: newCardIds
-      });
-      
-      console.log(`Carta ${group.card.name} adicionada ao deck`);
+      await updateDeck(activeDeck.id, { card_ids: newCardIds });
     } catch (err: any) {
       console.error('Erro ao adicionar carta ao deck:', err);
-      alert(`Erro ao adicionar carta: ${err.message}`);
+      await showAlert(`Erro ao adicionar carta: ${err.message}`, 'Erro', 'error');
     } finally {
       setIsUpdatingDeck(false);
     }
@@ -153,30 +154,15 @@ export const CardCollection: React.FC<CardCollectionProps> = ({ onClose }) => {
 
   // Remover carta do deck ativo
   const handleRemoveFromDeck = async (baseId: string) => {
-    if (!activeDeck?.card_ids) return;
-
-    const group = groupedCards.find(g => g.baseId === baseId);
-    if (!group || group.copiesInDeck <= 0) return;
+    if (!activeDeck) return;
 
     try {
       setIsUpdatingDeck(true);
-      
-      // Remover uma cópia da carta do deck
-      const newCardIds = [...activeDeck.card_ids];
-      const indexToRemove = newCardIds.findIndex(id => id === baseId);
-      
-      if (indexToRemove !== -1) {
-        newCardIds.splice(indexToRemove, 1);
-        
-        await updateDeck(activeDeck.id, {
-          card_ids: newCardIds
-        });
-        
-        console.log(`Carta ${group.card.name} removida do deck`);
-      }
+      const newCardIds = activeDeck.card_ids?.filter(id => id !== baseId) || [];
+      await updateDeck(activeDeck.id, { card_ids: newCardIds });
     } catch (err: any) {
       console.error('Erro ao remover carta do deck:', err);
-      alert(`Erro ao remover carta: ${err.message}`);
+      await showAlert(`Erro ao remover carta: ${err.message}`, 'Erro', 'error');
     } finally {
       setIsUpdatingDeck(false);
     }
@@ -304,7 +290,8 @@ export const CardCollection: React.FC<CardCollectionProps> = ({ onClose }) => {
           </div>
         ) : playerCards.length === 0 ? (
           <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            {/* CreditCard is not imported, assuming it's a placeholder or typo */}
+            {/* <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" /> */}
             <p className="text-muted-foreground">Nenhuma carta encontrada</p>
             <Button
               onClick={() => window.location.reload()}

@@ -9,6 +9,8 @@ import { useGameSettings } from './useGameSettings';
 import { useCards } from './useCards';
 import { useStarterDeck } from './useStarterDeck';
 import { useUnlockedCards } from './useUnlockedCards';
+import { useCatastrophes } from './useCatastrophes';
+import { useCardCopyLimits } from './useCardCopyLimits';
 
 const DECK_LIMIT = 28;
 const HAND_LIMIT = 7;
@@ -795,6 +797,8 @@ export function useGameState() {
   const { cards: supabaseCards, loading: allCardsLoading } = useCards();
   const { starterDeck, loading: starterDeckLoading } = useStarterDeck();
   const { unlockedCards, hasCard, loading: unlockedCardsLoading } = useUnlockedCards();
+  const { generateRandomCatastrophe, applyCatastropheEffect } = useCatastrophes();
+  const { validateCompleteDeck, canAddCardToDeck } = useCardCopyLimits();
 
   // Estado de loading do jogo
   const [gameLoading, setGameLoading] = useState(true);
@@ -1395,13 +1399,59 @@ export function useGameState() {
     
     if (game.phase === 'end') {
       // Avança para novo turno e volta para 'draw'
-      setGame((g) => ({ ...g, turn: g.turn + 1, phase: 'draw' }));
+      const newTurn = game.turn + 1;
+      
+      // Verificar limite de turnos
+      const turnLimit = gameSettings.gameTurnLimit || 50;
+      if (turnLimit > 0 && newTurn > turnLimit) {
+        setDefeat(`❌ Derrota: Limite de ${turnLimit} turnos atingido`);
+        addToHistory(`❌ Derrota: Limite de ${turnLimit} turnos atingido`);
+        return;
+      }
+      
+      // Verificar vitória por prestígio
+      const prestigeGoal = gameSettings.prestigeGoal || 30;
+      if (game.playerStats.reputation >= prestigeGoal) {
+        setVictory(`🏆 Vitória: Prestígio ${game.playerStats.reputation}/${prestigeGoal} atingido!`);
+        addToHistory(`🏆 Vitória: Prestígio ${game.playerStats.reputation}/${prestigeGoal} atingido!`);
+        return;
+      }
+      
+      // Gerar catástrofe aleatória (10% de chance por turno)
+      const catastropheChance = 0.1;
+      if (Math.random() < catastropheChance) {
+        const catastrophe = generateRandomCatastrophe(newTurn);
+        if (catastrophe) {
+          // Aplicar efeito da catástrofe
+          const modifiedState = applyCatastropheEffect(catastrophe, game);
+          
+          // Atualizar estado do jogo com os efeitos da catástrofe
+          setGame((g) => ({
+            ...g,
+            turn: newTurn,
+            phase: 'draw',
+            resources: modifiedState.resources,
+            // Adicionar efeitos temporários se necessário
+            ...(modifiedState.productionReduction && { productionReduction: modifiedState.productionReduction }),
+            ...(modifiedState.cardDestructionCount && { cardDestructionCount: modifiedState.cardDestructionCount })
+          }));
+          
+          addToHistory(`🌪️ Catástrofe: ${catastrophe.name} - ${catastrophe.description}`);
+          setError(`🌪️ ${catastrophe.name}: ${catastrophe.description}`);
+          
+          // Limpar erro após 3 segundos
+          setTimeout(() => setError(null), 3000);
+          return;
+        }
+      }
+      
+      setGame((g) => ({ ...g, turn: newTurn, phase: 'draw' }));
     } else if (game.phase === 'build') {
       handleProduction();
     } else if (currentPhaseIndex < phaseOrder.length - 1) {
       setGame((g) => ({ ...g, phase: phaseOrder[currentPhaseIndex + 1] }));
     }
-  }, [game.phase, victory, discardMode, diceUsed]);
+  }, [game.phase, victory, discardMode, diceUsed, game.turn, game.playerStats.reputation, gameSettings.gameTurnLimit, gameSettings.prestigeGoal, generateRandomCatastrophe, applyCatastropheEffect]);
 
   const handleSelectCard = useCallback((card: Card) => {
     if (victory) return;
@@ -2055,13 +2105,13 @@ export function useGameState() {
     },
     progress: {
       reputation: game.playerStats.reputation,
-      reputationMax: gameSettings?.victoryMode === 'reputation' ? gameSettings.victoryValue : 10,
+      reputationMax: gameSettings.prestigeGoal || 30,
       production: game.playerStats.totalProduction,
       productionMax: 1000,
       landmarks: game.playerStats.landmarks,
       landmarksMax: gameSettings?.victoryMode === 'landmarks' ? gameSettings.victoryValue : 3,
       turn: game.turn,
-      turnMax: 20,
+      turnMax: gameSettings.gameTurnLimit || 50,
     },
     victory: {
       reputation: game.playerStats.reputation,
@@ -2076,12 +2126,16 @@ export function useGameState() {
   
   const topBarProps = {
     turn: game.turn,
-    turnMax: 10,
+    turnMax: gameSettings.gameTurnLimit || 50,
     buildCount: game.builtCountThisTurn,
     buildMax: 2,
     phase: game.phase,
     onNextPhase: handleNextPhase,
     discardMode,
+    reputation: game.playerStats.reputation,
+    reputationGoal: gameSettings.prestigeGoal || 30,
+    catastropheActive: false, // Será implementado quando houver catástrofe ativa
+    catastropheName: undefined,
     resources: game.resources,
     productionPerTurn: prodPerTurn,
     productionDetails: prodDetails,

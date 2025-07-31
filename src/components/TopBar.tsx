@@ -8,14 +8,35 @@ interface TopBarProps {
   phase: string;
   onNextPhase: () => void;
   discardMode?: boolean;
+  reputation?: number;
+  reputationGoal?: number;
+  catastropheActive?: boolean;
+  catastropheName?: string;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ turn, turnMax, buildCount, buildMax, phase, onNextPhase, discardMode }) => (
+const TopBar: React.FC<TopBarProps> = ({ 
+  turn, 
+  turnMax, 
+  buildCount, 
+  buildMax, 
+  phase, 
+  onNextPhase, 
+  discardMode,
+  reputation = 0,
+  reputationGoal = 30,
+  catastropheActive = false,
+  catastropheName
+}) => (
   <header className="w-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 flex items-center justify-between box-border gap-4 relative overflow-hidden">
     {/* Animated background pattern */}
     <div className="absolute inset-0 opacity-10">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)] animate-pulse"></div>
     </div>
+    
+    {/* Catastrophe warning */}
+    {catastropheActive && (
+      <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-orange-600/20 animate-pulse z-5"></div>
+    )}
     
     {/* Logo section */}
     <div className="flex items-center gap-3 relative z-10">
@@ -34,10 +55,20 @@ const TopBar: React.FC<TopBarProps> = ({ turn, turnMax, buildCount, buildMax, ph
         <div className="bg-slate-800/80 backdrop-blur-sm border-2 border-blue-500 rounded-xl px-4 py-2 font-bold text-lg tracking-wide transition-all duration-300 group-hover:border-blue-400 group-hover:bg-slate-700/80 group-hover:scale-105">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            Turno: {turn}/{turnMax}
+            Turno: {turn}/{turnMax === 0 ? '∞' : turnMax}
           </div>
         </div>
         <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      </div>
+
+      <div className="relative group">
+        <div className="bg-slate-800/80 backdrop-blur-sm border-2 border-purple-500 rounded-xl px-4 py-2 font-bold text-lg tracking-wide transition-all duration-300 group-hover:border-purple-400 group-hover:bg-slate-700/80 group-hover:scale-105">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+            Prestígio: {reputation}/{reputationGoal}
+          </div>
+        </div>
+        <div className="absolute inset-0 bg-purple-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
 
       <div className="relative group">
@@ -59,6 +90,19 @@ const TopBar: React.FC<TopBarProps> = ({ turn, turnMax, buildCount, buildMax, ph
         </div>
         <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </div>
+
+      {/* Catastrophe indicator */}
+      {catastropheActive && (
+        <div className="relative group">
+          <div className="bg-red-800/80 backdrop-blur-sm border-2 border-red-500 rounded-xl px-4 py-2 font-bold text-lg tracking-wide transition-all duration-300 group-hover:border-red-400 group-hover:bg-red-700/80 group-hover:scale-105 animate-pulse">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              🌪️ {catastropheName || 'Catástrofe'}
+            </div>
+          </div>
+          <div className="absolute inset-0 bg-red-500/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </div>
+      )}
     </div>
 
     {/* Next phase button */}

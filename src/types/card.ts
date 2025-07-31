@@ -13,6 +13,7 @@ export interface ResourceCost {
 
 export interface CardEffect {
   description: string;
+  diceNumber?: number; // Número do dado necessário para ativar o efeito
   // Pode ser expandido para funções ou triggers específicas
 }
 
@@ -24,4 +25,5 @@ export interface Card {
   effect: CardEffect;
   rarity: CardRarity;
   activation: string;
+  artworkUrl?: string;
 }
