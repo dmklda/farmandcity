@@ -394,7 +394,7 @@ const FullCardComponent: React.FC<{ card: Card }> = ({ card }) => {
 };
 
 const CollectionPage: React.FC = () => {
-  const { playerCards, loading, error } = usePlayerCards();
+  const { playerCards, cardsLoading: loading } = useAppContext();
   const { decks } = usePlayerDecks();
   const { setCurrentView } = useAppContext();
   
@@ -539,11 +539,7 @@ const CollectionPage: React.FC = () => {
         </Tabs>
 
         {/* Cards Grid */}
-        {error ? (
-          <div className="text-center py-8">
-            <p className="text-red-400">Erro ao carregar coleção: {error}</p>
-          </div>
-        ) : playerCards.length === 0 ? (
+        {playerCards.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-yellow-400">Nenhuma carta encontrada</p>
             <Button

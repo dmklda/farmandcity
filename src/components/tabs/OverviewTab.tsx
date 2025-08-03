@@ -10,6 +10,7 @@ interface OverviewTabProps {
   onGoToCollection: () => void;
   onGoToMissions: () => void;
   onGoToDecks: () => void;
+  onGoToSettings: () => void;
   currency: { coins: number; gems: number } | null;
   playerCards: any[];
   decks: any[];
@@ -22,6 +23,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onGoToCollection,
   onGoToMissions,
   onGoToDecks,
+  onGoToSettings,
   currency,
   playerCards,
   decks
@@ -36,6 +38,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         onGoToCollection={onGoToCollection}
         onGoToMissions={onGoToMissions}
         onGoToDecks={onGoToDecks}
+        onGoToSettings={onGoToSettings}
         currency={currency}
         playerCards={playerCards}
         decks={decks}

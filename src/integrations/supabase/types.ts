@@ -993,6 +993,7 @@ export type Database = {
           pack_type: string | null
           price_coins: number | null
           price_gems: number | null
+          price_dollars: number | null
           purchase_time_limit: unknown | null
           rarity: string | null
           rotation_date: string | null
@@ -1184,6 +1185,211 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      battlefield_customizations: {
+        Row: {
+          created_at: string | null
+          currency_type: string | null
+          description: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          is_special: boolean | null
+          name: string
+          price_coins: number | null
+          price_gems: number | null
+          rarity: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency_type?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          is_special?: boolean | null
+          name: string
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency_type?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          is_special?: boolean | null
+          name?: string
+          price_coins?: number | null
+          price_gems?: number | null
+          rarity?: string | null
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          auto_save_enabled: boolean | null
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string | null
+          id: string
+          language: string | null
+          music_enabled: boolean | null
+          notifications_enabled: boolean | null
+          sound_enabled: boolean | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          auto_save_enabled?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          language?: string | null
+          music_enabled?: boolean | null
+          notifications_enabled?: boolean | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          auto_save_enabled?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          language?: string | null
+          music_enabled?: boolean | null
+          notifications_enabled?: boolean | null
+          sound_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_customizations: {
+        Row: {
+          customization_id: string | null
+          id: string
+          is_equipped: boolean | null
+          purchased_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          customization_id?: string | null
+          id?: string
+          is_equipped?: boolean | null
+          purchased_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          customization_id?: string | null
+          id?: string
+          is_equipped?: boolean | null
+          purchased_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_customizations_customization_id_fkey"
+            columns: ["customization_id"]
+            isOneToOne: false
+            referencedRelation: "battlefield_customizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      container_customizations: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          image_url: string | null
+          container_type: string
+          rarity: string | null
+          price_coins: number | null
+          price_gems: number | null
+          currency_type: string | null
+          is_active: boolean | null
+          is_special: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          image_url?: string | null
+          container_type: string
+          rarity?: string | null
+          price_coins?: number | null
+          price_gems?: number | null
+          currency_type?: string | null
+          is_active?: boolean | null
+          is_special?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          image_url?: string | null
+          container_type?: string
+          rarity?: string | null
+          price_coins?: number | null
+          price_gems?: number | null
+          currency_type?: string | null
+          is_active?: boolean | null
+          is_special?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      user_container_customizations: {
+        Row: {
+          id: string
+          user_id: string | null
+          customization_id: string | null
+          container_type: string
+          is_equipped: boolean | null
+          purchased_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          customization_id?: string | null
+          container_type: string
+          is_equipped?: boolean | null
+          purchased_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          customization_id?: string | null
+          container_type?: string
+          is_equipped?: boolean | null
+          purchased_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_container_customizations_customization_id_fkey"
+            columns: ["customization_id"]
+            isOneToOne: false
+            referencedRelation: "container_customizations"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

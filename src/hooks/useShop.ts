@@ -9,6 +9,7 @@ interface ShopItem {
   item_type: 'pack' | 'booster' | 'card' | 'currency' | 'cosmetic' | 'event';
   price_coins: number;
   price_gems: number;
+  price_dollars?: number;
   currency_type: 'coins' | 'gems' | 'both';
   rarity?: string;
   card_ids?: string[];
@@ -21,19 +22,27 @@ interface ShopItem {
   is_daily_rotation: boolean;
   rotation_date?: string;
   event_id?: string;
+  is_special: boolean;
   created_at: string;
   updated_at: string;
 }
 
-interface DailyRotationCard {
+export interface DailyRotationCard {
   card_id: string;
   card_name: string;
   card_type: string;
   card_rarity: string;
+  card_effect: string;
+  cost_coins: number;
+  cost_food: number;
+  cost_materials: number;
+  cost_population: number;
   price_coins: number;
   price_gems: number;
   currency_type: string;
   discount_percentage: number;
+  slot_type: string;
+  is_purchased?: boolean; // Indica se o usuário já comprou esta carta hoje
 }
 
 interface ShopEvent {
@@ -163,6 +172,7 @@ export const useShop = () => {
             currency_type: item.currency_type as 'coins' | 'gems' | 'both',
             price_coins: item.price_coins || 0,
             price_gems: item.price_gems || 0,
+            price_dollars: parseFloat((item as any).price_dollars) || 0,
             is_limited: item.is_limited || false,
             stock_quantity: item.stock_quantity || 0,
             sold_quantity: item.sold_quantity || 0,
@@ -173,6 +183,7 @@ export const useShop = () => {
             is_daily_rotation: item.is_daily_rotation || false,
             rotation_date: item.rotation_date || undefined,
             event_id: item.event_id || undefined,
+            is_special: (item as any).is_special || false,
             created_at: item.created_at || new Date().toISOString(),
             updated_at: item.updated_at || new Date().toISOString()
           };
@@ -192,8 +203,30 @@ export const useShop = () => {
   const fetchDailyRotationCards = async () => {
     try {
       console.log('Buscando cartas em rotação diária...');
+      
+      // Verificar se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('Usuário não autenticado, não é possível verificar compras');
+        setDailyRotationCards([]);
+        return;
+      }
+      
+      // Query mais simples e confiável
       const { data, error } = await supabase
-        .rpc('get_daily_rotation_cards', { p_date: new Date().toISOString().split('T')[0] });
+        .from('daily_rotation_cards')
+        .select(`
+          card_id,
+          rotation_date,
+          price_coins,
+          price_gems,
+          currency_type,
+          discount_percentage,
+          is_active,
+          slot_type
+        `)
+        .eq('is_active', true)
+        .order('slot_type');
 
       if (error) {
         console.error('Erro ao buscar cartas em rotação:', error);
@@ -201,7 +234,69 @@ export const useShop = () => {
       }
 
       console.log('Cartas em rotação encontradas:', data);
-      setDailyRotationCards(data || []);
+      
+      if (!data || data.length === 0) {
+        console.log('Nenhuma carta em rotação encontrada');
+        setDailyRotationCards([]);
+        return;
+      }
+
+      // Buscar detalhes das cartas separadamente
+      const cardIds = data.map(item => item.card_id);
+      const { data: cardsData, error: cardsError } = await supabase
+        .from('cards')
+        .select('id, name, type, rarity, effect, cost_coins, cost_food, cost_materials, cost_population')
+        .in('id', cardIds);
+
+      if (cardsError) {
+        console.error('Erro ao buscar detalhes das cartas:', cardsError);
+        return;
+      }
+
+      console.log('Detalhes das cartas encontrados:', cardsData);
+
+      // Buscar cartas já compradas pelo usuário hoje
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const { data: purchasedCards, error: purchasedError } = await supabase
+        .from('daily_card_purchases')
+        .select('card_id')
+        .eq('player_id', user.id)
+        .eq('rotation_date', today);
+
+      if (purchasedError) {
+        console.error('Erro ao buscar cartas compradas:', purchasedError);
+        return;
+      }
+
+      const purchasedCardIds = new Set(purchasedCards?.map(p => p.card_id) || []);
+      console.log('Cartas já compradas hoje:', Array.from(purchasedCardIds));
+
+      // Mapear os dados
+      const mappedCards: DailyRotationCard[] = data.map(item => {
+        const cardDetails = cardsData?.find(card => card.id === item.card_id);
+        const isPurchased = purchasedCardIds.has(item.card_id);
+        
+        return {
+          card_id: item.card_id,
+          card_name: cardDetails?.name || 'Carta Desconhecida',
+          card_type: cardDetails?.type || 'unknown',
+          card_rarity: cardDetails?.rarity || 'common',
+          card_effect: cardDetails?.effect || '',
+          cost_coins: cardDetails?.cost_coins || 0,
+          cost_food: cardDetails?.cost_food || 0,
+          cost_materials: cardDetails?.cost_materials || 0,
+          cost_population: cardDetails?.cost_population || 0,
+          price_coins: item.price_coins || 0,
+          price_gems: item.price_gems || 0,
+          currency_type: item.currency_type,
+          discount_percentage: item.discount_percentage || 0,
+          slot_type: item.slot_type,
+          is_purchased: isPurchased // Nova propriedade
+        };
+      });
+      
+      console.log('Cartas mapeadas:', mappedCards);
+      setDailyRotationCards(mappedCards);
     } catch (err: any) {
       console.error('Erro ao buscar cartas em rotação:', err);
     }
@@ -487,9 +582,115 @@ export const useShop = () => {
 
   const purchaseCard = async (cardId: string) => {
     try {
-      console.log('Compra de carta individual temporariamente desabilitada');
-      throw new Error('Funcionalidade temporariamente indisponível');
+      console.log('Iniciando compra de carta:', cardId);
+      console.log('Cartas disponíveis:', dailyRotationCards);
+      
+      // Verificar se o usuário já comprou esta carta
+      if (hasUserPurchasedCard(cardId)) {
+        console.error('Usuário já comprou esta carta:', cardId);
+        throw new Error('Você já comprou esta carta diária');
+      }
+      
+      // Encontrar a carta na rotação diária
+      const cardToPurchase = dailyRotationCards.find(card => card.card_id === cardId);
+      if (!cardToPurchase) {
+        console.error('Carta não encontrada na rotação diária:', cardId);
+        throw new Error('Carta não encontrada na loja');
+      }
+
+      console.log('Carta encontrada:', cardToPurchase);
+
+      // Verificar se o jogador tem moedas/gems suficientes
+      const requiredCoins = cardToPurchase.price_coins;
+      const requiredGems = cardToPurchase.price_gems;
+      
+      console.log('Moedas necessárias:', requiredCoins);
+      console.log('Gems necessárias:', requiredGems);
+      console.log('Moedas do jogador:', currency?.coins);
+      console.log('Gems do jogador:', currency?.gems);
+      
+      if (cardToPurchase.currency_type === 'coins' && currency?.coins < requiredCoins) {
+        throw new Error('Moedas insuficientes');
+      }
+      
+      if (cardToPurchase.currency_type === 'gems' && currency?.gems < requiredGems) {
+        throw new Error('Gems insuficientes');
+      }
+      
+      if (cardToPurchase.currency_type === 'both' && (currency?.coins < requiredCoins || currency?.gems < requiredGems)) {
+        throw new Error('Moedas ou gems insuficientes');
+      }
+
+      console.log('Recursos suficientes, processando compra...');
+
+      // Deduzir o custo
+      if (cardToPurchase.currency_type === 'coins' || cardToPurchase.currency_type === 'both') {
+        console.log('Deduzindo moedas:', requiredCoins);
+        await spendCoins(requiredCoins);
+      }
+      
+      if (cardToPurchase.currency_type === 'gems' || cardToPurchase.currency_type === 'both') {
+        console.log('Deduzindo gems:', requiredGems);
+        await spendGems(requiredGems);
+      }
+
+      console.log('Adicionando carta ao jogador...');
+      // Adicionar a carta ao jogador
+      await addCardToPlayer(cardId, 1);
+
+      // Atualizar as cartas do jogador no contexto global
+      await stableRefreshPlayerCards();
+
+      console.log('Registrando compra no banco de dados...');
+      // Registrar a compra no banco de dados
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Registrar na tabela de compras gerais
+        const { error: purchaseError } = await supabase
+          .from('card_purchases')
+          .insert({
+            player_id: user.id,
+            card_id: cardId,
+            price_coins: requiredCoins,
+            price_gems: requiredGems,
+            currency_type: cardToPurchase.currency_type,
+            discount_percentage: cardToPurchase.discount_percentage,
+            purchased_at: new Date().toISOString()
+          });
+
+        if (purchaseError) {
+          console.error('Erro ao registrar compra geral:', purchaseError);
+        }
+
+        // Registrar na tabela de compras diárias
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const { error: dailyPurchaseError } = await supabase
+          .from('daily_card_purchases')
+          .insert({
+            player_id: user.id,
+            card_id: cardId,
+            rotation_date: today,
+            purchased_at: new Date().toISOString()
+          });
+
+        if (dailyPurchaseError) {
+          console.error('Erro ao registrar compra diária:', dailyPurchaseError);
+          // Se falhar ao registrar a compra diária, reverter a compra
+          throw new Error('Erro ao registrar compra diária');
+        }
+      }
+
+      // Atualizar a lista de compras
+      await fetchCardPurchases();
+      
+      // Recarregar as cartas diárias para atualizar o estado de compra
+      await fetchDailyRotationCards();
+      
+      console.log('Carta comprada com sucesso:', cardToPurchase.card_name);
+      
     } catch (err: any) {
+      console.error('Erro na compra da carta:', err);
+      console.error('Stack trace:', err.stack);
       setError(err.message);
       throw err;
     }
@@ -516,6 +717,9 @@ export const useShop = () => {
           
           itemsReceived.cards = receivedCards;
         }
+        
+        // Atualizar as cartas do jogador no contexto global
+        await stableRefreshPlayerCards();
         break;
 
       case 'currency':
@@ -538,6 +742,9 @@ export const useShop = () => {
             receivedCards.push(cardId);
           }
           itemsReceived.cards = receivedCards;
+          
+          // Atualizar as cartas do jogador no contexto global
+          await stableRefreshPlayerCards();
         }
         break;
     }
@@ -560,13 +767,42 @@ export const useShop = () => {
     return match ? parseInt(match[1]) : 0;
   };
 
+  const hasUserPurchasedCard = useCallback((cardId: string): boolean => {
+    return cardPurchases.some(purchase => purchase.card_id === cardId);
+  }, [cardPurchases]);
+
   const getItemsByType = (type: string) => {
     return shopItems.filter(item => item.item_type === type);
   };
 
-  const getAvailablePacks = () => getItemsByType('pack');
-  const getAvailableBoosters = () => getItemsByType('booster');
+  const getAvailablePacks = () => {
+    return shopItems.filter(item => item.item_type === 'pack' && !item.is_special);
+  };
+
+  const getAvailableBoosters = () => {
+    return shopItems.filter(item => item.item_type === 'booster' && !item.is_special);
+  };
+
   const getAvailableCurrency = () => getItemsByType('currency');
+  
+  const getCurrencyPacks = () => shopItems.filter(item => 
+    item.item_type === 'currency' && item.currency_type === 'both'
+  );
+  
+  const getCurrencyGems = () => shopItems.filter(item => 
+    item.item_type === 'currency' && item.currency_type === 'gems'
+  );
+  
+  const getCurrencyCoins = () => shopItems.filter(item => 
+    item.item_type === 'currency' && item.currency_type === 'coins'
+  );
+
+  const getSpecialPacks = () => {
+    return shopItems.filter(item => 
+      (item.item_type === 'pack' || item.item_type === 'booster') && 
+      item.is_special
+    );
+  };
 
   console.log('useShop return:', { 
     shopItems: shopItems?.length, 
@@ -593,6 +829,11 @@ export const useShop = () => {
     testFetchPurchases,
     getAvailablePacks,
     getAvailableBoosters,
-    getAvailableCurrency
+    getAvailableCurrency,
+    getCurrencyPacks,
+    getCurrencyGems,
+    getCurrencyCoins,
+    getSpecialPacks,
+    hasUserPurchasedCard
   };
 }; 

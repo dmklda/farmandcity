@@ -7,17 +7,21 @@ import { getCardTypeIconPNG } from './IconComponentsPNG';
 import { CityIconPNG, FarmIconPNG, LandmarkIconPNG, EventIconPNG, GameLogoPNG } from './IconComponentsPNG';
 import { CityTileGrid, FarmTileGrid, LandmarkTileGrid, EventTileGrid } from './TileGridComponents';
 import { CardMiniature } from './CardMiniature';
-import backgroundImage from '../assets/grid-board-background.jpg';
+import backgroundImage from '../assets/boards_backgrounds/grid-board-background.jpg';
 import cityBackground from '../assets/grids_background/City_background.png';
 import farmBackground from '../assets/grids_background/Farm_background.png';
 import landmarkBackground from '../assets/grids_background/Landmark_background.png';
 import eventsBackground from '../assets/grids_background/Events_background.png';
+import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
+import { useContainerCustomization } from '../hooks/useContainerCustomization';
 
 
 interface GridCell {
   card?: Card | null;
   x: number;
   y: number;
+  level?: number; // Nível da carta (para cartas empilhadas)
+  stack?: Card[]; // Cartas empilhadas
 }
 
 interface EpicBattlefieldProps {
@@ -192,6 +196,7 @@ const CardSlot = ({
               onShowDetail={() => setShowDetail(cell.card!)}
               className="w-full h-full"
               activatedDiceNumber={activatedCards[cell.card!.id]}
+              level={cell.level}
             />
           </div>
         )}
@@ -276,11 +281,14 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
   handVisible = true,
   activatedCards = {}
 }) => {
+  const { getCurrentBackground } = useBattlefieldCustomization();
+  const currentBackground = getCurrentBackground();
+  const { getCurrentContainerBackground } = useContainerCustomization();
   return (
     <motion.div 
       className="relative rounded-2xl overflow-hidden min-h-[700px] select-none"
       style={{ 
-        backgroundImage: `url(${backgroundImage})`,
+        backgroundImage: `url(${currentBackground})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -290,9 +298,9 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {/* Background Overlay */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(59,130,246,0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,rgba(59,130,246,0.05),transparent_50%)]" />
       
       {/* Content */}
       <div className="relative z-10 p-4">
@@ -332,7 +340,7 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
               className="grid grid-cols-3 gap-3 p-4 rounded-xl border border-stone-600/30 backdrop-blur-sm" 
               style={{ 
                 gridTemplateRows: 'repeat(4, 1fr)',
-                backgroundImage: `url(${cityBackground})`,
+                backgroundImage: `url(${getCurrentContainerBackground('city')})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
@@ -373,7 +381,7 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
               <div 
                 className="flex justify-center gap-4 p-4 rounded-xl border border-purple-600/30 backdrop-blur-sm"
                 style={{
-                  backgroundImage: `url(${landmarkBackground})`,
+                  backgroundImage: `url(${getCurrentContainerBackground('landmark')})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
@@ -420,7 +428,7 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
               <div 
                 className="flex justify-center gap-32 p-4 rounded-xl border border-amber-600/30 backdrop-blur-sm"
                 style={{
-                  backgroundImage: `url(${eventsBackground})`,
+                  backgroundImage: `url(${getCurrentContainerBackground('events')})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
@@ -462,7 +470,7 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
               className="grid grid-cols-3 gap-3 p-4 rounded-xl border border-green-600/30 backdrop-blur-sm" 
               style={{ 
                 gridTemplateRows: 'repeat(4, 1fr)',
-                backgroundImage: `url(${farmBackground})`,
+                backgroundImage: `url(${getCurrentContainerBackground('farm')})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'

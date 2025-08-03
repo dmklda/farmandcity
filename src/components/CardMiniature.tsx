@@ -15,6 +15,7 @@ interface CardMiniatureProps {
   showPlayableIndicator?: boolean;
   className?: string;
   activatedDiceNumber?: number; // Número do dado que ativou a carta
+  level?: number; // Nível da carta (para cartas empilhadas)
 }
 
 const cardTypeConfig = {
@@ -148,7 +149,8 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
   showInfo = true,
   showPlayableIndicator = true,
   className,
-  activatedDiceNumber
+  activatedDiceNumber,
+  level
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -223,6 +225,15 @@ export const CardMiniature: React.FC<CardMiniatureProps> = ({
           <div className="bg-amber-600/80 border border-amber-400/60 rounded-full w-3 h-3 flex items-center justify-center">
             <span className="text-[6px] font-bold text-amber-100">
               {activatedDiceNumber}
+            </span>
+          </div>
+        )}
+
+        {/* Level Indicator */}
+        {level && level > 1 && (
+          <div className="bg-blue-600/80 border border-blue-400/60 rounded-full w-3 h-3 flex items-center justify-center">
+            <span className="text-[6px] font-bold text-blue-100">
+              {level}
             </span>
           </div>
         )}

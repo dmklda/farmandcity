@@ -12,6 +12,7 @@ interface TopBarProps {
   reputationGoal?: number;
   catastropheActive?: boolean;
   catastropheName?: string;
+  onSettingsClick?: () => void;
 }
 
 const TopBar: React.FC<TopBarProps> = ({ 
@@ -25,7 +26,8 @@ const TopBar: React.FC<TopBarProps> = ({
   reputation = 0,
   reputationGoal = 30,
   catastropheActive = false,
-  catastropheName
+  catastropheName,
+  onSettingsClick
 }) => (
   <header className="w-full bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-4 flex items-center justify-between box-border gap-4 relative overflow-hidden">
     {/* Animated background pattern */}
@@ -105,8 +107,20 @@ const TopBar: React.FC<TopBarProps> = ({
       )}
     </div>
 
-    {/* Next phase button */}
-    <div className="relative z-10">
+    {/* Action buttons */}
+    <div className="relative z-10 flex items-center gap-3">
+      {/* Settings button */}
+      {onSettingsClick && (
+        <button
+          onClick={onSettingsClick}
+          className="relative p-3 rounded-xl font-bold text-lg border-2 bg-gradient-to-r from-yellow-600 to-amber-700 border-yellow-500 text-white hover:from-yellow-500 hover:to-amber-600 hover:border-yellow-400 hover:scale-105 active:scale-95 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          <span className="relative z-10 text-xl">⚙️</span>
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-xl blur-md opacity-0 hover:opacity-50 transition-opacity duration-300"></div>
+        </button>
+      )}
+
+      {/* Next phase button */}
       <button
         onClick={onNextPhase}
         disabled={discardMode}

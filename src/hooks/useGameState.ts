@@ -1781,11 +1781,12 @@ export function useGameState() {
             if (cell.card && canStackCard(selectedCard, cell.card)) {
               // Empilhar carta
               const newStack = cell.stack ? [...cell.stack, selectedCard] : [selectedCard];
-              const newLevel = (cell.level || 1) + 1;
+              const totalCards = [cell.card, ...newStack];
+              const level = calculateCardLevel(totalCards);
               return { 
                 ...cell, 
                 stack: newStack, 
-                level: newLevel 
+                level 
               };
             } else {
               // Nova carta

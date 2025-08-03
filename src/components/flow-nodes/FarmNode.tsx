@@ -40,7 +40,7 @@ const FarmNode: React.FC<{ data: FarmNodeData }> = ({ data }) => {
             >
               {cell.card ? (
                 <div className="text-center flex flex-col items-center">
-                  <div className="mb-0.5">{getCardTypeIconPNG(cell.card.type, 12)}</div>
+                  <div className="mb-0.5">{getCardTypeIconPNG(cell.card.type, 16)}</div>
                   <div className="text-xs text-text-muted truncate max-w-full">
                     {cell.card.name.slice(0, 6)}
                   </div>

@@ -59,10 +59,10 @@ export const PackManager: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    item_type: 'pack' as const,
+    item_type: 'pack' as 'pack' | 'booster',
     price_coins: 0,
     price_gems: 0,
-    currency_type: 'coins' as const,
+    currency_type: 'coins' as 'coins' | 'gems' | 'both',
     rarity: 'common',
     card_ids: [] as string[],
     card_quantities: {} as Record<string, number>,
@@ -73,7 +73,7 @@ export const PackManager: React.FC = () => {
     discount_percentage: 0,
     is_daily_rotation: false,
     event_id: undefined as string | undefined,
-    pack_type: 'unrestricted' as const,
+    pack_type: 'unrestricted' as 'unrestricted' | 'random' | 'conditional' | 'unlimited',
     pack_conditions: {} as Record<string, number>,
     max_purchases_per_user: null as number | null,
     purchase_time_limit: null as string | null,
@@ -106,8 +106,8 @@ export const PackManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-              // // console.log('Packs encontrados:', data);
-      setPacks(data || []);
+      // // console.log('Packs encontrados:', data);
+      setPacks((data as Pack[]) || []);
     } catch (err) {
       console.error('Erro ao buscar packs:', err);
     } finally {
@@ -257,8 +257,8 @@ export const PackManager: React.FC = () => {
       is_active: pack.is_active || false,
       discount_percentage: pack.discount_percentage || 0,
       is_daily_rotation: pack.is_daily_rotation || false,
-      event_id: pack.event_id,
-      pack_type: pack.pack_type || 'unrestricted',
+      event_id: pack.event_id || undefined,
+      pack_type: (pack.pack_type as 'unrestricted' | 'random' | 'conditional' | 'unlimited') || 'unrestricted',
       pack_conditions: pack.pack_conditions || {},
       max_purchases_per_user: pack.max_purchases_per_user,
       purchase_time_limit: pack.purchase_time_limit,
@@ -988,7 +988,7 @@ export const PackManager: React.FC = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      {getRarityIcon(pack.rarity)}
+                      {getRarityIcon(pack.rarity || 'common')}
                       <CardTitle className="text-lg">{pack.name}</CardTitle>
                     </div>
                     <Badge className={getRarityColor(pack.rarity || 'common')}>

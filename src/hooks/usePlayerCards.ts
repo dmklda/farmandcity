@@ -335,7 +335,7 @@ export const usePlayerCards = () => {
       }
 
       // Recarregar dados
-      await fetchPlayerCards();
+      await refresh();
     } catch (err: any) {
       console.error('Erro ao adicionar carta:', err);
       throw err;

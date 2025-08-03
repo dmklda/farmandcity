@@ -6,11 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
 import { useShop } from '../hooks/useShop';
 import { useAppContext } from '../contexts/AppContext';
-import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History } from 'lucide-react';
+import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History, Image } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './ui/toast';
 import { SpecialPacksDisplay } from './SpecialPacksDisplay';
 import { getRarityIconPNG } from './IconComponentsPNG';
+import DailyCardComponent from './DailyCardComponent';
+import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
 
 export const Shop: React.FC = () => {
   const { 
@@ -25,10 +27,25 @@ export const Shop: React.FC = () => {
     error, 
     getAvailablePacks, 
     getAvailableBoosters, 
-    getAvailableCurrency, 
+    getAvailableCurrency,
+    getCurrencyPacks,
+    getCurrencyGems,
+    getCurrencyCoins,
+    getSpecialPacks,
     fetchShopItems,
     testFetchPurchases
   } = useShop();
+  
+  const {
+    customizations,
+    userCustomizations,
+    equippedCustomization,
+    purchaseCustomization,
+    equipCustomization,
+    loading: customizationsLoading,
+    error: customizationsError
+  } = useBattlefieldCustomization();
+  
   const { currency, currencyLoading, refreshCurrency } = useAppContext();
   const { showToast, ToastContainer } = useToast();
 
@@ -75,6 +92,30 @@ export const Shop: React.FC = () => {
       showToast('Carta comprada com sucesso!', 'success');
     } catch (err: any) {
       showToast(`Erro na compra da carta: ${err.message}`, 'error');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handlePurchaseCustomization = async (customizationId: string) => {
+    try {
+      setPurchasing(true);
+      await purchaseCustomization(customizationId);
+      showToast('Customização comprada com sucesso!', 'success');
+    } catch (err: any) {
+      showToast(`Erro na compra da customização: ${err.message}`, 'error');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleEquipCustomization = async (customizationId: string) => {
+    try {
+      setPurchasing(true);
+      await equipCustomization(customizationId);
+      showToast('Customização equipada com sucesso!', 'success');
+    } catch (err: any) {
+      showToast(`Erro ao equipar customização: ${err.message}`, 'error');
     } finally {
       setPurchasing(false);
     }
@@ -142,6 +183,126 @@ export const Shop: React.FC = () => {
     }
   };
 
+  const getRarityBadge = (rarity: string) => {
+    const colors = {
+      common: 'bg-gray-500',
+      rare: 'bg-blue-500',
+      epic: 'bg-purple-500',
+      legendary: 'bg-yellow-500'
+    };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${colors[rarity as keyof typeof colors] || colors.common}`}>
+        {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
+      </span>
+    );
+  };
+
+  const renderCustomization = (customization: any) => {
+    const isOwned = userCustomizations?.some(uc => uc.customization_id === customization.id);
+    const isEquipped = equippedCustomization?.id === customization.id;
+    const isFree = customization.price_coins === 0 && customization.price_gems === 0;
+    
+    return (
+      <Card key={customization.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
+        {/* Glow effect */}
+        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getRarityColor(customization.rarity)} blur-xl -z-10`} />
+        
+        {/* Rarity badge */}
+        <div className="absolute top-3 right-3 z-10">
+          {getRarityBadge(customization.rarity)}
+        </div>
+
+        {/* Free badge */}
+        {isFree && (
+          <div className="absolute top-3 left-3 z-10">
+            <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0">
+              GRÁTIS
+            </Badge>
+          </div>
+        )}
+        
+        <div className="p-6">
+          {/* Customization Preview */}
+          <div className="w-full h-32 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg mb-4 flex items-center justify-center shadow-lg overflow-hidden">
+            <img 
+              src={customization.image_url} 
+              alt={customization.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLElement;
+                target.style.display = 'none';
+                const nextSibling = target.nextElementSibling as HTMLElement;
+                if (nextSibling) {
+                  nextSibling.style.display = 'flex';
+                }
+              }}
+            />
+            <div className="w-full h-full flex items-center justify-center" style={{ display: 'none' }}>
+              <Image className="w-12 h-12 text-white" />
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold text-white mb-2 text-center">
+            {customization.name}
+          </h3>
+          
+          <p className="text-gray-300 text-sm mb-4 text-center min-h-[40px]">
+            {customization.description}
+          </p>
+
+          <Separator className="my-4 bg-yellow-600/30" />
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              {isFree ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-lg">🎁</span>
+                  <span className="text-xl font-bold text-green-400">GRÁTIS</span>
+                </div>
+              ) : (
+                <>
+                  {customization.price_coins > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-5 h-5 text-yellow-500" />
+                      <span className="text-xl font-bold text-yellow-400">{customization.price_coins}</span>
+                    </div>
+                  )}
+                  {customization.price_gems > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Gem className="w-5 h-5 text-purple-500" />
+                      <span className="text-xl font-bold text-purple-400">{customization.price_gems}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {!isOwned ? (
+              <Button
+                onClick={() => handlePurchaseCustomization(customization.id)}
+                className={`w-full ${isFree ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                disabled={purchasing}
+              >
+                {purchasing ? 'Obtendo...' : isFree ? 'Obter Grátis' : 'Comprar'}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => handleEquipCustomization(customization.id)}
+                className={`w-full ${isEquipped ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                disabled={purchasing || isEquipped}
+              >
+                {purchasing ? 'Equipando...' : isEquipped ? 'Equipado' : 'Equipar'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   const renderShopItem = (item: any) => (
     <Card key={item.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
       {/* Glow effect */}
@@ -186,6 +347,12 @@ export const Shop: React.FC = () => {
               <div className="flex items-center gap-1">
                 <Gem className="w-5 h-5 text-purple-500" />
                 <span className="text-xl font-bold text-purple-400">{item.price_gems}</span>
+          </div>
+        )}
+        {item.price_dollars && parseFloat(item.price_dollars) > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-lg">💵</span>
+                <span className="text-xl font-bold text-green-400">${parseFloat(item.price_dollars).toFixed(2)}</span>
           </div>
         )}
       </div>
@@ -319,7 +486,7 @@ export const Shop: React.FC = () => {
 
       {/* Tabs da Loja */}
               <Tabs defaultValue="special" className="w-full">
-                                           <TabsList className="grid w-full grid-cols-7 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
+                                           <TabsList className="grid w-full grid-cols-8 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
              <TabsTrigger value="special" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
                <Star className="h-4 w-4" />
                Especiais
@@ -344,6 +511,10 @@ export const Shop: React.FC = () => {
                <Zap className="h-4 w-4" />
                Eventos
              </TabsTrigger>
+             <TabsTrigger value="customizations" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Image className="h-4 w-4" />
+               Campos
+             </TabsTrigger>
              <TabsTrigger value="history" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
                <History className="h-4 w-4" />
                Histórico
@@ -352,9 +523,7 @@ export const Shop: React.FC = () => {
 
         <TabsContent value="special" className="mt-6">
           <SpecialPacksDisplay
-            packs={shopItems.filter(item =>
-              item.item_type === 'pack' || item.item_type === 'booster'
-            ) as any}
+            packs={getSpecialPacks() as any}
             onPurchase={handlePurchase}
             purchasing={purchasing ? 'purchasing' : null}
             userCurrency={memoizedCurrency}
@@ -363,54 +532,65 @@ export const Shop: React.FC = () => {
 
         <TabsContent value="packs" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {shopItems
-                .filter(item => item.item_type === 'pack')
-                .map(item => renderShopItem(item))}
+              {getAvailablePacks().map(item => renderShopItem(item))}
           </div>
         </TabsContent>
 
         <TabsContent value="boosters" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {shopItems
-                .filter(item => item.item_type === 'booster')
-                .map(item => renderShopItem(item))}
+              {getAvailableBoosters().map(item => renderShopItem(item))}
           </div>
         </TabsContent>
 
         <TabsContent value="daily" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {dailyRotationCards?.map(card => (
-                <Card key={card.card_id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
-                  <div className="p-6">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center shadow-lg">
-                      <Star className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2 text-center">{card.card_name}</h3>
-                    <p className="text-gray-300 text-sm mb-4 text-center">Tipo: {card.card_type}</p>
-                    <Separator className="my-4 bg-yellow-600/30" />
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Coins className="w-5 h-5 text-yellow-500" />
-                      <span className="text-xl font-bold text-yellow-400">{card.price_coins || 100}</span>
-                    </div>
-                  <Button 
-                    onClick={() => handlePurchaseCard(card.card_id)}
-                    disabled={purchasing}
-                      className="w-full bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                  >
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                    {purchasing ? 'Comprando...' : 'Comprar Carta'}
-                  </Button>
-                  </div>
-                </Card>
+                <DailyCardComponent
+                  key={card.card_id}
+                  card={card}
+                  onPurchase={handlePurchaseCard}
+                  purchasing={purchasing}
+                  userCurrency={memoizedCurrency}
+                />
               ))}
             </div>
         </TabsContent>
 
         <TabsContent value="currency" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {shopItems
-                .filter(item => item.item_type === 'currency')
-                .map(item => renderShopItem(item))}
+          {/* Pacotes (Gems + Coins) */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Package className="w-6 h-6 text-yellow-400" />
+              Pacotes (Gems + Coins)
+              <Badge className="bg-gradient-to-r from-yellow-600 to-amber-700 text-white">
+                Melhor Custo-Benefício
+              </Badge>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {getCurrencyPacks().map(item => renderShopItem(item))}
+            </div>
+          </div>
+
+          {/* Gems */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Gem className="w-6 h-6 text-purple-400" />
+              Gemas
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {getCurrencyGems().map(item => renderShopItem(item))}
+            </div>
+          </div>
+
+          {/* Coins */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Coins className="w-6 h-6 text-yellow-400" />
+              Moedas
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {getCurrencyCoins().map(item => renderShopItem(item))}
+            </div>
           </div>
         </TabsContent>
 
@@ -440,6 +620,21 @@ export const Shop: React.FC = () => {
                 </Card>
               ))}
             </div>
+        </TabsContent>
+
+        <TabsContent value="customizations" className="mt-6">
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Image className="w-6 h-6 text-yellow-400" />
+              Customizações de Campo de Batalha
+              <Badge className="bg-gradient-to-r from-yellow-600 to-amber-700 text-white">
+                Personalize seu campo
+              </Badge>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {customizations?.map(customization => renderCustomization(customization))}
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">

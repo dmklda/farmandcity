@@ -145,6 +145,7 @@ const HomePage: React.FC = () => {
             onGoToCollection={() => setCurrentView('collection')}
             onGoToMissions={() => setCurrentView('missions')}
             onGoToDecks={() => setCurrentView('decks')}
+            onGoToSettings={() => setCurrentView('settings')}
             currency={transformedCurrency}
             playerCards={playerCards}
             decks={decks}

@@ -239,6 +239,7 @@ export const CardImportModal: React.FC<CardImportModalProps> = ({
                     accept=".json,.csv,.txt"
                     onChange={handleFileUpload}
                     className="hidden"
+                    aria-label="Selecionar arquivo para importar cartas"
                   />
                   <Button
                     variant="outline"

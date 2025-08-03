@@ -29,8 +29,8 @@ interface AppContextType {
   decksLoading: boolean;
   
   // Estado da aplicação
-  currentView: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks';
-  setCurrentView: (view: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks') => void;
+  currentView: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks' | 'settings';
+  setCurrentView: (view: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks' | 'settings') => void;
   
   // Funções de logout
   signOut: () => Promise<void>;
@@ -70,13 +70,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const { decks, loading: decksLoading } = usePlayerDecks();
   
   // Inicializar currentView do localStorage ou usar 'home' como padrão
-  const [currentView, setCurrentViewState] = useState<'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks'>(() => {
+  const [currentView, setCurrentViewState] = useState<'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks' | 'settings'>(() => {
     const savedView = localStorage.getItem('famand_currentView');
-    return (savedView as 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks') || 'home';
+    return (savedView as 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks' | 'settings') || 'home';
   });
 
   // Função para atualizar currentView e salvar no localStorage
-  const setCurrentView = (view: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks') => {
+  const setCurrentView = (view: 'home' | 'game' | 'gameMode' | 'collection' | 'shop' | 'missions' | 'decks' | 'settings') => {
     setCurrentViewState(view);
     localStorage.setItem('famand_currentView', view);
     // // console.log('Navegação alterada para:', view);

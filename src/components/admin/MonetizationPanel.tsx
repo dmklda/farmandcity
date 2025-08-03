@@ -3,386 +3,571 @@ import { supabase } from '../../integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
-import { Switch } from '../ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Separator } from '../ui/separator';
+import { 
+  DollarSign, 
+  Coins, 
+  Gem, 
+  ShoppingCart, 
+  Users, 
+  TrendingUp, 
+  Package, 
+  Star,
+  Calendar,
+  BarChart3,
+  RefreshCw
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface MonetizationPanelProps {
   onStatsUpdate: () => void;
 }
 
+interface TransactionStats {
+  totalRevenue: number;
+  totalTransactions: number;
+  averageTransactionValue: number;
+  topSellingItems: any[];
+  recentTransactions: any[];
+  userStats: any[];
+  dailyStats: any[];
+  monthlyStats: any[];
+}
+
 export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpdate }) => {
-  const [packs, setPacks] = useState<any[]>([]);
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showPackModal, setShowPackModal] = useState(false);
-  const [editingPack, setEditingPack] = useState<any>(null);
-  const [packForm, setPackForm] = useState({
-    name: '',
-    description: '',
-    price_coins: 100,
-    cards_count: 5,
-    guaranteed_rarity: '',
-    is_active: true
+  const [stats, setStats] = useState<TransactionStats>({
+    totalRevenue: 0,
+    totalTransactions: 0,
+    averageTransactionValue: 0,
+    topSellingItems: [],
+    recentTransactions: [],
+    userStats: [],
+    dailyStats: [],
+    monthlyStats: []
   });
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState('30d');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchAllTransactionData();
+  }, [selectedPeriod]);
 
-  const fetchData = async () => {
+  const fetchAllTransactionData = async () => {
     try {
       setLoading(true);
       
-      // Fetch booster packs
-      const { data: packsData, error: packsError } = await supabase
-        .from('booster_packs')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Buscar todas as transações da loja
+      const { data: shopPurchases, error: shopError } = await supabase
+        .from('shop_purchases')
+        .select(`
+          *,
+          shop_items (name, price_dollars, item_type),
+          profiles (display_name, email)
+        `)
+        .order('purchased_at', { ascending: false });
 
-      if (packsError) throw packsError;
+      if (shopError) throw shopError;
 
-      // Fetch recent purchases
-      const { data: purchasesData, error: purchasesError } = await supabase
+      // Buscar compras de cartas
+      const { data: cardPurchases, error: cardError } = await supabase
+        .from('card_purchases')
+        .select(`
+          *,
+          profiles (display_name, email)
+        `)
+        .order('purchased_at', { ascending: false });
+
+      if (cardError) throw cardError;
+
+      // Buscar compras de packs
+      const { data: packPurchases, error: packError } = await supabase
         .from('pack_purchases')
         .select(`
           *,
           booster_packs (name, price_coins),
-          profiles (display_name)
+          profiles (display_name, email)
         `)
-        .order('purchased_at', { ascending: false })
-        .limit(10);
+        .order('purchased_at', { ascending: false });
 
-      if (purchasesError) throw purchasesError;
+      if (packError) throw packError;
 
-      setPacks(packsData || []);
-      setPurchases(purchasesData || []);
+      // Buscar compras de starter pack
+      const { data: starterPackPurchases, error: starterError } = await supabase
+        .from('player_pack_purchases')
+        .select(`
+          *,
+          special_packs (name),
+          profiles (display_name, email)
+        `)
+        .order('purchased_at', { ascending: false });
+
+      if (starterError) throw starterError;
+
+      // Calcular estatísticas
+      const allTransactions = [
+        ...(shopPurchases || []),
+        ...(cardPurchases || []),
+        ...(packPurchases || []),
+        ...(starterPackPurchases || [])
+      ];
+
+      const totalRevenue = calculateTotalRevenue(allTransactions);
+      const totalTransactions = allTransactions.length;
+      const averageTransactionValue = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+      const topSellingItems = calculateTopSellingItems(allTransactions);
+      const userStats = calculateUserStats(allTransactions);
+      const dailyStats = calculateDailyStats(allTransactions);
+      const monthlyStats = calculateMonthlyStats(allTransactions);
+
+      setStats({
+        totalRevenue,
+        totalTransactions,
+        averageTransactionValue,
+        topSellingItems,
+        recentTransactions: allTransactions.slice(0, 20),
+        userStats,
+        dailyStats,
+        monthlyStats
+      });
+
       onStatsUpdate();
     } catch (error) {
-      console.error('Error fetching monetization data:', error);
+      console.error('Error fetching transaction data:', error);
+      toast.error('Erro ao carregar dados de transação');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreatePack = async () => {
-    try {
-      const { error } = await supabase
-        .from('booster_packs')
-        .insert([packForm]);
-
-      if (error) throw error;
-
-      toast.success('Pacote criado com sucesso!');
-      setShowPackModal(false);
-      setPackForm({
-        name: '',
-        description: '',
-        price_coins: 100,
-        cards_count: 5,
-        guaranteed_rarity: '',
-        is_active: true
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error creating pack:', error);
-      toast.error('Erro ao criar pacote');
-    }
+  const calculateTotalRevenue = (transactions: any[]): number => {
+    return transactions.reduce((total, transaction) => {
+      // Calcular valor baseado no tipo de transação
+      if (transaction.shop_items?.price_dollars) {
+        return total + parseFloat(transaction.shop_items.price_dollars);
+      }
+      // Para outras transações, estimar valor baseado em moedas/gemas
+      if (transaction.total_price_coins) {
+        return total + (transaction.total_price_coins / 100); // Estimativa: 100 moedas = $1
+      }
+      if (transaction.total_price_gems) {
+        return total + (transaction.total_price_gems * 0.1); // Estimativa: 1 gema = $0.10
+      }
+      return total;
+    }, 0);
   };
 
-  const handleUpdatePack = async () => {
-    try {
-      const { error } = await supabase
-        .from('booster_packs')
-        .update(packForm)
-        .eq('id', editingPack.id);
-
-      if (error) throw error;
-
-      toast.success('Pacote atualizado com sucesso!');
-      setShowPackModal(false);
-      setEditingPack(null);
-      setPackForm({
-        name: '',
-        description: '',
-        price_coins: 100,
-        cards_count: 5,
-        guaranteed_rarity: '',
-        is_active: true
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error updating pack:', error);
-      toast.error('Erro ao atualizar pacote');
-    }
-  };
-
-  const handleEditPack = (pack: any) => {
-    setEditingPack(pack);
-    setPackForm({
-      name: pack.name,
-      description: pack.description || '',
-      price_coins: pack.price_coins,
-      cards_count: pack.cards_count,
-      guaranteed_rarity: pack.guaranteed_rarity || '',
-      is_active: pack.is_active
+  const calculateTopSellingItems = (transactions: any[]): any[] => {
+    const itemCounts: { [key: string]: number } = {};
+    
+    transactions.forEach(transaction => {
+      const itemName = transaction.shop_items?.name || 
+                      transaction.booster_packs?.name || 
+                      transaction.special_packs?.name || 
+                      'Carta Individual';
+      
+      itemCounts[itemName] = (itemCounts[itemName] || 0) + 1;
     });
-    setShowPackModal(true);
+
+    return Object.entries(itemCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
   };
 
-  const handleDeletePack = async (packId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este pacote?')) return;
+  const calculateUserStats = (transactions: any[]): any[] => {
+    const userStats: { [key: string]: any } = {};
+    
+    transactions.forEach(transaction => {
+      const userId = transaction.player_id || transaction.user_id;
+      const userName = transaction.profiles?.display_name || transaction.profiles?.email || 'Usuário Desconhecido';
+      
+      if (!userStats[userId]) {
+        userStats[userId] = {
+          id: userId,
+          name: userName,
+          totalSpent: 0,
+          transactions: 0,
+          lastPurchase: null
+        };
+      }
+      
+      userStats[userId].transactions++;
+      userStats[userId].totalSpent += calculateTransactionValue(transaction);
+      
+      if (!userStats[userId].lastPurchase || 
+          new Date(transaction.purchased_at) > new Date(userStats[userId].lastPurchase)) {
+        userStats[userId].lastPurchase = transaction.purchased_at;
+      }
+    });
 
-    try {
-      const { error } = await supabase
-        .from('booster_packs')
-        .delete()
-        .eq('id', packId);
+    return Object.values(userStats)
+      .sort((a: any, b: any) => b.totalSpent - a.totalSpent)
+      .slice(0, 20);
+  };
 
-      if (error) throw error;
-
-      toast.success('Pacote excluído com sucesso!');
-      fetchData();
-    } catch (error) {
-      console.error('Error deleting pack:', error);
-      toast.error('Erro ao excluir pacote');
+  const calculateTransactionValue = (transaction: any): number => {
+    if (transaction.shop_items?.price_dollars) {
+      return parseFloat(transaction.shop_items.price_dollars);
     }
+    if (transaction.total_price_coins) {
+      return transaction.total_price_coins / 100;
+    }
+    if (transaction.total_price_gems) {
+      return transaction.total_price_gems * 0.1;
+    }
+    return 0;
+  };
+
+  const calculateDailyStats = (transactions: any[]): any[] => {
+    const dailyStats: { [key: string]: any } = {};
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.purchased_at).toISOString().split('T')[0];
+      
+      if (!dailyStats[date]) {
+        dailyStats[date] = {
+          date,
+          revenue: 0,
+          transactions: 0
+        };
+      }
+      
+      dailyStats[date].revenue += calculateTransactionValue(transaction);
+      dailyStats[date].transactions++;
+    });
+
+    return Object.values(dailyStats)
+      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 30);
+  };
+
+  const calculateMonthlyStats = (transactions: any[]): any[] => {
+    const monthlyStats: { [key: string]: any } = {};
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.purchased_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!monthlyStats[monthKey]) {
+        monthlyStats[monthKey] = {
+          month: monthKey,
+          revenue: 0,
+          transactions: 0
+        };
+      }
+      
+      monthlyStats[monthKey].revenue += calculateTransactionValue(transaction);
+      monthlyStats[monthKey].transactions++;
+    });
+
+    return Object.values(monthlyStats)
+      .sort((a: any, b: any) => b.month.localeCompare(a.month));
+  };
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (loading) {
-    return <div className="text-center p-8">Carregando dados de monetização...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-yellow-500" />
+          <p className="text-gray-400">Carregando dados de monetização...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Painel de Monetização</h2>
-          <p className="text-muted-foreground">Gerencie pacotes booster e vendas</p>
-        </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => {
-            setEditingPack(null);
-            setShowPackModal(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Novo Pacote
-        </Button>
+      {/* Header com estatísticas principais */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-green-900/20 to-emerald-800/20 border-green-600/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-400">Receita Total</p>
+                <p className="text-2xl font-bold text-green-300">
+                  {formatCurrency(stats.totalRevenue)}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-green-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-900/20 to-indigo-800/20 border-blue-600/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-400">Total de Transações</p>
+                <p className="text-2xl font-bold text-blue-300">
+                  {stats.totalTransactions}
+                </p>
+              </div>
+              <ShoppingCart className="w-8 h-8 text-blue-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-900/20 to-violet-800/20 border-purple-600/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-400">Ticket Médio</p>
+                <p className="text-2xl font-bold text-purple-300">
+                  {formatCurrency(stats.averageTransactionValue)}
+                </p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-purple-400" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-yellow-900/20 to-amber-800/20 border-yellow-600/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-yellow-400">Usuários Ativos</p>
+                <p className="text-2xl font-bold text-yellow-300">
+                  {stats.userStats.length}
+                </p>
+              </div>
+              <Users className="w-8 h-8 text-yellow-400" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Booster Packs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pacotes Booster</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {packs.map((pack) => (
-              <Card key={pack.id} className="border-2">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{pack.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {pack.description || 'Sem descrição'}
+      {/* Tabs para diferentes visualizações */}
+      <Tabs defaultValue="transactions" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="transactions">Transações Recentes</TabsTrigger>
+          <TabsTrigger value="top-items">Itens Mais Vendidos</TabsTrigger>
+          <TabsTrigger value="users">Usuários</TabsTrigger>
+          <TabsTrigger value="daily">Estatísticas Diárias</TabsTrigger>
+          <TabsTrigger value="monthly">Estatísticas Mensais</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="transactions" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                Transações Recentes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.recentTransactions.map((transaction, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-yellow-600/20 rounded-full flex items-center justify-center">
+                        <ShoppingCart className="w-5 h-5 text-yellow-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">
+                          {transaction.shop_items?.name || 
+                           transaction.booster_packs?.name || 
+                           transaction.special_packs?.name || 
+                           'Carta Individual'}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {transaction.profiles?.display_name || transaction.profiles?.email || 'Usuário Desconhecido'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-400">
+                        {formatCurrency(calculateTransactionValue(transaction))}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {formatDate(transaction.purchased_at)}
                       </p>
                     </div>
-                    {!pack.is_active && (
-                      <Badge variant="destructive">Inativo</Badge>
-                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span>Preço:</span>
-                    <span className="font-semibold">🪙 {pack.price_coins}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Cartas:</span>
-                    <span>{pack.cards_count}</span>
-                  </div>
-                  {pack.guaranteed_rarity && (
-                    <div className="flex justify-between text-sm">
-                      <span>Raridade Garantida:</span>
-                      <Badge variant="secondary">{pack.guaranteed_rarity}</Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="top-items" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5" />
+                Itens Mais Vendidos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.topSellingItems.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-yellow-600 text-white">
+                        #{index + 1}
+                      </Badge>
+                      <div>
+                        <p className="font-medium text-white">{item.name}</p>
+                        <p className="text-sm text-gray-400">
+                          {item.count} vendas
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="pt-2 border-t flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => handleEditPack(pack)}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Editar
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDeletePack(pack.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="text-right">
+                      <p className="font-bold text-yellow-400">
+                        {item.count} unidades
+                      </p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Recent Purchases */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Compras Recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {purchases.map((purchase) => (
-              <div key={purchase.id} className="flex items-center justify-between p-3 border rounded">
-                <div className="flex items-center space-x-3">
-                  <div>
-                    <p className="font-medium">
-                      {purchase.profiles?.display_name || 'Usuário Anônimo'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {purchase.booster_packs?.name || 'Pacote Desconhecido'}
-                    </p>
+        <TabsContent value="users" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Usuários com Maior Gasto
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.userStats.map((user, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-purple-600 text-white">
+                        #{index + 1}
+                      </Badge>
+                      <div>
+                        <p className="font-medium text-white">{user.name}</p>
+                        <p className="text-sm text-gray-400">
+                          {user.transactions} transações
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-purple-400">
+                        {formatCurrency(user.totalSpent)}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Última: {user.lastPurchase ? formatDate(user.lastPurchase) : 'N/A'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">🪙 {purchase.booster_packs?.price_coins || 0}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(purchase.purchased_at).toLocaleDateString()}
-                  </p>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {purchases.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-lg text-muted-foreground">Nenhuma compra realizada ainda</p>
-        </div>
-      )}
-
-      {/* Pack Modal */}
-      {showPackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
-              {editingPack ? 'Editar Pacote' : 'Novo Pacote'}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome do Pacote</Label>
-                <Input
-                  id="name"
-                  value={packForm.name}
-                  onChange={(e) => setPackForm({...packForm, name: e.target.value})}
-                  placeholder="Ex: Pacote Lendário"
-                />
+        <TabsContent value="daily" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Estatísticas Diárias
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.dailyStats.map((day, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-blue-600/20 rounded-full flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">
+                          {new Date(day.date).toLocaleDateString('pt-BR')}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {day.transactions} transações
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-blue-400">
+                        {formatCurrency(day.revenue)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-              <div>
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={packForm.description}
-                  onChange={(e) => setPackForm({...packForm, description: e.target.value})}
-                  placeholder="Descrição do pacote..."
-                />
+        <TabsContent value="monthly" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Estatísticas Mensais
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.monthlyStats.map((month, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-green-600/20 rounded-full flex items-center justify-center">
+                        <BarChart3 className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">
+                          {new Date(month.month + '-01').toLocaleDateString('pt-BR', { 
+                            year: 'numeric', 
+                            month: 'long' 
+                          })}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {month.transactions} transações
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-green-400">
+                        {formatCurrency(month.revenue)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="price">Preço (Moedas)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={packForm.price_coins}
-                    onChange={(e) => setPackForm({...packForm, price_coins: parseInt(e.target.value)})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="cards">Número de Cartas</Label>
-                  <Input
-                    id="cards"
-                    type="number"
-                    value={packForm.cards_count}
-                    onChange={(e) => setPackForm({...packForm, cards_count: parseInt(e.target.value)})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="rarity">Raridade Garantida (Opcional)</Label>
-                <Select 
-                  value={packForm.guaranteed_rarity} 
-                  onValueChange={(value) => setPackForm({...packForm, guaranteed_rarity: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma raridade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
-                    <SelectItem value="common">Comum</SelectItem>
-                    <SelectItem value="uncommon">Incomum</SelectItem>
-                    <SelectItem value="rare">Raro</SelectItem>
-                    <SelectItem value="ultra">Ultra</SelectItem>
-                    <SelectItem value="legendary">Lendário</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={packForm.is_active}
-                  onCheckedChange={(checked) => setPackForm({...packForm, is_active: checked})}
-                />
-                <Label htmlFor="active">Pacote Ativo</Label>
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <Button 
-                onClick={editingPack ? handleUpdatePack : handleCreatePack}
-                className="flex-1"
-              >
-                {editingPack ? 'Atualizar' : 'Criar'}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowPackModal(false);
-                  setEditingPack(null);
-                  setPackForm({
-                    name: '',
-                    description: '',
-                    price_coins: 100,
-                    cards_count: 5,
-                    guaranteed_rarity: '',
-                    is_active: true
-                  });
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Botão de atualização */}
+      <div className="flex justify-center">
+        <Button 
+          onClick={fetchAllTransactionData}
+          className="bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600"
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Atualizar Dados
+        </Button>
+      </div>
     </div>
   );
 };

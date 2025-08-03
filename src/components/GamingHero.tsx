@@ -22,6 +22,7 @@ interface GamingHeroProps {
   onGoToCollection: () => void;
   onGoToMissions: () => void;
   onGoToDecks: () => void;
+  onGoToSettings: () => void;
   currency: { coins: number; gems: number } | null;
   playerCards: any[];
   decks: any[];
@@ -34,6 +35,7 @@ export const GamingHero: React.FC<GamingHeroProps> = ({
   onGoToCollection,
   onGoToMissions,
   onGoToDecks,
+  onGoToSettings,
   currency,
   playerCards,
   decks
@@ -100,7 +102,7 @@ export const GamingHero: React.FC<GamingHeroProps> = ({
       title: "Configurações",
       description: "Personalize sua experiência de jogo",
       icon: Settings,
-      action: () => {},
+      action: onGoToSettings,
       gradient: "from-gray-500 to-slate-600",
       hoverGradient: "from-gray-400 to-slate-500",
       buttonGradient: "from-gray-600 to-slate-600",

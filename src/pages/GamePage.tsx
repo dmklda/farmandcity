@@ -67,6 +67,10 @@ const GamePage: React.FC = () => {
     setCurrentView('home');
   };
 
+  const handleSettingsClick = () => {
+    setCurrentView('settings');
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -313,6 +317,7 @@ const GamePage: React.FC = () => {
         onShowSavedGames={handleShowSavedGames}
         onGoHome={handleGoHome}
         onLogout={handleLogout}
+        onSettingsClick={handleSettingsClick}
         userEmail={user?.email}
         activeDeck={activeDeck}
       />

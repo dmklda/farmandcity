@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Save, LogOut, User, Home } from 'lucide-react';
+import { BarChart3, Save, LogOut, User, Home, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MedievalTopBarProps {
@@ -33,6 +33,7 @@ interface MedievalTopBarProps {
   onShowSavedGames?: () => void;
   onLogout?: () => void;
   onGoHome?: () => void;
+  onSettingsClick?: () => void;
   userEmail?: string;
   activeDeck?: {
     id: string;
@@ -128,6 +129,7 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
   onShowSavedGames,
   onLogout,
   onGoHome,
+  onSettingsClick,
   userEmail,
   activeDeck,
 
@@ -260,6 +262,19 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
                 <BarChart3 size={20} />
+              </motion.button>
+            )}
+
+            {onSettingsClick && (
+              <motion.button
+                onClick={onSettingsClick}
+                className="p-2 bg-gradient-to-br from-yellow-900/30 to-amber-900/30 text-yellow-400 rounded-lg border border-yellow-600 hover:from-yellow-800/40 hover:to-amber-800/40 transition-all duration-300"
+                title="Configurações"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <Settings size={20} />
               </motion.button>
             )}
 

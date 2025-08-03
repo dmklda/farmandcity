@@ -7,6 +7,7 @@ import MissionsPage from '../pages/MissionsPage';
 import DecksPage from '../pages/DecksPage';
 import GamePage from '../pages/GamePage';
 import GameModePage from '../pages/GameModePage';
+import { SettingsPage } from '../pages/SettingsPage';
 
 const AppRouter: React.FC = () => {
   const { currentView } = useAppContext();
@@ -28,6 +29,8 @@ const AppRouter: React.FC = () => {
       return <GameModePage />;
     case 'game':
       return <GamePage />;
+    case 'settings':
+      return <SettingsPage />;
     default:
       return <HomePage />;
   }

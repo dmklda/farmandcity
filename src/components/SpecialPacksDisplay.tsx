@@ -197,7 +197,7 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
             <Card 
               key={pack.id}
               className={`
-                relative overflow-hidden transition-all duration-300 hover:scale-105
+                relative overflow-hidden transition-all duration-300 hover:scale-105 group
                 bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm
                 border-2 border-yellow-600/30 hover:border-yellow-500/60
                 shadow-lg ${getPackGlow(pack.rarity)} hover:shadow-xl
