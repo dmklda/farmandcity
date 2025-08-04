@@ -4,9 +4,11 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useShop } from '../hooks/useShop';
 import { useAppContext } from '../contexts/AppContext';
-import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History, Image, Palette } from 'lucide-react';
+import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History, Image, Palette, Search, Filter } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './ui/toast';
 import { SpecialPacksDisplay } from './SpecialPacksDisplay';
@@ -14,6 +16,7 @@ import { getRarityIconPNG } from './IconComponentsPNG';
 import DailyCardComponent from './DailyCardComponent';
 import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
 import { useContainerCustomization } from '../hooks/useContainerCustomization';
+import { useCurrencyPurchase } from '../hooks/useCurrencyPurchase';
 
 export const Shop: React.FC = () => {
   const { 
@@ -56,6 +59,13 @@ export const Shop: React.FC = () => {
     loading: containerCustomizationsLoading,
     error: containerCustomizationsError
   } = useContainerCustomization();
+
+  const {
+    purchaseCurrency,
+    getCurrencyItems,
+    loading: currencyPurchaseLoading,
+    error: currencyPurchaseError
+  } = useCurrencyPurchase();
   
   const { currency, currencyLoading, refreshCurrency } = useAppContext();
   const { showToast, ToastContainer } = useToast();
@@ -65,6 +75,11 @@ export const Shop: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const [authStatus, setAuthStatus] = useState<string>('Verificando...');
+  
+  // Search and filter states for customizations
+  const [customizationSearch, setCustomizationSearch] = useState('');
+  const [customizationRarityFilter, setCustomizationRarityFilter] = useState('all');
+  const [customizationTypeFilter, setCustomizationTypeFilter] = useState('all');
 
   useEffect(() => {
     checkAuth();
@@ -111,7 +126,22 @@ export const Shop: React.FC = () => {
   const handlePurchaseCustomization = async (customizationId: string) => {
     try {
       setPurchasing(true);
-      await purchaseCustomization(customizationId);
+      
+      // Encontrar a customização para determinar o tipo de moeda
+      const customization = customizations.find(c => c.id === customizationId);
+      if (!customization) {
+        throw new Error('Customização não encontrada');
+      }
+      
+      // Determinar o tipo de moeda baseado no preço
+      let purchaseType: 'coins' | 'gems' | 'real_money' = 'coins';
+      if (customization.price_gems && customization.price_gems > 0) {
+        purchaseType = 'gems';
+      } else if (customization.price_coins && customization.price_coins > 0) {
+        purchaseType = 'coins';
+      }
+      
+      await purchaseCustomization(customizationId, purchaseType);
       showToast('Customização comprada com sucesso!', 'success');
     } catch (err: any) {
       showToast(`Erro na compra da customização: ${err.message}`, 'error');
@@ -150,6 +180,18 @@ export const Shop: React.FC = () => {
       showToast('Customização de container equipada com sucesso!', 'success');
     } catch (err: any) {
       showToast(`Erro ao equipar: ${err.message}`, 'error');
+    }
+  };
+
+  const handlePurchaseCurrency = async (itemId: string) => {
+    try {
+      setPurchasing(true);
+      const result = await purchaseCurrency(itemId);
+      showToast(result.message, 'success');
+    } catch (err: any) {
+      showToast(`Erro na compra de moeda: ${err.message}`, 'error');
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -229,6 +271,29 @@ export const Shop: React.FC = () => {
       </span>
     );
   };
+
+  // Filtered customizations logic
+  const filteredCustomizations = useMemo(() => {
+    if (!customizations) return [];
+    
+    return customizations.filter(customization => {
+      // Search filter
+      const matchesSearch = customization.name.toLowerCase().includes(customizationSearch.toLowerCase()) ||
+                           (customization.description && customization.description.toLowerCase().includes(customizationSearch.toLowerCase()));
+      
+      // Rarity filter
+      const matchesRarity = customizationRarityFilter === 'all' || customization.rarity === customizationRarityFilter;
+      
+      // Type filter (animated vs static)
+      const isAnimated = customization.name.toLowerCase().includes('animado') || 
+                        (customization.image_url && customization.image_url.includes('.mp4'));
+      const matchesType = customizationTypeFilter === 'all' || 
+                         (customizationTypeFilter === 'animated' && isAnimated) ||
+                         (customizationTypeFilter === 'static' && !isAnimated);
+      
+      return matchesSearch && matchesRarity && matchesType;
+    });
+  }, [customizations, customizationSearch, customizationRarityFilter, customizationTypeFilter]);
 
   const renderCustomization = (customization: any) => {
     const isOwned = userCustomizations?.some(uc => uc.customization_id === customization.id);
@@ -472,6 +537,146 @@ export const Shop: React.FC = () => {
               </Button>
             )}
           </div>
+        </div>
+      </Card>
+    );
+  };
+
+  const renderCurrencyItem = (item: any) => {
+    const extractCoinAmount = (text: string): number => {
+      const patterns = [
+        /(\d+)\s*moedas?/i,
+        /(\d+)\s*Moedas?/i,
+        /(\d+)\s*coins?/i,
+        /(\d+)\s*Coins?/i
+      ];
+      
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+          return parseInt(match[1]);
+        }
+      }
+      return 0;
+    };
+
+    const extractGemAmount = (text: string): number => {
+      const patterns = [
+        /(\d+)\s*gems?/i,
+        /(\d+)\s*Gems?/i,
+        /(\d+)\s*gemas?/i,
+        /(\d+)\s*Gemas?/i
+      ];
+      
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+          return parseInt(match[1]);
+        }
+      }
+      return 0;
+    };
+
+    const coinAmount = extractCoinAmount(item.description || item.name);
+    const gemAmount = extractGemAmount(item.description || item.name);
+    const priceDollars = parseFloat(item.price_dollars || '0');
+    const discountPercentage = item.discount_percentage || 0;
+    const isSpecial = item.is_special || false;
+    
+    // Calculate original price if there's a discount
+    const originalPrice = discountPercentage > 0 ? priceDollars / (1 - discountPercentage / 100) : priceDollars;
+    const savings = originalPrice - priceDollars;
+
+    return (
+      <Card key={item.id} className={`relative overflow-hidden backdrop-blur-sm border-2 transition-all duration-300 group hover:shadow-xl ${
+        isSpecial && discountPercentage > 0 
+          ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/50 hover:border-red-400/70' 
+          : 'bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-yellow-600/30 hover:border-yellow-500/60'
+      }`}>
+        {/* Glow effect */}
+        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getRarityColor(item.rarity)} blur-xl -z-10`} />
+        
+        {/* Rarity badge */}
+        <div className="absolute top-3 right-3 z-10">
+          {getRarityBadge(item.rarity)}
+        </div>
+
+        {/* Premium badge */}
+        <div className="absolute top-3 left-3 z-10">
+          <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0">
+            PREMIUM
+          </Badge>
+        </div>
+
+        {/* Promoção badge */}
+        {isSpecial && discountPercentage > 0 && (
+          <div className="absolute top-12 left-3 z-10">
+            <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-0 animate-pulse">
+              -{discountPercentage}%
+            </Badge>
+          </div>
+        )}
+        
+        <div className="p-6">
+          {/* Currency Preview */}
+          <div className="w-full h-32 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg mb-4 flex items-center justify-center shadow-lg">
+            <div className="text-center">
+              {coinAmount > 0 && (
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Coins className="w-8 h-8 text-white" />
+                  <span className="text-2xl font-bold text-white">{coinAmount}</span>
+                </div>
+              )}
+              {gemAmount > 0 && (
+                <div className="flex items-center justify-center gap-2">
+                  <Gem className="w-8 h-8 text-white" />
+                  <span className="text-2xl font-bold text-white">{gemAmount}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold text-white mb-2 text-center">
+            {item.name}
+          </h3>
+          
+          <p className="text-gray-300 text-sm mb-4 text-center min-h-[40px]">
+            {item.description}
+          </p>
+
+                              <Separator className="my-4 bg-yellow-600/30" />
+
+                    <div className="flex flex-col items-center justify-center mb-4">
+                      {isSpecial && discountPercentage > 0 ? (
+                        <>
+                          {/* Preço original riscado */}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg line-through text-gray-400">${originalPrice.toFixed(2)}</span>
+                          </div>
+                          {/* Preço com desconto */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-green-400">${priceDollars.toFixed(2)}</span>
+                          </div>
+                          {/* Economia */}
+                          <div className="text-sm text-green-300 mt-1">
+                            Economize ${savings.toFixed(2)}!
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-green-400">${priceDollars.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+
+          <Button 
+            onClick={() => handlePurchaseCurrency(item.id)}
+            disabled={purchasing || currencyPurchaseLoading}
+            className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            {purchasing || currencyPurchaseLoading ? 'Processando...' : 'Comprar'}
+          </Button>
         </div>
       </Card>
     );
@@ -734,18 +939,30 @@ export const Shop: React.FC = () => {
             </div>
         </TabsContent>
 
-        <TabsContent value="currency" className="mt-6">
-          {/* Pacotes (Gems + Coins) */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Package className="w-6 h-6 text-yellow-400" />
-              Pacotes (Gems + Coins)
-              <Badge className="bg-gradient-to-r from-yellow-600 to-amber-700 text-white">
-                Melhor Custo-Benefício
-              </Badge>
-            </h3>
+                    <TabsContent value="currency" className="mt-6">
+              {/* Banner de Promoção */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-lg">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="text-2xl">🔥</div>
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-white">PROMOÇÃO ESPECIAL!</h3>
+                    <p className="text-sm text-yellow-200">Todos os pacotes com 50% de desconto por tempo limitado!</p>
+                  </div>
+                  <div className="text-2xl">🔥</div>
+                </div>
+              </div>
+
+              {/* Pacotes (Gems + Coins) */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Package className="w-6 h-6 text-yellow-400" />
+                  Pacotes (Gems + Coins)
+                  <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse">
+                    -50% OFF
+                  </Badge>
+                </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyPacks().map(item => renderShopItem(item))}
+              {getCurrencyPacks().map(item => renderCurrencyItem(item))}
             </div>
           </div>
 
@@ -756,7 +973,7 @@ export const Shop: React.FC = () => {
               Gemas
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyGems().map(item => renderShopItem(item))}
+              {getCurrencyGems().map(item => renderCurrencyItem(item))}
             </div>
           </div>
 
@@ -767,7 +984,7 @@ export const Shop: React.FC = () => {
               Moedas
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyCoins().map(item => renderShopItem(item))}
+              {getCurrencyCoins().map(item => renderCurrencyItem(item))}
             </div>
           </div>
         </TabsContent>
@@ -809,9 +1026,71 @@ export const Shop: React.FC = () => {
                 Personalize seu campo
               </Badge>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {customizations?.map(customization => renderCustomization(customization))}
+            
+            {/* Search and Filter Controls */}
+            <div className="mb-6 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Buscar customizações..."
+                  value={customizationSearch}
+                  onChange={(e) => setCustomizationSearch(e.target.value)}
+                  className="pl-10 bg-slate-800/50 border-slate-600 text-white placeholder-gray-400 focus:border-yellow-500"
+                />
+              </div>
+              
+              {/* Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-300 text-sm">Filtros:</span>
+                </div>
+                
+                <Select value={customizationRarityFilter} onValueChange={setCustomizationRarityFilter}>
+                  <SelectTrigger className="w-full sm:w-48 bg-slate-800/50 border-slate-600 text-white">
+                    <SelectValue placeholder="Raridade" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectItem value="all">Todas as Raridades</SelectItem>
+                    <SelectItem value="common">Comum</SelectItem>
+                    <SelectItem value="rare">Raro</SelectItem>
+                    <SelectItem value="epic">Épico</SelectItem>
+                    <SelectItem value="legendary">Lendário</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={customizationTypeFilter} onValueChange={setCustomizationTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-48 bg-slate-800/50 border-slate-600 text-white">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectItem value="all">Todos os Tipos</SelectItem>
+                    <SelectItem value="static">Estáticos</SelectItem>
+                    <SelectItem value="animated">Animados</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {/* Results Counter */}
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <span>{filteredCustomizations.length} de {customizations?.length || 0} customizações</span>
+                </div>
+              </div>
             </div>
+            
+            {/* Customizations Grid */}
+            {filteredCustomizations.length === 0 ? (
+              <div className="text-center py-12">
+                <Image className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhuma customização encontrada</p>
+                <p className="text-gray-500">Tente ajustar os filtros ou a busca</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCustomizations.map(customization => renderCustomization(customization))}
+              </div>
+            )}
           </div>
         </TabsContent>
 

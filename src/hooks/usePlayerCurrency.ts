@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import type { Tables } from '../integrations/supabase/types';
+import { CurrencyService } from '../services/CurrencyService';
 
 type PlayerCurrency = Tables<'player_currency'>;
 
@@ -87,35 +88,27 @@ export const usePlayerCurrency = () => {
   const addCoins = async (amount: number) => {
     if (!currency) return;
 
-    const { data, error } = await supabase
-      .from('player_currency')
-      .update({ 
-        coins: (currency.coins || 0) + amount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('player_id', currency.player_id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    setCurrency(data);
+    try {
+      await CurrencyService.addCoins(currency.player_id, amount);
+      // Refresh currency data
+      await fetchPlayerCurrency();
+    } catch (error) {
+      console.error('Error adding coins:', error);
+      throw error;
+    }
   };
 
   const addGems = async (amount: number) => {
     if (!currency) return;
 
-    const { data, error } = await supabase
-      .from('player_currency')
-      .update({ 
-        gems: (currency.gems || 0) + amount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('player_id', currency.player_id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    setCurrency(data);
+    try {
+      await CurrencyService.addGems(currency.player_id, amount);
+      // Refresh currency data
+      await fetchPlayerCurrency();
+    } catch (error) {
+      console.error('Error adding gems:', error);
+      throw error;
+    }
   };
 
   const addExperience = async (amount: number) => {
@@ -141,41 +134,39 @@ export const usePlayerCurrency = () => {
   };
 
   const spendCoins = async (amount: number) => {
-    if (!currency || (currency.coins || 0) < amount) {
+    if (!currency) {
       throw new Error('Moedas insuficientes');
     }
 
-    const { data, error } = await supabase
-      .from('player_currency')
-      .update({ 
-        coins: (currency.coins || 0) - amount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('player_id', currency.player_id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    setCurrency(data);
+    try {
+      const success = await CurrencyService.spendCoins(currency.player_id, amount);
+      if (!success) {
+        throw new Error('Moedas insuficientes');
+      }
+      // Refresh currency data
+      await fetchPlayerCurrency();
+    } catch (error) {
+      console.error('Error spending coins:', error);
+      throw error;
+    }
   };
 
   const spendGems = async (amount: number) => {
-    if (!currency || (currency.gems || 0) < amount) {
+    if (!currency) {
       throw new Error('Gems insuficientes');
     }
 
-    const { data, error } = await supabase
-      .from('player_currency')
-      .update({ 
-        gems: (currency.gems || 0) - amount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('player_id', currency.player_id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    setCurrency(data);
+    try {
+      const success = await CurrencyService.spendGems(currency.player_id, amount);
+      if (!success) {
+        throw new Error('Gems insuficientes');
+      }
+      // Refresh currency data
+      await fetchPlayerCurrency();
+    } catch (error) {
+      console.error('Error spending gems:', error);
+      throw error;
+    }
   };
 
   const refresh = useCallback(async () => {

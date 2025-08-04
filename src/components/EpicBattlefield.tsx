@@ -14,6 +14,7 @@ import landmarkBackground from '../assets/grids_background/Landmark_background.p
 import eventsBackground from '../assets/grids_background/Events_background.png';
 import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
 import { useContainerCustomization } from '../hooks/useContainerCustomization';
+import { AnimatedBattlefieldBackground } from './AnimatedBattlefieldBackground';
 
 
 interface GridCell {
@@ -281,22 +282,46 @@ const EpicBattlefield: React.FC<EpicBattlefieldProps> = ({
   handVisible = true,
   activatedCards = {}
 }) => {
-  const { getCurrentBackground } = useBattlefieldCustomization();
+  const { getCurrentBackground, getCurrentBackgroundType, isAnimatedBackground } = useBattlefieldCustomization();
   const currentBackground = getCurrentBackground();
+  const backgroundType = getCurrentBackgroundType();
   const { getCurrentContainerBackground } = useContainerCustomization();
+
+
+
+  const renderBackground = () => {
+    if (backgroundType === 'video' && isAnimatedBackground(currentBackground)) {
+      return (
+        <AnimatedBattlefieldBackground
+          videoUrl={currentBackground}
+          fallbackImage="/src/assets/boards_backgrounds/grid-board-background.jpg"
+        />
+      );
+    } else {
+      return (
+        <div 
+          className="absolute inset-0 w-full h-full"
+          style={{ 
+            backgroundImage: `url(${currentBackground})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        />
+      );
+    }
+  };
+
   return (
     <motion.div 
       className="relative rounded-2xl overflow-hidden min-h-[700px] select-none"
-      style={{ 
-        backgroundImage: `url(${currentBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
+      {/* Background */}
+      {renderBackground()}
+      
       {/* Background Overlay */}
       <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" />
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5" />

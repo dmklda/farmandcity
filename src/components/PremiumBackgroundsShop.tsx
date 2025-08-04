@@ -63,7 +63,77 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
   };
 
   const isAnimated = (background: any) => {
-    return background.image_url?.includes('.mp4') || background.name?.includes('Animado');
+    return background.image_url?.includes('.mp4') || 
+           background.name?.includes('Animado') || 
+           background.name?.includes('animated') ||
+           background.image_url?.includes('animated');
+  };
+
+  const getBackgroundPreview = (background: any) => {
+    const animated = isAnimated(background);
+    
+    if (animated) {
+      // Para backgrounds animados, mostrar uma preview estática com indicador
+      return (
+        <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
+          {/* Placeholder para vídeo com gradiente animado */}
+          <div className="w-full h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 animate-pulse">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <Zap className="w-8 h-8 text-blue-400 mx-auto mb-2 animate-pulse" />
+                <p className="text-blue-400 text-xs font-medium">Background Animado</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Overlay indicando que é animado */}
+          <div className="absolute top-2 right-2">
+            <Badge variant="outline" className="text-xs text-blue-400 border-blue-400 bg-blue-900/50">
+              <Zap className="w-3 h-3 mr-1" />
+              ANIMADO
+            </Badge>
+          </div>
+          
+          {/* Overlay de equipado */}
+          {equipped && (
+            <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
+              <Badge className="bg-yellow-600 text-white">
+                EQUIPADO
+              </Badge>
+            </div>
+          )}
+        </div>
+      );
+    } else {
+      // Para backgrounds estáticos, mostrar imagem normal
+      return (
+        <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
+          {background.image_url ? (
+            <img
+              src={background.image_url}
+              alt={background.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = '/src/assets/boards_backgrounds/grid-board-background.jpg';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-slate-800">
+              <Palette className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          
+          {/* Overlay de equipado */}
+          {equipped && (
+            <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
+              <Badge className="bg-yellow-600 text-white">
+                EQUIPADO
+              </Badge>
+            </div>
+          )}
+        </div>
+      );
+    }
   };
 
   const filteredBackgrounds = premiumBackgrounds.filter(background => {
@@ -184,31 +254,7 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
 
               <CardContent className="space-y-4">
                 {/* Preview da imagem */}
-                <div className="relative aspect-video bg-slate-800 rounded-lg overflow-hidden">
-                  {background.image_url ? (
-                    <img
-                      src={background.image_url}
-                      alt={background.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/src/assets/boards_backgrounds/grid-board-background.jpg';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                      <Palette className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
-                  
-                  {/* Overlay de equipado */}
-                  {equipped && (
-                    <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
-                      <Badge className="bg-yellow-600 text-white">
-                        EQUIPADO
-                      </Badge>
-                    </div>
-                  )}
-                </div>
+                {getBackgroundPreview(background)}
 
                 {/* Descrição */}
                 <p className="text-sm text-gray-300 line-clamp-2">

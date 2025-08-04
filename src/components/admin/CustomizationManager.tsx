@@ -70,7 +70,8 @@ export const CustomizationManager: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [creatingType, setCreatingType] = useState<'battlefield' | 'container' | null>(null);
   const [newCustomization, setNewCustomization] = useState<Partial<BattlefieldCustomization | ContainerCustomization>>({});
-  const { showToast, ToastContainer } = useToast();
+  
+  const { showToast } = useToast();
 
   const containerTypes = [
     { value: 'city', label: 'Cidade', icon: '🏙️', color: 'from-blue-500 to-blue-600' },
@@ -112,7 +113,7 @@ export const CustomizationManager: React.FC = () => {
       if (error) throw error;
       setContainerCustomizations((data || []) as ContainerCustomization[]);
     } catch (err: any) {
-      console.error('Erro ao buscar customizações de containers:', err);
+      console.error('Erro ao buscar customizações de container:', err);
       setError(err.message);
     }
   };
@@ -122,7 +123,7 @@ export const CustomizationManager: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      await Promise.all([
+      await Promise.allSettled([
         fetchBattlefieldCustomizations(),
         fetchContainerCustomizations()
       ]);
@@ -145,9 +146,10 @@ export const CustomizationManager: React.FC = () => {
         .from('battlefield_customizations')
         .insert({
           ...newCustomization,
+          image_url: newCustomization.image_url || '',
           is_active: true,
           created_at: new Date().toISOString()
-        })
+        } as any)
         .select()
         .single();
 
@@ -175,9 +177,11 @@ export const CustomizationManager: React.FC = () => {
         .from('container_customizations')
         .insert({
           ...newCustomization,
+          container_type: (newCustomization as ContainerCustomization).container_type || 'city',
+          image_url: newCustomization.image_url || '',
           is_active: true,
           created_at: new Date().toISOString()
-        })
+        } as any)
         .select()
         .single();
 
@@ -201,9 +205,22 @@ export const CustomizationManager: React.FC = () => {
         return;
       }
 
+      // Filtrar apenas os campos válidos para battlefield_customizations
+      const updateData = {
+        name: editingCustomization.name,
+        description: editingCustomization.description,
+        image_url: editingCustomization.image_url || '',
+        rarity: editingCustomization.rarity,
+        price_coins: editingCustomization.price_coins || 0,
+        price_gems: editingCustomization.price_gems || 0,
+        currency_type: editingCustomization.currency_type,
+        is_active: editingCustomization.is_active,
+        is_special: editingCustomization.is_special
+      } as any;
+
       const { data, error } = await supabase
         .from('battlefield_customizations')
-        .update(editingCustomization)
+        .update(updateData)
         .eq('id', editingId)
         .select()
         .single();
@@ -256,6 +273,23 @@ export const CustomizationManager: React.FC = () => {
     if (!confirm('Tem certeza que deseja excluir esta customização?')) return;
 
     try {
+      // Primeiro, remover todas as referências do usuário
+      const { error: userError } = await supabase
+        .from('user_customizations')
+        .delete()
+        .eq('customization_id', id);
+
+      if (userError) throw userError;
+
+      // Remover todas as compras registradas
+      const { error: purchaseError } = await supabase
+        .from('background_purchases' as any)
+        .delete()
+        .eq('background_id', id);
+
+      if (purchaseError) throw purchaseError;
+
+      // Agora deletar a customização
       const { error } = await supabase
         .from('battlefield_customizations')
         .delete()
@@ -275,6 +309,15 @@ export const CustomizationManager: React.FC = () => {
     if (!confirm('Tem certeza que deseja excluir esta customização?')) return;
 
     try {
+      // Primeiro, remover todas as referências do usuário
+      const { error: userError } = await supabase
+        .from('user_container_customizations')
+        .delete()
+        .eq('customization_id', id);
+
+      if (userError) throw userError;
+
+      // Agora deletar a customização
       const { error } = await supabase
         .from('container_customizations')
         .delete()
@@ -292,17 +335,25 @@ export const CustomizationManager: React.FC = () => {
 
   const toggleBattlefieldActive = async (id: string, currentActive: boolean) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('battlefield_customizations')
         .update({ is_active: !currentActive })
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) throw error;
 
+      // Atualizar estado local imediatamente
       setBattlefieldCustomizations(prev => 
         prev.map(cat => cat.id === id ? { ...cat, is_active: !currentActive } : cat)
       );
+      
       showToast(`Customização de campo de batalha ${!currentActive ? 'ativada' : 'desativada'} com sucesso!`, 'success');
+      
+      // Recarregar dados para garantir sincronização
+      setTimeout(() => {
+        fetchBattlefieldCustomizations();
+      }, 500);
     } catch (err: any) {
       console.error('Erro ao alterar status de battlefield:', err);
       showToast(`Erro ao alterar status: ${err.message}`, 'error');
@@ -318,10 +369,17 @@ export const CustomizationManager: React.FC = () => {
 
       if (error) throw error;
 
+      // Atualizar estado local imediatamente
       setContainerCustomizations(prev => 
         prev.map(cat => cat.id === id ? { ...cat, is_active: !currentActive } : cat)
       );
+      
       showToast(`Customização de container ${!currentActive ? 'ativada' : 'desativada'} com sucesso!`, 'success');
+      
+      // Recarregar dados para garantir sincronização
+      setTimeout(() => {
+        fetchContainerCustomizations();
+      }, 500);
     } catch (err: any) {
       console.error('Erro ao alterar status de container:', err);
       showToast(`Erro ao alterar status: ${err.message}`, 'error');
@@ -365,8 +423,6 @@ export const CustomizationManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <ToastContainer />
-      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -375,6 +431,9 @@ export const CustomizationManager: React.FC = () => {
             Customizações
           </h1>
           <p className="text-gray-300">Gerencie as customizações de campo de batalha e containers</p>
+          {error && (
+            <p className="text-red-400 text-sm mt-2">Erro: {error}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -393,6 +452,8 @@ export const CustomizationManager: React.FC = () => {
           </Button>
         </div>
       </div>
+
+
 
       {/* Create New Customization */}
       {isCreating && (
@@ -724,19 +785,19 @@ export const CustomizationManager: React.FC = () => {
                             </div>
                             <p className="text-gray-300 text-sm">{customization.description}</p>
                             <div className="flex items-center gap-4 mt-2">
-                              {customization.price_coins > 0 && (
+                              {(customization.price_coins || 0) > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Coins className="w-4 h-4 text-yellow-500" />
-                                  <span className="text-yellow-400 text-sm">{customization.price_coins}</span>
+                                  <span className="text-yellow-400 text-sm">{customization.price_coins || 0}</span>
                                 </div>
                               )}
-                              {customization.price_gems > 0 && (
+                              {(customization.price_gems || 0) > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Gem className="w-4 h-4 text-purple-500" />
-                                  <span className="text-purple-400 text-sm">{customization.price_gems}</span>
+                                  <span className="text-purple-400 text-sm">{customization.price_gems || 0}</span>
                                 </div>
                               )}
-                              {(customization.price_coins === 0 && customization.price_gems === 0) && (
+                              {((customization.price_coins || 0) === 0 && (customization.price_gems || 0) === 0) && (
                                 <Badge className="bg-green-600 text-white">GRÁTIS</Badge>
                               )}
                             </div>
@@ -981,19 +1042,19 @@ export const CustomizationManager: React.FC = () => {
                             </div>
                             <p className="text-gray-300 text-sm">{customization.description}</p>
                             <div className="flex items-center gap-4 mt-2">
-                              {customization.price_coins > 0 && (
+                              {(customization.price_coins || 0) > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Coins className="w-4 h-4 text-yellow-500" />
-                                  <span className="text-yellow-400 text-sm">{customization.price_coins}</span>
+                                  <span className="text-yellow-400 text-sm">{customization.price_coins || 0}</span>
                                 </div>
                               )}
-                              {customization.price_gems > 0 && (
+                              {(customization.price_gems || 0) > 0 && (
                                 <div className="flex items-center gap-1">
                                   <Gem className="w-4 h-4 text-purple-500" />
-                                  <span className="text-purple-400 text-sm">{customization.price_gems}</span>
+                                  <span className="text-purple-400 text-sm">{customization.price_gems || 0}</span>
                                 </div>
                               )}
-                              {(customization.price_coins === 0 && customization.price_gems === 0) && (
+                              {((customization.price_coins || 0) === 0 && (customization.price_gems || 0) === 0) && (
                                 <Badge className="bg-green-600 text-white">GRÁTIS</Badge>
                               )}
                             </div>

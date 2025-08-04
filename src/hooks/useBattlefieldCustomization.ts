@@ -37,10 +37,10 @@ export const useBattlefieldCustomization = () => {
         .from('battlefield_customizations')
         .select('*')
         .eq('is_active', true)
-        .order('rarity', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCustomizations(data || []);
+      setCustomizations((data || []) as BattlefieldCustomization[]);
     } catch (err: any) {
       console.error('Erro ao buscar customizações:', err);
       setError(err.message);
@@ -258,12 +258,23 @@ export const useBattlefieldCustomization = () => {
     return '/src/assets/boards_backgrounds/grid-board-background.jpg';
   };
 
+  const isAnimatedBackground = (backgroundUrl: string) => {
+    return backgroundUrl?.includes('.mp4') || backgroundUrl?.includes('animated');
+  };
+
+  const getCurrentBackgroundType = () => {
+    if (equippedCustomization && equippedCustomization.image_url) {
+      return isAnimatedBackground(equippedCustomization.image_url) ? 'video' : 'image';
+    }
+    return 'image';
+  };
+
   const getPremiumBackgrounds = () => {
-    return customizations.filter(c => c.is_special);
+    return customizations.filter(c => c.is_special && c.is_active !== false);
   };
 
   const getFreeBackgrounds = () => {
-    return customizations.filter(c => !c.is_special);
+    return customizations.filter(c => !c.is_special && c.is_active !== false);
   };
 
   useEffect(() => {
@@ -299,6 +310,8 @@ export const useBattlefieldCustomization = () => {
     purchaseCustomization,
     equipCustomization,
     getCurrentBackground,
+    getCurrentBackgroundType,
+    isAnimatedBackground,
     getPremiumBackgrounds,
     getFreeBackgrounds
   };
