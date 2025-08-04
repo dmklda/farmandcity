@@ -26,7 +26,7 @@ export const useCardCopyLimits = () => {
         .order('rarity', { ascending: true });
 
       if (error) throw error;
-      setCopyLimits(data || []);
+      setCopyLimits((data || []) as CardCopyLimit[]);
     } catch (err: any) {
       console.error('Error fetching copy limits:', err);
       setError(err.message);

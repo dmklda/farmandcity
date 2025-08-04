@@ -69,33 +69,12 @@ export const useBattlefieldCustomization = () => {
       const equipped = customizations.find(uc => uc.is_equipped);
       if (equipped && equipped.customization) {
         setEquippedCustomization(equipped.customization);
-      }
-    } catch (err: any) {
-      console.error('Erro ao buscar customizações do usuário:', err);
-      setError(err.message);
-    }
-  };
-
-  const initializeUserCustomizations = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Verificar se o usuário já tem customizações
-      const { data: existingCustomizations, error: checkError } = await supabase
-        .from('user_customizations')
-        .select('id')
-        .eq('user_id', user.id)
-        .limit(1);
-
-      if (checkError) throw checkError;
-
-      // Se não tem nenhuma customização, dar o Campo Clássico
-      if (!existingCustomizations || existingCustomizations.length === 0) {
+      } else if (customizations.length === 0) {
+        // Se o usuário não tem nenhuma customização, dar o Campo Clássico gratuitamente
         await giveDefaultCustomization(user.id);
       }
     } catch (err: any) {
-      console.error('Erro ao inicializar customizações do usuário:', err);
+      console.error('Erro ao buscar customizações do usuário:', err);
       setError(err.message);
     }
   };
@@ -133,7 +112,7 @@ export const useBattlefieldCustomization = () => {
     }
   };
 
-  const purchaseCustomization = async (customizationId: string) => {
+  const purchaseCustomization = async (customizationId: string, purchaseType: 'coins' | 'gems' | 'real_money' = 'coins') => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -152,9 +131,69 @@ export const useBattlefieldCustomization = () => {
         throw new Error('Customização não encontrada');
       }
 
-      // Aqui você implementaria a lógica de compra (verificar moedas/gems)
-      // Por enquanto, vamos apenas adicionar à coleção do usuário
+      // Verificar se é uma customização premium
+      const isPremium = customization.is_special;
+      
+      if (isPremium) {
+        // Para backgrounds premium, verificar se o usuário tem moedas/gemas suficientes
+        const { data: currencyData, error: currencyError } = await supabase
+          .from('player_currency')
+          .select('coins, gems')
+          .eq('player_id', user.id)
+          .single();
 
+        if (currencyError) throw currencyError;
+
+        const currentCoins = currencyData?.coins || 0;
+        const currentGems = currencyData?.gems || 0;
+
+        if (purchaseType === 'coins' && customization.price_coins && currentCoins < customization.price_coins) {
+          throw new Error(`Moedas insuficientes. Você tem ${currentCoins} moedas, mas precisa de ${customization.price_coins} moedas.`);
+        }
+
+        if (purchaseType === 'gems' && customization.price_gems && currentGems < customization.price_gems) {
+          throw new Error(`Gemas insuficientes. Você tem ${currentGems} gemas, mas precisa de ${customization.price_gems} gemas.`);
+        }
+
+        // Deduzir moedas/gemas
+        const updateData: any = {};
+        if (purchaseType === 'coins' && customization.price_coins) {
+          updateData.coins = currentCoins - customization.price_coins;
+        }
+        if (purchaseType === 'gems' && customization.price_gems) {
+          updateData.gems = currentGems - customization.price_gems;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error: updateError } = await supabase
+            .from('player_currency')
+            .update(updateData)
+            .eq('player_id', user.id);
+
+          if (updateError) throw updateError;
+        }
+
+        // Registrar a compra na tabela de background_purchases
+        const purchaseData: any = {
+          user_id: user.id,
+          background_id: customizationId,
+          purchase_type: purchaseType,
+          amount_paid: purchaseType === 'coins' ? customization.price_coins : customization.price_gems,
+          currency_used: purchaseType
+        };
+
+        if (purchaseType === 'real_money') {
+          purchaseData.real_money_amount = customization.price_coins ? customization.price_coins / 100 : 0;
+        }
+
+        const { error: purchaseError } = await supabase
+          .from('background_purchases')
+          .insert(purchaseData);
+
+        if (purchaseError) throw purchaseError;
+      }
+
+      // Adicionar à coleção do usuário
       const { data, error } = await supabase
         .from('user_customizations')
         .insert({
@@ -219,14 +258,34 @@ export const useBattlefieldCustomization = () => {
     return '/src/assets/boards_backgrounds/grid-board-background.jpg';
   };
 
+  const getPremiumBackgrounds = () => {
+    return customizations.filter(c => c.is_special);
+  };
+
+  const getFreeBackgrounds = () => {
+    return customizations.filter(c => !c.is_special);
+  };
+
   useEffect(() => {
-    const initialize = async () => {
-      await fetchCustomizations();
-      await initializeUserCustomizations();
-      await fetchUserCustomizations();
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Executar todas as funções de busca em paralelo
+        await Promise.all([
+          fetchCustomizations(),
+          fetchUserCustomizations()
+        ]);
+      } catch (err: any) {
+        console.error('Erro ao inicializar dados de battlefield:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
-    
-    initialize();
+
+    initializeData();
   }, []);
 
   return {
@@ -237,9 +296,10 @@ export const useBattlefieldCustomization = () => {
     error,
     fetchCustomizations,
     fetchUserCustomizations,
-    initializeUserCustomizations,
     purchaseCustomization,
     equipCustomization,
-    getCurrentBackground
+    getCurrentBackground,
+    getPremiumBackgrounds,
+    getFreeBackgrounds
   };
 }; 

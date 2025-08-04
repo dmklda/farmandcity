@@ -51,9 +51,6 @@ export const useUserSettings = () => {
 
   const fetchUserSettings = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setError('Usuário não autenticado');
@@ -97,8 +94,6 @@ export const useUserSettings = () => {
     } catch (err: any) {
       console.error('Erro ao buscar configurações:', err);
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -289,9 +284,26 @@ export const useUserSettings = () => {
   };
 
   useEffect(() => {
-    fetchUserSettings();
-    fetchCustomizations();
-    fetchUserCustomizations();
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Executar todas as funções de busca em paralelo
+        await Promise.all([
+          fetchUserSettings(),
+          fetchCustomizations(),
+          fetchUserCustomizations()
+        ]);
+      } catch (err: any) {
+        console.error('Erro ao inicializar dados:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
   return {

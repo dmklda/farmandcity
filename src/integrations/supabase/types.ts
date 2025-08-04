@@ -1021,6 +1021,7 @@ export type Database = {
           pack_type?: string | null
           price_coins?: number | null
           price_gems?: number | null
+          price_dollars?: number | null
           purchase_time_limit?: unknown | null
           rarity?: string | null
           rotation_date?: string | null
@@ -1048,6 +1049,7 @@ export type Database = {
           pack_type?: string | null
           price_coins?: number | null
           price_gems?: number | null
+          price_dollars?: number | null
           purchase_time_limit?: unknown | null
           rarity?: string | null
           rotation_date?: string | null
@@ -1391,6 +1393,38 @@ export type Database = {
           }
         ]
       }
+      daily_card_purchases: {
+        Row: {
+          id: string
+          player_id: string | null
+          card_id: string | null
+          rotation_date: string | null
+          purchased_at: string | null
+        }
+        Insert: {
+          id?: string
+          player_id?: string | null
+          card_id?: string | null
+          rotation_date?: string | null
+          purchased_at?: string | null
+        }
+        Update: {
+          id?: string
+          player_id?: string | null
+          card_id?: string | null
+          rotation_date?: string | null
+          purchased_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_card_purchases_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1460,6 +1494,40 @@ export type Database = {
       test_open_pack: {
         Args: { pack_id: string }
         Returns: Json
+      }
+      get_starter_pack_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          pack: {
+            id: string
+            name: string
+            description: string
+            price: number
+            is_starter_pack: boolean
+            max_purchases_per_player: number
+          }
+          items: Array<{
+            card_id: string
+            card_name: string
+            card_type: string
+            card_rarity: string
+            quantity: number
+          }>
+          can_purchase: boolean
+        }
+      }
+      purchase_starter_pack: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          success: boolean
+          message: string
+          purchase_id?: string
+          cards_added?: number
+        }
+      }
+      can_purchase_starter_pack: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
     }
     Enums: {

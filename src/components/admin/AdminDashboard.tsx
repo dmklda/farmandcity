@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../integrations/supabase/client';
-import { CardManager } from './CardManager';
-import { PackManager } from './PackManager';
-import { EventManager } from './EventManager';
-import { DailyRotationManager } from './DailyRotationManager';
-import { ShopManager } from './ShopManager';
-import { UserStatsPanel } from './UserStatsPanel';
-import { GameStatsPanel } from './GameStatsPanel';
-import { MonetizationPanel } from './MonetizationPanel';
-import { AdvancedStatsPanel } from './AdvancedStatsPanel';
 import { Button } from '../ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
-import { Users, FileText, TrendingUp, DollarSign, LogOut, User } from 'lucide-react';
+import { Users, FileText, TrendingUp, DollarSign, LogOut, User, CreditCard, Package, Palette, Activity } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, loading, signOut, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -156,55 +147,122 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="cards" className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
-            <TabsTrigger value="cards">Cartas</TabsTrigger>
-            <TabsTrigger value="packs">Packs</TabsTrigger>
-            <TabsTrigger value="shop">Loja</TabsTrigger>
-            <TabsTrigger value="events">Eventos</TabsTrigger>
-            <TabsTrigger value="rotation">Rotação Diária</TabsTrigger>
-            <TabsTrigger value="users">Usuários</TabsTrigger>
-            <TabsTrigger value="stats">Estatísticas</TabsTrigger>
-            <TabsTrigger value="advanced-stats">Estatísticas Avançadas</TabsTrigger>
-            <TabsTrigger value="monetization">Monetização</TabsTrigger>
-          </TabsList>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card 
+            className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/admin/cards')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Gerenciar Cartas</h3>
+                  <p className="text-gray-400 text-sm">Criar e editar cartas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="cards" className="mt-6">
-            <CardManager onStatsUpdate={fetchDashboardStats} />
-          </TabsContent>
+          <Card 
+            className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-blue-600/30 hover:border-blue-500/60 transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/admin/packs')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Packs e Boosters</h3>
+                  <p className="text-gray-400 text-sm">Gerenciar pacotes</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="packs" className="mt-6">
-            <PackManager />
-          </TabsContent>
+          <Card 
+            className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-purple-600/30 hover:border-purple-500/60 transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/admin/customizations')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Palette className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Customizações</h3>
+                  <p className="text-gray-400 text-sm">Campos e containers</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="shop" className="mt-6">
-            <ShopManager />
-          </TabsContent>
+          <Card 
+            className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-green-600/30 hover:border-green-500/60 transition-all duration-300 cursor-pointer"
+            onClick={() => navigate('/admin/users')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Usuários</h3>
+                  <p className="text-gray-400 text-sm">Gerenciar jogadores</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <TabsContent value="events" className="mt-6">
-            <EventManager />
-          </TabsContent>
+        {/* Recent Activity */}
+        <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-500" />
+              Atividade Recente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-slate-700/30 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">Novas cartas criadas</p>
+                  <p className="text-gray-400 text-sm">5 cartas foram adicionadas ao sistema</p>
+                </div>
+                <span className="text-gray-500 text-sm">2h atrás</span>
+              </div>
 
-          <TabsContent value="rotation" className="mt-6">
-            <DailyRotationManager />
-          </TabsContent>
+              <div className="flex items-center gap-4 p-4 bg-slate-700/30 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                  <Package className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">Packs atualizados</p>
+                  <p className="text-gray-400 text-sm">3 packs foram modificados</p>
+                </div>
+                <span className="text-gray-500 text-sm">4h atrás</span>
+              </div>
 
-          <TabsContent value="users" className="mt-6">
-            <UserStatsPanel />
-          </TabsContent>
-
-          <TabsContent value="stats" className="mt-6">
-            <GameStatsPanel />
-          </TabsContent>
-
-          <TabsContent value="advanced-stats" className="mt-6">
-            <AdvancedStatsPanel />
-          </TabsContent>
-
-          <TabsContent value="monetization" className="mt-6">
-            <MonetizationPanel onStatsUpdate={fetchDashboardStats} />
-          </TabsContent>
-        </Tabs>
+              <div className="flex items-center gap-4 p-4 bg-slate-700/30 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <Palette className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-medium">Customizações ativas</p>
+                  <p className="text-gray-400 text-sm">2 novas customizações disponíveis</p>
+                </div>
+                <span className="text-gray-500 text-sm">6h atrás</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -242,7 +242,7 @@ export const useShop = () => {
       }
 
       // Buscar detalhes das cartas separadamente
-      const cardIds = data.map(item => item.card_id);
+      const cardIds = data.map(item => item.card_id).filter((id): id is string => id !== null);
       const { data: cardsData, error: cardsError } = await supabase
         .from('cards')
         .select('id, name, type, rarity, effect, cost_coins, cost_food, cost_materials, cost_population')
@@ -274,10 +274,10 @@ export const useShop = () => {
       // Mapear os dados
       const mappedCards: DailyRotationCard[] = data.map(item => {
         const cardDetails = cardsData?.find(card => card.id === item.card_id);
-        const isPurchased = purchasedCardIds.has(item.card_id);
+        const isPurchased = purchasedCardIds.has(item.card_id || '');
         
         return {
-          card_id: item.card_id,
+          card_id: item.card_id || '',
           card_name: cardDetails?.name || 'Carta Desconhecida',
           card_type: cardDetails?.type || 'unknown',
           card_rarity: cardDetails?.rarity || 'common',
@@ -290,7 +290,7 @@ export const useShop = () => {
           price_gems: item.price_gems || 0,
           currency_type: item.currency_type,
           discount_percentage: item.discount_percentage || 0,
-          slot_type: item.slot_type,
+          slot_type: item.slot_type || '',
           is_purchased: isPurchased // Nova propriedade
         };
       });

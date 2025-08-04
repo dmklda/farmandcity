@@ -17,7 +17,8 @@ import {
   User,
   Gift,
   Calendar,
-  Zap
+  Zap,
+  Palette
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/button';
@@ -97,6 +98,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isCollapsed, onToggl
       icon: Database,
       path: '/admin/logs',
       description: 'Logs e auditoria'
+    },
+    {
+      title: 'Customizações',
+      icon: Palette,
+      path: '/admin/customizations',
+      description: 'Campos de batalha e containers'
     },
     {
       title: 'Configurações',

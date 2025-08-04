@@ -51,7 +51,7 @@ export const useAdminPermissions = () => {
             setAdminRole(null);
             setError('Permissões expiradas');
           } else {
-            setAdminRole(data);
+            setAdminRole(data as AdminRole);
           }
         } else {
           setAdminRole(null);

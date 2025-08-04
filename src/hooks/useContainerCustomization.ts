@@ -47,7 +47,7 @@ export const useContainerCustomization = () => {
         .order('rarity', { ascending: false });
 
       if (error) throw error;
-      setCustomizations(data || []);
+      setCustomizations((data || []) as ContainerCustomization[]);
     } catch (err: any) {
       console.error('Erro ao buscar customizações de containers:', err);
       setError(err.message);
@@ -70,7 +70,7 @@ export const useContainerCustomization = () => {
       if (error) throw error;
 
       const customizations = data || [];
-      setUserCustomizations(customizations);
+      setUserCustomizations(customizations as UserContainerCustomization[]);
 
       // Encontrar customizações equipadas por tipo
       const equipped: Record<string, ContainerCustomization | null> = {
@@ -82,7 +82,7 @@ export const useContainerCustomization = () => {
 
       customizations.forEach(uc => {
         if (uc.is_equipped && uc.customization) {
-          equipped[uc.container_type] = uc.customization;
+          equipped[uc.container_type] = uc.customization as ContainerCustomization;
         }
       });
 
@@ -101,7 +101,7 @@ export const useContainerCustomization = () => {
       }
 
       // Buscar informações da customização
-      const customization = customizations.find(c => c.id === customizationId);
+      const customization = customizations.find(c => c.id === customizationId) as ContainerCustomization;
       if (!customization) {
         throw new Error('Customização não encontrada');
       }
@@ -195,8 +195,25 @@ export const useContainerCustomization = () => {
   };
 
   useEffect(() => {
-    fetchCustomizations();
-    fetchUserCustomizations();
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Executar todas as funções de busca em paralelo
+        await Promise.all([
+          fetchCustomizations(),
+          fetchUserCustomizations()
+        ]);
+      } catch (err: any) {
+        console.error('Erro ao inicializar dados de containers:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
   return {

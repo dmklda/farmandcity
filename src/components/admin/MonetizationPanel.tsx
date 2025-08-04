@@ -16,7 +16,8 @@ import {
   Star,
   Calendar,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,6 +34,7 @@ interface TransactionStats {
   userStats: any[];
   dailyStats: any[];
   monthlyStats: any[];
+  backgroundStats: any[];
 }
 
 export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpdate }) => {
@@ -44,7 +46,8 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
     recentTransactions: [],
     userStats: [],
     dailyStats: [],
-    monthlyStats: []
+    monthlyStats: [],
+    backgroundStats: []
   });
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
@@ -104,12 +107,25 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
 
       if (starterError) throw starterError;
 
+      // Buscar compras de backgrounds premium
+      const { data: backgroundPurchases, error: backgroundError } = await supabase
+        .from('background_purchases')
+        .select(`
+          *,
+          battlefield_customizations (name, rarity),
+          profiles (display_name, email)
+        `)
+        .order('purchased_at', { ascending: false });
+
+      if (backgroundError) throw backgroundError;
+
       // Calcular estatísticas
       const allTransactions = [
         ...(shopPurchases || []),
         ...(cardPurchases || []),
         ...(packPurchases || []),
-        ...(starterPackPurchases || [])
+        ...(starterPackPurchases || []),
+        ...(backgroundPurchases || [])
       ];
 
       const totalRevenue = calculateTotalRevenue(allTransactions);
@@ -119,6 +135,7 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
       const userStats = calculateUserStats(allTransactions);
       const dailyStats = calculateDailyStats(allTransactions);
       const monthlyStats = calculateMonthlyStats(allTransactions);
+      const backgroundStats = calculateBackgroundStats(backgroundPurchases || []);
 
       setStats({
         totalRevenue,
@@ -128,7 +145,8 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
         recentTransactions: allTransactions.slice(0, 20),
         userStats,
         dailyStats,
-        monthlyStats
+        monthlyStats,
+        backgroundStats
       });
 
       onStatsUpdate();
@@ -146,6 +164,18 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
       if (transaction.shop_items?.price_dollars) {
         return total + parseFloat(transaction.shop_items.price_dollars);
       }
+      // Para backgrounds premium
+      if (transaction.battlefield_customizations) {
+        if (transaction.purchase_type === 'real_money') {
+          return total + parseFloat(transaction.real_money_amount || '0');
+        }
+        if (transaction.purchase_type === 'gems') {
+          return total + (transaction.amount_paid * 0.1); // Estimativa: 1 gema = $0.10
+        }
+        if (transaction.purchase_type === 'coins') {
+          return total + (transaction.amount_paid / 100); // Estimativa: 100 moedas = $1
+        }
+      }
       // Para outras transações, estimar valor baseado em moedas/gemas
       if (transaction.total_price_coins) {
         return total + (transaction.total_price_coins / 100); // Estimativa: 100 moedas = $1
@@ -161,10 +191,19 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
     const itemCounts: { [key: string]: number } = {};
     
     transactions.forEach(transaction => {
-      const itemName = transaction.shop_items?.name || 
-                      transaction.booster_packs?.name || 
-                      transaction.special_packs?.name || 
-                      'Carta Individual';
+      let itemName = 'Item Desconhecido';
+      
+      if (transaction.shop_items?.name) {
+        itemName = transaction.shop_items.name;
+      } else if (transaction.booster_packs?.name) {
+        itemName = transaction.booster_packs.name;
+      } else if (transaction.special_packs?.name) {
+        itemName = transaction.special_packs.name;
+      } else if (transaction.battlefield_customizations?.name) {
+        itemName = `Background: ${transaction.battlefield_customizations.name}`;
+      } else {
+        itemName = 'Carta Individual';
+      }
       
       itemCounts[itemName] = (itemCounts[itemName] || 0) + 1;
     });
@@ -210,6 +249,17 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
     if (transaction.shop_items?.price_dollars) {
       return parseFloat(transaction.shop_items.price_dollars);
     }
+    if (transaction.battlefield_customizations) {
+      if (transaction.purchase_type === 'real_money') {
+        return parseFloat(transaction.real_money_amount || '0');
+      }
+      if (transaction.purchase_type === 'gems') {
+        return transaction.amount_paid * 0.1;
+      }
+      if (transaction.purchase_type === 'coins') {
+        return transaction.amount_paid / 100;
+      }
+    }
     if (transaction.total_price_coins) {
       return transaction.total_price_coins / 100;
     }
@@ -217,6 +267,37 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
       return transaction.total_price_gems * 0.1;
     }
     return 0;
+  };
+
+  const calculateBackgroundStats = (backgroundPurchases: any[]): any[] => {
+    const backgroundStats: { [key: string]: any } = {};
+    
+    backgroundPurchases.forEach(purchase => {
+      const backgroundName = purchase.battlefield_customizations?.name || 'Background Desconhecido';
+      const rarity = purchase.battlefield_customizations?.rarity || 'unknown';
+      
+      if (!backgroundStats[backgroundName]) {
+        backgroundStats[backgroundName] = {
+          name: backgroundName,
+          rarity: rarity,
+          totalPurchases: 0,
+          totalRevenue: 0,
+          purchaseTypes: {
+            coins: 0,
+            gems: 0,
+            real_money: 0
+          }
+        };
+      }
+      
+      backgroundStats[backgroundName].totalPurchases++;
+      backgroundStats[backgroundName].totalRevenue += calculateTransactionValue(purchase);
+      backgroundStats[backgroundName].purchaseTypes[purchase.purchase_type]++;
+    });
+
+    return Object.values(backgroundStats)
+      .sort((a: any, b: any) => b.totalPurchases - a.totalPurchases)
+      .slice(0, 10);
   };
 
   const calculateDailyStats = (transactions: any[]): any[] => {
@@ -280,6 +361,16 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getRarityColor = (rarity: string): string => {
+    switch (rarity) {
+      case 'common': return 'text-gray-400';
+      case 'rare': return 'text-blue-400';
+      case 'epic': return 'text-purple-400';
+      case 'legendary': return 'text-yellow-400';
+      default: return 'text-gray-400';
+    }
   };
 
   if (loading) {
@@ -356,9 +447,10 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
 
       {/* Tabs para diferentes visualizações */}
       <Tabs defaultValue="transactions" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="transactions">Transações Recentes</TabsTrigger>
           <TabsTrigger value="top-items">Itens Mais Vendidos</TabsTrigger>
+          <TabsTrigger value="backgrounds">Backgrounds Premium</TabsTrigger>
           <TabsTrigger value="users">Usuários</TabsTrigger>
           <TabsTrigger value="daily">Estatísticas Diárias</TabsTrigger>
           <TabsTrigger value="monthly">Estatísticas Mensais</TabsTrigger>
@@ -378,13 +470,18 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
                   <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-yellow-600/20 rounded-full flex items-center justify-center">
-                        <ShoppingCart className="w-5 h-5 text-yellow-400" />
+                        {transaction.battlefield_customizations ? (
+                          <Palette className="w-5 h-5 text-yellow-400" />
+                        ) : (
+                          <ShoppingCart className="w-5 h-5 text-yellow-400" />
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-white">
                           {transaction.shop_items?.name || 
                            transaction.booster_packs?.name || 
                            transaction.special_packs?.name || 
+                           transaction.battlefield_customizations?.name ||
                            'Carta Individual'}
                         </p>
                         <p className="text-sm text-gray-400">
@@ -433,6 +530,49 @@ export const MonetizationPanel: React.FC<MonetizationPanelProps> = ({ onStatsUpd
                     <div className="text-right">
                       <p className="font-bold text-yellow-400">
                         {item.count} unidades
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="backgrounds" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="w-5 h-5" />
+                Backgrounds Premium Mais Vendidos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {stats.backgroundStats.map((background, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-purple-600 text-white">
+                        #{index + 1}
+                      </Badge>
+                      <div>
+                        <p className="font-medium text-white">{background.name}</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm ${getRarityColor(background.rarity)}`}>
+                            {background.rarity.toUpperCase()}
+                          </span>
+                          <span className="text-sm text-gray-400">
+                            {background.totalPurchases} compras
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-purple-400">
+                        {formatCurrency(background.totalRevenue)}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {background.purchaseTypes.gems} gemas, {background.purchaseTypes.coins} moedas
                       </p>
                     </div>
                   </div>

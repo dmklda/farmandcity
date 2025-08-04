@@ -43,7 +43,7 @@ export const usePackOpening = () => {
         throw error;
       }
 
-      return data;
+      return data as OpenedCard[] | null;
     } catch (err: any) {
       console.error('Erro ao abrir pack:', err);
       setError(err.message || 'Erro ao abrir pack');

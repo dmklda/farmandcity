@@ -6,13 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
 import { useShop } from '../hooks/useShop';
 import { useAppContext } from '../contexts/AppContext';
-import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History, Image } from 'lucide-react';
+import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, History, Image, Palette } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './ui/toast';
 import { SpecialPacksDisplay } from './SpecialPacksDisplay';
 import { getRarityIconPNG } from './IconComponentsPNG';
 import DailyCardComponent from './DailyCardComponent';
 import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
+import { useContainerCustomization } from '../hooks/useContainerCustomization';
 
 export const Shop: React.FC = () => {
   const { 
@@ -45,6 +46,16 @@ export const Shop: React.FC = () => {
     loading: customizationsLoading,
     error: customizationsError
   } = useBattlefieldCustomization();
+
+  const {
+    customizations: containerCustomizations,
+    userCustomizations: userContainerCustomizations,
+    equippedCustomizations: equippedContainerCustomizations,
+    purchaseCustomization: purchaseContainerCustomization,
+    equipCustomization: equipContainerCustomization,
+    loading: containerCustomizationsLoading,
+    error: containerCustomizationsError
+  } = useContainerCustomization();
   
   const { currency, currencyLoading, refreshCurrency } = useAppContext();
   const { showToast, ToastContainer } = useToast();
@@ -118,6 +129,27 @@ export const Shop: React.FC = () => {
       showToast(`Erro ao equipar customização: ${err.message}`, 'error');
     } finally {
       setPurchasing(false);
+    }
+  };
+
+  const handlePurchaseContainerCustomization = async (customizationId: string) => {
+    try {
+      setPurchasing(true);
+      await purchaseContainerCustomization(customizationId);
+      showToast('Customização de container comprada com sucesso!', 'success');
+    } catch (err: any) {
+      showToast(`Erro na compra: ${err.message}`, 'error');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleEquipContainerCustomization = async (customizationId: string, containerType: string) => {
+    try {
+      await equipContainerCustomization(customizationId, containerType);
+      showToast('Customização de container equipada com sucesso!', 'success');
+    } catch (err: any) {
+      showToast(`Erro ao equipar: ${err.message}`, 'error');
     }
   };
 
@@ -291,6 +323,148 @@ export const Shop: React.FC = () => {
             ) : (
               <Button
                 onClick={() => handleEquipCustomization(customization.id)}
+                className={`w-full ${isEquipped ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                disabled={purchasing || isEquipped}
+              >
+                {purchasing ? 'Equipando...' : isEquipped ? 'Equipado' : 'Equipar'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+  const renderContainerCustomization = (customization: any) => {
+    const isOwned = userContainerCustomizations?.some(uc => uc.customization_id === customization.id);
+    const isEquipped = equippedContainerCustomizations[customization.container_type]?.id === customization.id;
+    const isFree = customization.price_coins === 0 && customization.price_gems === 0;
+    
+    const getContainerTypeColor = (type: string) => {
+      switch (type) {
+        case 'city': return 'from-blue-500 to-blue-600';
+        case 'farm': return 'from-green-500 to-green-600';
+        case 'landmark': return 'from-purple-500 to-purple-600';
+        case 'events': return 'from-orange-500 to-orange-600';
+        default: return 'from-gray-500 to-gray-600';
+      }
+    };
+
+    const getContainerTypeIcon = (type: string) => {
+      switch (type) {
+        case 'city': return '🏙️';
+        case 'farm': return '🌾';
+        case 'landmark': return '🏛️';
+        case 'events': return '🎪';
+        default: return '📦';
+      }
+    };
+
+    const getContainerTypeName = (type: string) => {
+      switch (type) {
+        case 'city': return 'Cidade';
+        case 'farm': return 'Fazenda';
+        case 'landmark': return 'Marco';
+        case 'events': return 'Eventos';
+        default: return 'Container';
+      }
+    };
+    
+    return (
+      <Card key={customization.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-blue-600/30 hover:border-blue-500/60 transition-all duration-300 group hover:shadow-xl">
+        {/* Glow effect */}
+        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getRarityColor(customization.rarity)} blur-xl -z-10`} />
+        
+        {/* Rarity badge */}
+        <div className="absolute top-3 right-3 z-10">
+          {getRarityBadge(customization.rarity)}
+        </div>
+
+        {/* Container type badge */}
+        <div className="absolute top-3 left-3 z-10">
+          <Badge className={`bg-gradient-to-r ${getContainerTypeColor(customization.container_type)} text-white border-0`}>
+            {getContainerTypeIcon(customization.container_type)} {getContainerTypeName(customization.container_type)}
+          </Badge>
+        </div>
+
+        {/* Free badge */}
+        {isFree && (
+          <div className="absolute top-12 left-3 z-10">
+            <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0">
+              GRÁTIS
+            </Badge>
+          </div>
+        )}
+        
+        <div className="p-6">
+          {/* Customization Preview */}
+          <div className="w-full h-32 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg mb-4 flex items-center justify-center shadow-lg overflow-hidden">
+            <img 
+              src={customization.image_url || ''} 
+              alt={customization.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLElement;
+                target.style.display = 'none';
+                const nextSibling = target.nextElementSibling as HTMLElement;
+                if (nextSibling) {
+                  nextSibling.style.display = 'flex';
+                }
+              }}
+            />
+            <div className="w-full h-full flex items-center justify-center" style={{ display: 'none' }}>
+              <Shield className="w-12 h-12 text-white" />
+            </div>
+          </div>
+
+          <h3 className="text-xl font-bold text-white mb-2 text-center">
+            {customization.name}
+          </h3>
+          
+          <p className="text-gray-300 text-sm mb-4 text-center min-h-[40px]">
+            {customization.description}
+          </p>
+
+          <Separator className="my-4 bg-blue-600/30" />
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              {isFree ? (
+                <div className="flex items-center gap-1">
+                  <span className="text-lg">🎁</span>
+                  <span className="text-xl font-bold text-green-400">GRÁTIS</span>
+                </div>
+              ) : (
+                <>
+                  {customization.price_coins > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-5 h-5 text-yellow-500" />
+                      <span className="text-xl font-bold text-yellow-400">{customization.price_coins}</span>
+                    </div>
+                  )}
+                  {customization.price_gems > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Gem className="w-5 h-5 text-purple-500" />
+                      <span className="text-xl font-bold text-purple-400">{customization.price_gems}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {!isOwned ? (
+              <Button
+                onClick={() => handlePurchaseContainerCustomization(customization.id)}
+                className={`w-full ${isFree ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                disabled={purchasing}
+              >
+                {purchasing ? 'Obtendo...' : isFree ? 'Obter Grátis' : 'Comprar'}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => handleEquipContainerCustomization(customization.id, customization.container_type)}
                 className={`w-full ${isEquipped ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
                 disabled={purchasing || isEquipped}
               >
@@ -486,7 +660,7 @@ export const Shop: React.FC = () => {
 
       {/* Tabs da Loja */}
               <Tabs defaultValue="special" className="w-full">
-                                           <TabsList className="grid w-full grid-cols-8 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
+                                           <TabsList className="grid w-full grid-cols-9 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
              <TabsTrigger value="special" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
                <Star className="h-4 w-4" />
                Especiais
@@ -514,6 +688,10 @@ export const Shop: React.FC = () => {
              <TabsTrigger value="customizations" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
                <Image className="h-4 w-4" />
                Campos
+             </TabsTrigger>
+             <TabsTrigger value="containers" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+               <Shield className="h-4 w-4" />
+               Containers
              </TabsTrigger>
              <TabsTrigger value="history" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
                <History className="h-4 w-4" />
@@ -634,6 +812,32 @@ export const Shop: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {customizations?.map(customization => renderCustomization(customization))}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="containers" className="mt-6">
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Shield className="w-6 h-6 text-blue-400" />
+              Customizações de Containers
+              <Badge className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                Personalize seus containers
+              </Badge>
+            </h3>
+            
+            {/* Temporary Disabled Message */}
+            <div className="text-center py-12">
+              <Palette className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">Funcionalidade Temporariamente Desabilitada</p>
+              <p className="text-gray-500">As customizações de containers estão temporariamente indisponíveis</p>
+            </div>
+
+            {/* 
+            // TEMPORARILY COMMENTED OUT - CONTAINER CUSTOMIZATIONS LOGIC
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {containerCustomizations?.map(customization => renderContainerCustomization(customization))}
+            </div>
+            */}
           </div>
         </TabsContent>
 

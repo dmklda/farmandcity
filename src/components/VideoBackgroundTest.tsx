@@ -1,5 +1,5 @@
 import React from 'react';
-import videoBackground from '../assets/social_u1116686729_Top-down_panoramic_view_of_a_fantasy_board_game_m_7d50ae5f-3639-4f24-84ae-9aca1f26cec0_3.mp4';
+import videoBackground from '../assets/main_background.mp4';
 
 export const VideoBackgroundTest: React.FC = () => {
   return (

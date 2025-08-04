@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Gift,
-  Calendar
+  Calendar,
+  Palette
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -37,6 +38,7 @@ const menuItems = [
   { id: 'monetization', label: 'Monetização', description: 'Pacotes e vendas', icon: DollarSign },
   { id: 'reports', label: 'Relatórios', description: 'Relatórios gerenciais', icon: FileBarChart },
   { id: 'logs', label: 'Logs do Sistema', description: 'Logs e auditoria', icon: ScrollText },
+  { id: 'customizations', label: 'Customizações', description: 'Campos de batalha e containers', icon: Palette },
   { id: 'settings', label: 'Configurações', description: 'Configurações gerais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
 ];

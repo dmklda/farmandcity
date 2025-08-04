@@ -42,7 +42,7 @@ export const useCatastrophes = () => {
         .order('rarity', { ascending: true });
 
       if (error) throw error;
-      setCatastrophes(data || []);
+      setCatastrophes((data || []) as Catastrophe[]);
     } catch (err: any) {
       console.error('Error fetching catastrophes:', err);
       setError(err.message);
@@ -71,7 +71,7 @@ export const useCatastrophes = () => {
         .order('turn_triggered', { ascending: true });
 
       if (error) throw error;
-      setGameCatastrophes(data || []);
+      setGameCatastrophes((data || []) as GameCatastrophe[]);
     } catch (err: any) {
       console.error('Error fetching game catastrophes:', err);
       setError(err.message);
@@ -101,7 +101,7 @@ export const useCatastrophes = () => {
       if (error) throw error;
       
       // Atualizar lista local
-      setGameCatastrophes(prev => [...prev, data]);
+      setGameCatastrophes(prev => [...prev, data as GameCatastrophe]);
       
       return data;
     } catch (err: any) {
@@ -130,7 +130,7 @@ export const useCatastrophes = () => {
       setGameCatastrophes(prev => 
         prev.map(cat => 
           cat.id === catastropheId 
-            ? { ...cat, resolved: true, resolved_at: data.resolved_at }
+            ? { ...cat, resolved: true, resolved_at: data.resolved_at } as GameCatastrophe
             : cat
         )
       );

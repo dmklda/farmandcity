@@ -15,6 +15,7 @@ import { SystemLogsPage } from './admin/SystemLogsPage';
 import { SettingsPage } from './admin/SettingsPage';
 import { SecurityPage } from './admin/SecurityPage';
 import { UsersPage } from './admin/UsersPage';
+import { CustomizationsPage } from './admin/CustomizationsPage';
 
 export const AdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -45,6 +46,8 @@ export const AdminPage: React.FC = () => {
         return <ReportsPage />;
       case 'logs':
         return <SystemLogsPage />;
+      case 'customizations':
+        return <CustomizationsPage />;
       case 'settings':
         return <SettingsPage />;
       case 'security':
