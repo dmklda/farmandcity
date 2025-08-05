@@ -41,6 +41,7 @@ export const useCards = () => {
         },
         rarity: adminCard.rarity,
         activation: getActivationDescription(adminCard),
+        artworkUrl: adminCard.art_url || undefined,
       }));
 
       setCards(gameCards);

@@ -98,6 +98,7 @@ export const usePlayerCards = () => {
             },
             rarity: adminCard.rarity,
             activation: getActivationDescription(adminCard),
+            artworkUrl: adminCard.art_url || undefined,
           });
         }
       });
@@ -165,6 +166,7 @@ export const usePlayerCards = () => {
             },
             rarity: adminCard.rarity,
             activation: getActivationDescription(adminCard),
+            artworkUrl: adminCard.art_url || undefined,
           });
         }
       });

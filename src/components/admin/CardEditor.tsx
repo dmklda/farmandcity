@@ -12,6 +12,7 @@ import { Switch } from '../../components/ui/switch';
 import { X, Upload, Eye, Save, Copy, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { CardValidator } from './CardValidator';
+import { cn } from '../../lib/utils';
 
 interface CardEditorProps {
   card?: AdminCard | null;
@@ -60,11 +61,38 @@ export const CardEditor: React.FC<CardEditorProps> = ({
         ...card,
         tags: card.tags || []
       });
-      if (card.art_url) {
-        setArtPreview(card.art_url);
-      }
+      // Sempre definir o artPreview se houver art_url, mesmo se for uma string vazia
+      setArtPreview(card.art_url || '');
+    } else {
+      // Reset para nova carta
+      setFormData({
+        name: '',
+        type: 'farm',
+        rarity: 'common',
+        cost_coins: 0,
+        cost_food: 0,
+        cost_materials: 0,
+        cost_population: 0,
+        effect: '',
+        effect_logic: '',
+        use_per_turn: 1,
+        is_reactive: false,
+        is_active: true,
+        tags: [],
+        art_url: '',
+        frame_url: ''
+      });
+      setArtPreview('');
+      setArtFile(null);
     }
   }, [card]);
+
+  // Sincronizar artPreview com formData.art_url sempre que houver mudanças
+  useEffect(() => {
+    if (formData.art_url && formData.art_url !== artPreview) {
+      setArtPreview(formData.art_url);
+    }
+  }, [formData.art_url, artPreview]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -110,12 +138,21 @@ export const CardEditor: React.FC<CardEditorProps> = ({
         .from('card-arts')
         .getPublicUrl(filePath);
 
+      console.log('Uploaded art URL:', publicUrl); // Debug log
+
+      // Atualizar tanto o formData quanto o artPreview
       setFormData(prev => ({ ...prev, art_url: publicUrl }));
       setArtPreview(publicUrl);
+      
+      // Limpar o arquivo temporário após upload bem-sucedido
+      setArtFile(null);
+      
       toast.success('Arte enviada com sucesso!');
+      return publicUrl; // Retornar a URL para uso no handleSave
     } catch (error) {
       console.error('Error uploading art:', error);
       toast.error('Erro ao enviar arte');
+      throw error; // Re-throw para que o handleSave possa capturar
     } finally {
       setUploading(false);
     }
@@ -142,13 +179,22 @@ export const CardEditor: React.FC<CardEditorProps> = ({
     try {
       setSaving(true);
 
+      let finalArtUrl = formData.art_url;
+
       // Upload art if new file selected
       if (artFile) {
-        await handleFileUpload(artFile);
+        const uploadedUrl = await handleFileUpload(artFile);
+        finalArtUrl = uploadedUrl || formData.art_url;
+      }
+
+      // Garantir que temos a URL da arte correta
+      if (artPreview && !finalArtUrl) {
+        finalArtUrl = artPreview;
       }
 
       const cardData = {
         ...formData,
+        art_url: finalArtUrl, // Garantir que a URL da arte seja incluída
         slug: formData.slug || formData.name?.toLowerCase().replace(/\s+/g, '-') || 'default-slug',
         updated_at: new Date().toISOString(),
         // Ensure required fields are not undefined
@@ -159,23 +205,34 @@ export const CardEditor: React.FC<CardEditorProps> = ({
         type: formData.type || 'farm'
       };
 
+      console.log('Saving card with art_url:', finalArtUrl); // Debug log
+
       if (isEditing) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('cards')
           .update(cardData)
-          .eq('id', card!.id);
+          .eq('id', card!.id)
+          .select()
+          .single();
 
         if (error) throw error;
+        console.log('Updated card data:', data); // Debug log
         toast.success('Carta atualizada com sucesso!');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('cards')
-          .insert(cardData);
+          .insert(cardData)
+          .select()
+          .single();
 
         if (error) throw error;
+        console.log('Created card data:', data); // Debug log
         toast.success('Carta criada com sucesso!');
       }
 
+      // Atualizar o formData local com os dados salvos
+      setFormData(cardData);
+      
       onSave(cardData as AdminCard);
     } catch (error) {
       console.error('Error saving card:', error);
@@ -227,6 +284,251 @@ export const CardEditor: React.FC<CardEditorProps> = ({
     return colors[type] || 'bg-gray-100 text-gray-800';
   };
 
+  const getRarityGems = (rarity: CardRarity) => {
+    switch (rarity) {
+      case 'common': return 1;
+      case 'uncommon': return 2;
+      case 'rare': return 3;
+      case 'ultra': return 4;
+      case 'legendary': return 5;
+      case 'secret': return 5;
+      case 'crisis': return 3;
+      case 'booster': return 2;
+      default: return 1;
+    }
+  };
+
+  const getRarityGemColor = (rarity: CardRarity) => {
+    switch (rarity) {
+      case 'common': return '#9CA3AF';
+      case 'uncommon': return '#10B981';
+      case 'rare': return '#3B82F6';
+      case 'ultra': return '#8B5CF6';
+      case 'legendary': return '#F59E0B';
+      case 'secret': return '#EF4444';
+      case 'crisis': return '#DC2626';
+      case 'booster': return '#6366F1';
+      default: return '#9CA3AF';
+    }
+  };
+
+  // Card type configuration - EXACTLY like CollectionPage
+  const getCardTypeConfig = (type: CardType) => {
+    const cardTypeConfig = {
+      city: {
+        icon: "🏰",
+        color: "#8B5A3C",
+        gradient: "from-amber-900/20 to-orange-800/20",
+        border: "border-amber-700",
+        accent: "#D4AF37"
+      },
+      farm: {
+        icon: "🌾",
+        color: "#4A7C59",
+        gradient: "from-green-800/20 to-emerald-700/20",
+        border: "border-green-600",
+        accent: "#90EE90"
+      },
+      magic: {
+        icon: "✨",
+        color: "#6B46C1",
+        gradient: "from-purple-800/20 to-violet-700/20",
+        border: "border-purple-600",
+        accent: "#9F7AEA"
+      },
+      landmark: {
+        icon: "🏛️",
+        color: "#1E40AF",
+        gradient: "from-blue-800/20 to-indigo-700/20",
+        border: "border-blue-600",
+        accent: "#60A5FA"
+      },
+      event: {
+        icon: "📅",
+        color: "#DC2626",
+        gradient: "from-red-800/20 to-rose-700/20",
+        border: "border-red-600",
+        accent: "#F87171"
+      },
+      trap: {
+        icon: "🛡️",
+        color: "#374151",
+        gradient: "from-gray-800/20 to-slate-700/20",
+        border: "border-gray-600",
+        accent: "#9CA3AF"
+      },
+      defense: {
+        icon: "⚔️",
+        color: "#059669",
+        gradient: "from-teal-800/20 to-cyan-700/20",
+        border: "border-teal-600",
+        accent: "#34D399"
+      },
+      action: {
+        icon: "⚡",
+        color: "#D97706",
+        gradient: "from-orange-800/20 to-amber-700/20",
+        border: "border-orange-600",
+        accent: "#FBBF24"
+      }
+    };
+    return cardTypeConfig[type] || cardTypeConfig.magic;
+  };
+
+  // Rarity configuration - EXACTLY like CollectionPage
+  const getRarityConfig = (rarity: CardRarity) => {
+    const rarityConfig = {
+      common: {
+        borderWidth: "border-2",
+        glow: "shadow-md",
+        gems: 1,
+        gemColor: "#9CA3AF",
+        frameStyle: "simple"
+      },
+      uncommon: {
+        borderWidth: "border-[3px]",
+        glow: "shadow-lg shadow-green-500/20",
+        gems: 2,
+        gemColor: "#10B981",
+        frameStyle: "enhanced"
+      },
+      rare: {
+        borderWidth: "border-[3px]",
+        glow: "shadow-lg shadow-blue-500/30",
+        gems: 3,
+        gemColor: "#3B82F6",
+        frameStyle: "ornate"
+      },
+      ultra: {
+        borderWidth: "border-4",
+        glow: "shadow-xl shadow-purple-500/40",
+        gems: 4,
+        gemColor: "#8B5CF6",
+        frameStyle: "elaborate"
+      },
+      legendary: {
+        borderWidth: "border-4",
+        glow: "shadow-2xl shadow-yellow-500/50",
+        gems: 5,
+        gemColor: "#F59E0B",
+        frameStyle: "legendary"
+      },
+      secret: {
+        borderWidth: "border-4",
+        glow: "shadow-2xl shadow-pink-500/50",
+        gems: 5,
+        gemColor: "#EF4444",
+        frameStyle: "legendary"
+      },
+      crisis: {
+        borderWidth: "border-[3px]",
+        glow: "shadow-lg shadow-red-500/30",
+        gems: 3,
+        gemColor: "#DC2626",
+        frameStyle: "ornate"
+      },
+      booster: {
+        borderWidth: "border-[3px]",
+        glow: "shadow-lg shadow-indigo-500/30",
+        gems: 2,
+        gemColor: "#6366F1",
+        frameStyle: "enhanced"
+      }
+    };
+    return rarityConfig[rarity] || rarityConfig.rare;
+    };
+
+  // Helper functions for rendering card elements - EXACTLY like CollectionPage
+  const renderGems = (rarity: CardRarity) => {
+    const raritySettings = getRarityConfig(rarity);
+    return Array.from({ length: raritySettings.gems }).map((_, index) => (
+      <div
+        key={index}
+        className="relative"
+      >
+        <div 
+          className="w-3 h-3" 
+          style={{ color: raritySettings.gemColor }}
+        >
+          💎
+        </div>
+        <div 
+          className="absolute inset-0 w-3 h-3 rounded-full blur-sm opacity-60"
+          style={{ backgroundColor: raritySettings.gemColor }}
+        />
+      </div>
+    ));
+  };
+
+  const renderOrnateCorners = (type: CardType, rarity: CardRarity) => {
+    if (rarity === "common" || rarity === "uncommon") return null;
+    
+    const typeConfig = getCardTypeConfig(type);
+
+    return (
+      <>
+        {/* Top corners */}
+        <div className="absolute top-2 left-2 w-6 h-6">
+          <div 
+            className="absolute inset-0 border-l-2 border-t-2 rounded-tl-lg"
+            style={{ borderColor: typeConfig.accent }}
+          />
+          <div 
+            className="absolute top-1 left-1 w-2 h-2 rounded-full"
+            style={{ backgroundColor: typeConfig.accent }}
+          />
+        </div>
+        <div className="absolute top-2 right-2 w-6 h-6">
+          <div 
+            className="absolute inset-0 border-r-2 border-t-2 rounded-tr-lg"
+            style={{ borderColor: typeConfig.accent }}
+          />
+          <div 
+            className="absolute top-1 right-1 w-2 h-2 rounded-full"
+            style={{ backgroundColor: typeConfig.accent }}
+          />
+        </div>
+
+        {/* Bottom corners */}
+        <div className="absolute bottom-2 left-2 w-6 h-6">
+          <div 
+            className="absolute inset-0 border-l-2 border-b-2 rounded-bl-lg"
+            style={{ borderColor: typeConfig.accent }}
+          />
+          <div 
+            className="absolute bottom-1 left-1 w-2 h-2 rounded-full"
+            style={{ backgroundColor: typeConfig.accent }}
+          />
+        </div>
+        <div className="absolute bottom-2 right-2 w-6 h-6">
+          <div 
+            className="absolute inset-0 border-r-2 border-b-2 rounded-br-lg"
+            style={{ borderColor: typeConfig.accent }}
+          />
+          <div 
+            className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+            style={{ backgroundColor: typeConfig.accent }}
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderLegendaryEffects = (type: CardType, rarity: CardRarity) => {
+    if (rarity !== "legendary") return null;
+    
+    const typeConfig = getCardTypeConfig(type);
+
+    return (
+      <div
+        className="absolute inset-0 rounded-xl pointer-events-none"
+        style={{
+          background: `conic-gradient(from 0deg, ${typeConfig.accent}20, transparent, ${typeConfig.accent}20)`
+        }}
+      />
+    );
+  };
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -467,28 +769,92 @@ export const CardEditor: React.FC<CardEditorProps> = ({
               <CardTitle>Arte da Carta</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  aria-label="Selecionar imagem da carta"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="flex items-center gap-2"
-                >
-                  <Upload className="h-4 w-4" />
-                  {uploading ? 'Enviando...' : 'Selecionar Imagem'}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                  PNG, JPG ou SVG até 5MB
-                </p>
-              </div>
+                             {/* Current Artwork */}
+               {(artPreview || formData.art_url) && (
+                 <div className="space-y-2">
+                   <Label>Arte Atual</Label>
+                   <div className="relative w-full h-32 rounded-lg overflow-hidden border-2 border-gray-300">
+                     <img
+                       src={artPreview || formData.art_url}
+                       alt="Current artwork"
+                       className="w-full h-full object-cover"
+                       onError={(e) => {
+                         // Fallback se a imagem falhar ao carregar
+                         const target = e.target as HTMLImageElement;
+                         target.style.display = 'none';
+                         target.nextElementSibling?.classList.remove('hidden');
+                       }}
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                   </div>
+                   <div className="flex gap-2">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => {
+                         setArtPreview('');
+                         setArtFile(null);
+                         setFormData(prev => ({ ...prev, art_url: '' }));
+                         if (fileInputRef.current) {
+                           fileInputRef.current.value = '';
+                         }
+                       }}
+                       className="flex items-center gap-1"
+                     >
+                       <X className="h-3 w-3" />
+                       Remover
+                     </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       onClick={() => fileInputRef.current?.click()}
+                       className="flex items-center gap-1"
+                     >
+                       <Upload className="h-3 w-3" />
+                       Trocar
+                     </Button>
+                   </div>
+                 </div>
+               )}
+
+                             {/* Upload Area */}
+               {!artPreview && !formData.art_url && (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    aria-label="Selecionar imagem da carta"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {uploading ? 'Enviando...' : 'Selecionar Imagem'}
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    PNG, JPG ou SVG até 5MB
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    A arte será exibida em todo o jogo: hand, deck, coleção, etc.
+                  </p>
+                </div>
+              )}
+
+              {/* Upload Progress */}
+              {uploading && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Enviando arte...</span>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -498,80 +864,156 @@ export const CardEditor: React.FC<CardEditorProps> = ({
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Preview da Carta</CardTitle>
+                <CardTitle>Preview da Carta (EXATAMENTE Igual ao Jogo)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative w-64 h-96 mx-auto border-2 border-gray-300 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-                  {/* Frame based on type and rarity */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${getTypeColor(formData.type || 'farm')} opacity-20`} />
-                  
-                  {/* Art */}
-                  {artPreview && (
-                    <div className="absolute inset-4">
-                      <img
-                        src={artPreview}
-                        alt="Card Art"
-                        className="w-full h-full object-cover rounded"
-                      />
-                    </div>
-                  )}
-                  
-                  {/* Card Content */}
-                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                    {/* Header */}
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-2">
-                        <Badge className={getRarityColor(formData.rarity || 'common')}>
-                          {formData.rarity}
-                        </Badge>
-                        <Badge className={getTypeColor(formData.type || 'farm')}>
-                          {formData.type}
-                        </Badge>
+                <div className="relative w-72 h-[28rem] mx-auto">
+                  {/* EXACT SAME STRUCTURE AS CollectionPage FullCardComponent */}
+                  <div 
+                    className={cn(
+                      "relative w-full h-full rounded-xl overflow-hidden cursor-pointer select-none",
+                      "bg-gradient-to-br from-background to-muted",
+                      getCardTypeConfig(formData.type || 'magic').border,
+                      getRarityConfig(formData.rarity || 'common').borderWidth,
+                      getRarityConfig(formData.rarity || 'common').glow
+                    )}
+                    style={{
+                      borderColor: getCardTypeConfig(formData.type || 'magic').color
+                    }}
+                  >
+                    {/* Legendary rotating border effect */}
+                    {renderLegendaryEffects(formData.type || 'magic', formData.rarity || 'common')}
+
+                    {/* Background gradient */}
+                    <div className={cn("absolute inset-0 bg-gradient-to-br", getCardTypeConfig(formData.type || 'magic').gradient)} />
+
+                    {/* Ornate corner decorations */}
+                    {renderOrnateCorners(formData.type || 'magic', formData.rarity || 'common')}
+
+                    {/* Header section */}
+                    <div className="relative p-3 pb-1">
+                      <div className="flex items-center justify-between mb-2">
+                        {/* Type icon and dice activation */}
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="p-1.5 rounded-lg border-2"
+                            style={{ 
+                              backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}20`,
+                              borderColor: getCardTypeConfig(formData.type || 'magic').color
+                            }}
+                          >
+                            <span className="text-lg">{getCardTypeConfig(formData.type || 'magic').icon}</span>
+                          </div>
+                          <div 
+                            className="p-1.5 rounded-lg border-2"
+                            style={{ 
+                              backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}20`,
+                              borderColor: getCardTypeConfig(formData.type || 'magic').color
+                            }}
+                          >
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 bg-white rounded-sm flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 bg-gray-800 rounded-sm"></div>
+                              </div>
+                              <span className="text-xs font-bold" style={{ color: getCardTypeConfig(formData.type || 'magic').color }}>
+                                {formData.dice_number || 0}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Rarity gems */}
+                        <div className="flex gap-1">
+                          {renderGems(formData.rarity || 'common')}
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Name */}
-                    <div className="text-center">
-                      <h3 className="font-bold text-lg text-gray-800 drop-shadow-sm">
+
+                      {/* Title */}
+                      <h3 className="font-bold text-base text-foreground leading-tight">
                         {formData.name || 'Nome da Carta'}
                       </h3>
+
+                      {/* Rarity indicator */}
+                      <div className="flex items-center gap-1 mt-1">
+                        {formData.rarity === "legendary" && <span className="text-yellow-500">👑</span>}
+                        {(formData.rarity === "ultra" || formData.rarity === "legendary") && <span className="text-purple-400">⭐</span>}
+                        <span 
+                          className="text-xs font-semibold uppercase tracking-wider"
+                          style={{ color: getRarityConfig(formData.rarity || 'common').gemColor }}
+                        >
+                          {formData.rarity}
+                        </span>
+                      </div>
                     </div>
-                    
-                    {/* Costs */}
-                    <div className="flex justify-center gap-2">
-                      {formData.cost_coins! > 0 && (
-                        <span className="flex items-center gap-1 bg-yellow-100 px-2 py-1 rounded text-sm">
-                          💰 {formData.cost_coins}
-                        </span>
-                      )}
-                      {formData.cost_food! > 0 && (
-                        <span className="flex items-center gap-1 bg-green-100 px-2 py-1 rounded text-sm">
-                          🌾 {formData.cost_food}
-                        </span>
-                      )}
-                      {formData.cost_materials! > 0 && (
-                        <span className="flex items-center gap-1 bg-orange-100 px-2 py-1 rounded text-sm">
-                          🏗️ {formData.cost_materials}
-                        </span>
-                      )}
-                      {formData.cost_population! > 0 && (
-                        <span className="flex items-center gap-1 bg-blue-100 px-2 py-1 rounded text-sm">
-                          👥 {formData.cost_population}
-                        </span>
-                      )}
+
+                                         {/* Image section */}
+                     <div className="relative mx-4 mb-3 h-40 rounded-lg overflow-hidden border-2 border-border">
+                       {(artPreview || formData.art_url) ? (
+                         <img 
+                           src={artPreview || formData.art_url} 
+                           alt={formData.name || 'Card Art'}
+                           className="w-full h-full object-cover"
+                           onError={(e) => {
+                             // Fallback se a imagem falhar ao carregar
+                             const target = e.target as HTMLImageElement;
+                             target.style.display = 'none';
+                             target.nextElementSibling?.classList.remove('hidden');
+                           }}
+                         />
+                       ) : null}
+                       {!artPreview && !formData.art_url && (
+                         <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                           <div className="text-center">
+                             <div className="text-2xl mb-1">🎨</div>
+                             <p className="text-xs text-gray-400">Artwork será carregado no painel admin</p>
+                           </div>
+                         </div>
+                       )}
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                     </div>
+
+                    {/* Cost section */}
+                    <div className="px-4 mb-2">
+                      <div className="flex justify-center items-center gap-2">
+                        {formData.cost_coins! > 0 && (
+                          <div className="flex items-center gap-1 bg-amber-900/50 border border-amber-600/50 rounded px-2 py-1">
+                            <span className="text-amber-400">💰</span>
+                            <span className="font-bold text-amber-100 text-sm">{formData.cost_coins}</span>
+                          </div>
+                        )}
+                        {formData.cost_food! > 0 && (
+                          <div className="flex items-center gap-1 bg-green-900/50 border border-green-600/50 rounded px-2 py-1">
+                            <span className="text-green-400">🌾</span>
+                            <span className="font-bold text-green-100 text-sm">{formData.cost_food}</span>
+                          </div>
+                        )}
+                        {formData.cost_materials! > 0 && (
+                          <div className="flex items-center gap-1 bg-blue-900/50 border border-blue-600/50 rounded px-2 py-1">
+                            <span className="text-blue-400">🏗️</span>
+                            <span className="font-bold text-blue-100 text-sm">{formData.cost_materials}</span>
+                          </div>
+                        )}
+                        {formData.cost_population! > 0 && (
+                          <div className="flex items-center gap-1 bg-purple-900/50 border border-purple-600/50 rounded px-2 py-1">
+                            <span className="text-purple-400">👥</span>
+                            <span className="font-bold text-purple-100 text-sm">{formData.cost_population}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    {/* Effect */}
-                    <div className="bg-white/80 p-3 rounded text-sm">
-                      <p className="text-gray-800">
-                        {formData.effect || 'Descrição do efeito da carta...'}
-                      </p>
-                    </div>
-                    
-                    {/* Footer */}
-                    <div className="flex justify-between items-center text-xs text-gray-600">
-                      <span>Uso: {formData.use_per_turn || 1}/turno</span>
-                      {formData.is_reactive && <span>🔄 Reativa</span>}
+
+                    {/* Description */}
+                    <div className="px-4 pb-3">
+                      <div 
+                        className="text-xs leading-relaxed p-3 rounded-lg border-2"
+                        style={{ 
+                          backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}15`,
+                          borderColor: `${getCardTypeConfig(formData.type || 'magic').color}40`,
+                          boxShadow: `0 0 10px ${getCardTypeConfig(formData.type || 'magic').color}20`
+                        }}
+                      >
+                        {formData.effect || "A magnificent fortress that generates wealth and provides protection for your realm."}
+                      </div>
                     </div>
                   </div>
                 </div>

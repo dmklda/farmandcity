@@ -129,6 +129,7 @@ export const usePlayerDecks = () => {
               },
               rarity: cardData.rarity,
               activation: getActivationDescription(cardData),
+              artworkUrl: cardData.art_url || undefined,
             };
             //console.log('Game card criada:', gameCard);
             gameCards.push(gameCard);

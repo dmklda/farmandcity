@@ -17,6 +17,7 @@ import DailyCardComponent from './DailyCardComponent';
 import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
 import { useContainerCustomization } from '../hooks/useContainerCustomization';
 import { useCurrencyPurchase } from '../hooks/useCurrencyPurchase';
+import { useShopAnnouncements } from '../hooks/useShopAnnouncements';
 
 export const Shop: React.FC = () => {
   const { 
@@ -66,6 +67,12 @@ export const Shop: React.FC = () => {
     loading: currencyPurchaseLoading,
     error: currencyPurchaseError
   } = useCurrencyPurchase();
+
+  const {
+    announcements,
+    loading: announcementsLoading,
+    error: announcementsError
+  } = useShopAnnouncements();
   
   const { currency, currencyLoading, refreshCurrency } = useAppContext();
   const { showToast, ToastContainer } = useToast();
@@ -80,6 +87,7 @@ export const Shop: React.FC = () => {
   const [customizationSearch, setCustomizationSearch] = useState('');
   const [customizationRarityFilter, setCustomizationRarityFilter] = useState('all');
   const [customizationTypeFilter, setCustomizationTypeFilter] = useState('all');
+  const [currencyItems, setCurrencyItems] = useState<any[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -270,6 +278,18 @@ export const Shop: React.FC = () => {
         {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
       </span>
     );
+  };
+
+  const getAnnouncementColorClasses = (color: string) => {
+    switch (color) {
+      case 'red': return 'from-red-600/20 via-orange-600/20 to-yellow-600/20';
+      case 'green': return 'from-green-600/20 to-emerald-600/20';
+      case 'blue': return 'from-blue-600/20 to-blue-800/20';
+      case 'purple': return 'from-purple-600/20 to-pink-600/20';
+      case 'orange': return 'from-orange-600/20 to-orange-800/20';
+      case 'yellow': return 'from-yellow-600/20 to-yellow-800/20';
+      default: return 'from-blue-600/20 to-blue-800/20';
+    }
   };
 
   // Filtered customizations logic
@@ -863,169 +883,336 @@ export const Shop: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabs da Loja */}
-              <Tabs defaultValue="special" className="w-full">
-                                           <TabsList className="grid w-full grid-cols-9 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
-             <TabsTrigger value="special" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Star className="h-4 w-4" />
-               Especiais
-             </TabsTrigger>
-             <TabsTrigger value="packs" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Package className="h-4 w-4" />
-               Packs
-             </TabsTrigger>
-             <TabsTrigger value="boosters" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Zap className="h-4 w-4" />
-               Boosters
-             </TabsTrigger>
-             <TabsTrigger value="daily" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Star className="h-4 w-4" />
-               Diárias
-             </TabsTrigger>
-             <TabsTrigger value="currency" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Coins className="h-4 w-4" />
-               Moedas
-             </TabsTrigger>
-             <TabsTrigger value="events" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Zap className="h-4 w-4" />
-               Eventos
-             </TabsTrigger>
-             <TabsTrigger value="customizations" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Image className="h-4 w-4" />
-               Campos
-             </TabsTrigger>
-             <TabsTrigger value="containers" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <Shield className="h-4 w-4" />
-               Containers
-             </TabsTrigger>
-             <TabsTrigger value="history" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
-               <History className="h-4 w-4" />
-               Histórico
-             </TabsTrigger>
-           </TabsList>
+      {/* Banner Principal de Promoção */}
+      {announcements.filter(a => a.type === 'promotion' && a.priority === 3).map(announcement => (
+        <div key={announcement.id} className={`mb-8 p-6 bg-gradient-to-r ${getAnnouncementColorClasses(announcement.color)} border-2 border-${announcement.color}-500/40 rounded-xl shadow-2xl`}>
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-4xl animate-bounce">{announcement.icon}</div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">{announcement.title}</h2>
+              <p className="text-lg text-yellow-200 mb-1">{announcement.message}</p>
+            </div>
+            <div className="text-4xl animate-bounce">{announcement.icon}</div>
+          </div>
+        </div>
+      ))}
+
+      {/* Anúncios e Alertas */}
+      {announcements.filter(a => a.type !== 'promotion' || a.priority < 3).length > 0 && (
+        <div className="mb-6 space-y-4">
+          {announcements.filter(a => a.type !== 'promotion' || a.priority < 3).map(announcement => (
+            <div key={announcement.id} className={`p-4 bg-gradient-to-r ${getAnnouncementColorClasses(announcement.color)} border border-${announcement.color}-500/40 rounded-lg`}>
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">{announcement.icon}</div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">{announcement.title}</h3>
+                  <p className="text-sm text-gray-200">{announcement.message}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tabs da Loja Reorganizadas */}
+      <Tabs defaultValue="special" className="w-full">
+        <TabsList className="grid w-full grid-cols-8 bg-black/40 backdrop-blur-sm rounded-full border border-yellow-600/30 p-1">
+          <TabsTrigger value="special" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Star className="h-4 w-4" />
+            Especiais
+          </TabsTrigger>
+          <TabsTrigger value="packs" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Package className="h-4 w-4" />
+            Packs
+          </TabsTrigger>
+          <TabsTrigger value="boosters" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Zap className="h-4 w-4" />
+            Boosters
+          </TabsTrigger>
+          <TabsTrigger value="daily" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Star className="h-4 w-4" />
+            Diárias
+          </TabsTrigger>
+          <TabsTrigger value="currency" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Coins className="h-4 w-4" />
+            Moedas
+          </TabsTrigger>
+          <TabsTrigger value="customizations" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Image className="h-4 w-4" />
+            Campos
+          </TabsTrigger>
+          <TabsTrigger value="events" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <Zap className="h-4 w-4" />
+            Eventos
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center justify-center gap-2 px-3 h-18 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-600 data-[state=active]:to-amber-700 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-full transition-all duration-300 hover:bg-white/10">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="special" className="mt-6">
-          <SpecialPacksDisplay
-            packs={getSpecialPacks() as any}
-            onPurchase={handlePurchase}
-            purchasing={purchasing ? 'purchasing' : null}
-            userCurrency={memoizedCurrency}
-          />
+          {/* Seção de Pacotes Especiais */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Crown className="w-8 h-8 text-yellow-400" />
+                Pacotes Especiais
+                <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse">
+                  -50% OFF
+                </Badge>
+              </h2>
+              <div className="text-sm text-gray-400">
+                {getSpecialPacks().length} pacotes disponíveis
+              </div>
+            </div>
+            
+            <SpecialPacksDisplay
+              packs={getSpecialPacks() as any}
+              onPurchase={handlePurchase}
+              purchasing={purchasing ? 'purchasing' : null}
+              userCurrency={memoizedCurrency}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="packs" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {getAvailablePacks().map(item => renderShopItem(item))}
+          {/* Seção de Packs */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Package className="w-8 h-8 text-blue-400" />
+                Pacotes de Cartas
+              </h2>
+              <div className="text-sm text-gray-400">
+                {getAvailablePacks().length} pacotes disponíveis
+              </div>
+            </div>
+            
+            {getAvailablePacks().length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhum pacote disponível</p>
+                <p className="text-gray-500">Verifique a seção de pacotes especiais</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {getAvailablePacks().map(item => renderShopItem(item))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="boosters" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {getAvailableBoosters().map(item => renderShopItem(item))}
+          {/* Seção de Boosters */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Zap className="w-8 h-8 text-purple-400" />
+                Boosters
+              </h2>
+              <div className="text-sm text-gray-400">
+                {getAvailableBoosters().length} boosters disponíveis
+              </div>
+            </div>
+            
+            {getAvailableBoosters().length === 0 ? (
+              <div className="text-center py-12">
+                <Zap className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhum booster disponível</p>
+                <p className="text-gray-500">Verifique a seção de pacotes especiais</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {getAvailableBoosters().map(item => renderShopItem(item))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="daily" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {dailyRotationCards?.map(card => (
-                <DailyCardComponent
-                  key={card.card_id}
-                  card={card}
-                  onPurchase={handlePurchaseCard}
-                  purchasing={purchasing}
-                  userCurrency={memoizedCurrency}
-                />
-              ))}
+          {/* Seção de Cartas Diárias */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Star className="w-8 h-8 text-yellow-400" />
+                Cartas Diárias
+                <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white">
+                  Rotação Diária
+                </Badge>
+              </h2>
+              <div className="text-sm text-gray-400">
+                {dailyRotationCards?.length || 0} cartas disponíveis hoje
+              </div>
             </div>
+            
+            {!dailyRotationCards || dailyRotationCards.length === 0 ? (
+              <div className="text-center py-12">
+                <Star className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhuma carta diária disponível</p>
+                <p className="text-gray-500">Volte amanhã para novas cartas</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {dailyRotationCards.map(card => (
+                  <DailyCardComponent
+                    key={card.card_id}
+                    card={card}
+                    onPurchase={handlePurchaseCard}
+                    purchasing={purchasing}
+                    userCurrency={memoizedCurrency}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-                    <TabsContent value="currency" className="mt-6">
-              {/* Banner de Promoção */}
-              <div className="mb-6 p-4 bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-lg">
-                <div className="flex items-center justify-center gap-3">
-                  <div className="text-2xl">🔥</div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-bold text-white">PROMOÇÃO ESPECIAL!</h3>
-                    <p className="text-sm text-yellow-200">Todos os pacotes com 50% de desconto por tempo limitado!</p>
-                  </div>
-                  <div className="text-2xl">🔥</div>
-                </div>
+        <TabsContent value="currency" className="mt-6">
+          {/* Seção de Moedas */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Coins className="w-8 h-8 text-yellow-400" />
+                Comprar Moedas
+              </h2>
+              <div className="text-sm text-gray-400">
+                {getCurrencyPacks().length + getCurrencyGems().length + getCurrencyCoins().length} opções disponíveis
               </div>
+            </div>
 
-              {/* Pacotes (Gems + Coins) */}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            {/* Banner de Promoção Específica para Moedas */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 rounded-lg">
+              <div className="flex items-center justify-center gap-3">
+                <div className="text-2xl">🔥</div>
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-white">PROMOÇÃO ESPECIAL!</h3>
+                  <p className="text-sm text-yellow-200">Todos os pacotes com 50% de desconto por tempo limitado!</p>
+                </div>
+                <div className="text-2xl">🔥</div>
+              </div>
+            </div>
+
+            {/* Pacotes (Gems + Coins) */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <Package className="w-6 h-6 text-yellow-400" />
-                  Pacotes (Gems + Coins)
+                  Pacotes Combinados
                   <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse">
                     -50% OFF
                   </Badge>
                 </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyPacks().map(item => renderCurrencyItem(item))}
+                <div className="text-sm text-gray-400">
+                  {getCurrencyPacks().length} pacotes
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {getCurrencyPacks().map(item => renderCurrencyItem(item))}
+              </div>
             </div>
-          </div>
 
-          {/* Gems */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Gem className="w-6 h-6 text-purple-400" />
-              Gemas
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyGems().map(item => renderCurrencyItem(item))}
+            {/* Gems */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Gem className="w-6 h-6 text-purple-400" />
+                  Gemas
+                </h3>
+                <div className="text-sm text-gray-400">
+                  {getCurrencyGems().length} opções
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {getCurrencyGems().map(item => renderCurrencyItem(item))}
+              </div>
             </div>
-          </div>
 
-          {/* Coins */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Coins className="w-6 h-6 text-yellow-400" />
-              Moedas
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {getCurrencyCoins().map(item => renderCurrencyItem(item))}
+            {/* Coins */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Coins className="w-6 h-6 text-yellow-400" />
+                  Moedas
+                </h3>
+                <div className="text-sm text-gray-400">
+                  {getCurrencyCoins().length} opções
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {getCurrencyCoins().map(item => renderCurrencyItem(item))}
+              </div>
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="events" className="mt-6">
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-               {shopEvents?.map(event => (
-                 <Card key={event.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
-                   <div className="p-6">
-                     <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-                       <Zap className="w-8 h-8 text-white" />
-          </div>
-                     <h3 className="text-xl font-bold text-white mb-2 text-center">{event.name}</h3>
-                     <p className="text-gray-300 text-sm mb-4 text-center">{event.description}</p>
-                     <Separator className="my-4 bg-yellow-600/30" />
-                     <div className="flex items-center justify-center gap-2 mb-4">
-                       <span className="text-sm text-gray-400">Desconto: {event.discount_percentage}%</span>
-                    </div>
-                     <Button 
-                       onClick={() => handlePurchase(event.id)}
-                       disabled={purchasing}
-                       className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                     >
-                       <ShoppingCart className="w-4 h-4 mr-2" />
-                       {purchasing ? 'Comprando...' : 'Participar'}
-                     </Button>
-                  </div>
-                </Card>
-              ))}
+          {/* Seção de Eventos */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Zap className="w-8 h-8 text-purple-400" />
+                Eventos Especiais
+                <Badge className="bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+                  Ativos
+                </Badge>
+              </h2>
+              <div className="text-sm text-gray-400">
+                {shopEvents?.length || 0} eventos ativos
+              </div>
             </div>
+            
+            {!shopEvents || shopEvents.length === 0 ? (
+              <div className="text-center py-12">
+                <Zap className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                <p className="text-gray-400 text-lg">Nenhum evento ativo no momento</p>
+                <p className="text-gray-500">Fique atento aos próximos eventos especiais</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {shopEvents.map(event => (
+                  <Card key={event.id} className="relative overflow-hidden bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30 hover:border-yellow-500/60 transition-all duration-300 group hover:shadow-xl">
+                    <div className="p-6">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Zap className="w-8 h-8 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2 text-center">{event.name}</h3>
+                      <p className="text-gray-300 text-sm mb-4 text-center">{event.description}</p>
+                      <Separator className="my-4 bg-yellow-600/30" />
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <span className="text-sm text-gray-400">Desconto: {event.discount_percentage}%</span>
+                      </div>
+                      <Button 
+                        onClick={() => handlePurchase(event.id)}
+                        disabled={purchasing}
+                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        {purchasing ? 'Comprando...' : 'Participar'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="customizations" className="mt-6">
+          {/* Seção de Customizações de Campo */}
           <div className="mb-8">
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Image className="w-6 h-6 text-yellow-400" />
-              Customizações de Campo de Batalha
-              <Badge className="bg-gradient-to-r from-yellow-600 to-amber-700 text-white">
-                Personalize seu campo
-              </Badge>
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Image className="w-8 h-8 text-yellow-400" />
+                Customizações de Campo
+                <Badge className="bg-gradient-to-r from-yellow-600 to-amber-700 text-white">
+                  Personalize seu campo
+                </Badge>
+              </h2>
+              <div className="text-sm text-gray-400">
+                {customizations?.length || 0} customizações disponíveis
+              </div>
+            </div>
             
             {/* Search and Filter Controls */}
             <div className="mb-6 space-y-4">
@@ -1121,12 +1308,20 @@ export const Shop: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
+          {/* Seção de Histórico */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <History className="w-8 h-8 text-yellow-400" />
+                Histórico de Compras
+              </h2>
+              <div className="text-sm text-gray-400">
+                {(purchases?.length || 0) + (cardPurchases?.length || 0)} compras realizadas
+              </div>
+            </div>
+            
             <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30">
               <div className="p-6">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                  <History className="w-6 h-6 text-yellow-500" />
-                  Histórico de Compras
-                </h2>
                 
                 {(!purchases || purchases.length === 0) && (!cardPurchases || cardPurchases.length === 0) ? (
                   <div className="text-center py-12">
@@ -1173,11 +1368,12 @@ export const Shop: React.FC = () => {
                         )}
               </div>
             </Card>
+          </div>
         </TabsContent>
       </Tabs>
-        </div>
-      
-      <ToastContainer />
     </div>
-  );
+    
+    <ToastContainer />
+  </div>
+);
 }; 

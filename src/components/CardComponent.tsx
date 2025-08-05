@@ -53,8 +53,23 @@ const CardComponent: React.FC<CardComponentProps> = ({
     }
   };
 
-  const getCardVisual = (cardId: string) => {
-    switch (cardId) {
+  const getCardVisual = (card: Card) => {
+    // Se a carta tem artwork, usar ele
+    if (card.artworkUrl) {
+      return (
+        <div className="w-full h-full relative overflow-hidden rounded-lg">
+          <img 
+            src={card.artworkUrl} 
+            alt={card.name}
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        </div>
+      );
+    }
+
+    // Fallback para cartas específicas
+    switch (card.id) {
       case 'starter-garden':
         return (
           <div className="w-full h-full relative overflow-hidden rounded-lg">
@@ -126,7 +141,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
 
       {/* Card content */}
       <div className="absolute inset-1 rounded-lg overflow-hidden">
-        {getCardVisual(card.id)}
+        {getCardVisual(card)}
       </div>
 
       {/* Hover effects */}

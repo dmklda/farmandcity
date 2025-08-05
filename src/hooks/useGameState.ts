@@ -380,6 +380,18 @@ function parseInstantEffect(card: Card): Partial<Resources> {
     /todas as suas fazendas produzem \+(\d+) comida/,
     /todas as suas cidades produzem \+(\d+) (moeda|material)/,
     
+    // Efeitos contínuos de campo (Event cards)
+    /\+(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
+    /\+(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
+    /\+(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
+    /\+(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
+    
+    // Efeitos negativos contínuos
+    /-(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
+    /-(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
+    /-(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
+    /-(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
+    
     // ❌ REMOVIDO: Padrão genérico que causava duplicação
     // /(\d+) (comida|moeda|material|população)/,
   ];
@@ -573,6 +585,55 @@ function parseInstantEffect(card: Card): Partial<Resources> {
             prod.population = (prod.population || 0) + value;
             break;
         }
+      }
+    }
+  }
+  
+  // Processar efeitos contínuos de campo (Event cards)
+  const continuousPatterns = [
+    // Efeitos positivos contínuos
+    /\+(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
+    /\+(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
+    /\+(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
+    /\+(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
+    
+    // Efeitos negativos contínuos
+    /-(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
+    /-(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
+    /-(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
+    /-(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
+  ];
+  
+  for (const pattern of continuousPatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    
+    for (const match of matches) {
+      const value = parseInt(match[1], 10);
+      const resourceType = match[2];
+      const isNegative = pattern.source.startsWith('/-');
+      const actualValue = isNegative ? -value : value;
+      
+      //console.log('🎭 Efeito contínuo encontrado:', { value, resourceType, isNegative, actualValue });
+      
+      switch (resourceType) {
+        case 'recurso':
+        case 'recursos':
+          // Para "todas construções", distribuir entre moedas e materiais
+          prod.coins = (prod.coins || 0) + Math.floor(actualValue / 2);
+          prod.materials = (prod.materials || 0) + Math.ceil(actualValue / 2);
+          break;
+        case 'comida':
+        case 'comidas':
+          prod.food = (prod.food || 0) + actualValue;
+          break;
+        case 'moeda':
+        case 'moedas':
+          prod.coins = (prod.coins || 0) + actualValue;
+          break;
+        case 'material':
+        case 'materiais':
+          prod.materials = (prod.materials || 0) + actualValue;
+          break;
       }
     }
   }

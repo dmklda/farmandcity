@@ -49,6 +49,7 @@ export const useStarterDeck = () => {
           },
           rarity: adminCard.rarity,
           activation: getActivationDescription(adminCard),
+          artworkUrl: adminCard.art_url || undefined,
         }));
 
         setStarterDeck(supabaseStarterCards);

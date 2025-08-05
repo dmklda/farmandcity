@@ -375,12 +375,20 @@ const DailyCardComponent: React.FC<DailyCardComponentProps> = ({
 
                          {/* Image section */}
              <div className="relative mx-3 mb-3 h-36 rounded-lg overflow-hidden border-2 border-border">
-              <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-2xl mb-1">🎨</div>
-                  <p className="text-xs text-gray-400">Artwork será carregado no painel admin</p>
+              {card.artworkUrl ? (
+                <img 
+                  src={card.artworkUrl} 
+                  alt={card.card_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">🎨</div>
+                    <p className="text-xs text-gray-400">Artwork será carregado no painel admin</p>
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
 

@@ -43,6 +43,7 @@ export interface DailyRotationCard {
   discount_percentage: number;
   slot_type: string;
   is_purchased?: boolean; // Indica se o usuário já comprou esta carta hoje
+  artworkUrl?: string; // URL da arte da carta
 }
 
 interface ShopEvent {
@@ -245,7 +246,7 @@ export const useShop = () => {
       const cardIds = data.map(item => item.card_id).filter((id): id is string => id !== null);
       const { data: cardsData, error: cardsError } = await supabase
         .from('cards')
-        .select('id, name, type, rarity, effect, cost_coins, cost_food, cost_materials, cost_population')
+        .select('id, name, type, rarity, effect, cost_coins, cost_food, cost_materials, cost_population, art_url')
         .in('id', cardIds);
 
       if (cardsError) {
@@ -291,7 +292,8 @@ export const useShop = () => {
           currency_type: item.currency_type,
           discount_percentage: item.discount_percentage || 0,
           slot_type: item.slot_type || '',
-          is_purchased: isPurchased // Nova propriedade
+          is_purchased: isPurchased, // Nova propriedade
+          artworkUrl: cardDetails?.art_url || undefined
         };
       });
       

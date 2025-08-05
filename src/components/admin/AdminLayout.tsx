@@ -15,7 +15,8 @@ import {
   X,
   Gift,
   Calendar,
-  Palette
+  Palette,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -32,6 +33,7 @@ const menuItems = [
   { id: 'packs', label: 'Packs e Boosters', description: 'Gerenciar pacotes', icon: Package },
   { id: 'events', label: 'Eventos', description: 'Eventos especiais', icon: Gift },
   { id: 'rotation', label: 'Rotação Diária', description: 'Ciclo diário de cartas', icon: Calendar },
+  { id: 'announcements', label: 'Avisos da Loja', description: 'Gerenciar anúncios', icon: Megaphone },
   { id: 'users', label: 'Usuários', description: 'Gerenciar jogadores', icon: Users },
   { id: 'stats', label: 'Estatísticas', description: 'Dados do jogo', icon: BarChart3 },
   { id: 'advanced-stats', label: 'Estatísticas Avançadas', description: 'Análises detalhadas', icon: TrendingUp },

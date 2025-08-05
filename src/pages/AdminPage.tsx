@@ -16,9 +16,20 @@ import { SettingsPage } from './admin/SettingsPage';
 import { SecurityPage } from './admin/SecurityPage';
 import { UsersPage } from './admin/UsersPage';
 import { CustomizationsPage } from './admin/CustomizationsPage';
+import { AnnouncementManager } from '../components/admin/AnnouncementManager';
 
 export const AdminPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  // Persistir a aba ativa no localStorage
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('admin_activeTab');
+    return savedTab || 'dashboard';
+  });
+
+  // Função para atualizar a aba e salvar no localStorage
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    localStorage.setItem('admin_activeTab', tab);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -48,6 +59,8 @@ export const AdminPage: React.FC = () => {
         return <SystemLogsPage />;
       case 'customizations':
         return <CustomizationsPage />;
+      case 'announcements':
+        return <AnnouncementManager />;
       case 'settings':
         return <SettingsPage />;
       case 'security':
@@ -58,7 +71,7 @@ export const AdminPage: React.FC = () => {
   };
 
   return (
-    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <AdminLayout activeTab={activeTab} onTabChange={handleTabChange}>
       {renderContent()}
     </AdminLayout>
   );

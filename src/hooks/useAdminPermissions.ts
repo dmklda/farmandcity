@@ -26,6 +26,15 @@ export const useAdminPermissions = () => {
         return;
       }
 
+      // Evitar verificações desnecessárias se já temos dados válidos
+      if (adminRole && adminRole.user_id === user.id && adminRole.is_active) {
+        // Verificar se a role não expirou
+        if (!adminRole.expires_at || new Date(adminRole.expires_at) > new Date()) {
+          setLoading(false);
+          return;
+        }
+      }
+
       setLoading(true);
       setError(null);
 
@@ -66,7 +75,7 @@ export const useAdminPermissions = () => {
     };
 
     checkPermissions();
-  }, [user, isAuthenticated]);
+  }, [user, isAuthenticated, adminRole]);
 
   const hasPermission = (permission: string): boolean => {
     if (!adminRole || !adminRole.is_active) return false;

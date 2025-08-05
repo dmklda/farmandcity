@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAdminPermissions } from '../../hooks/useAdminPermissions';
 import { LoginForm } from './LoginForm';
@@ -12,6 +12,18 @@ interface AdminAuthGuardProps {
 export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const { adminRole, loading: permissionsLoading, error, isAuthenticated } = useAdminPermissions();
+
+  // Adicionar um pequeno delay para evitar flickering durante recarregamentos
+  const [showContent, setShowContent] = useState(false);
+  
+  useEffect(() => {
+    if (!loading && !permissionsLoading) {
+      const timer = setTimeout(() => {
+        setShowContent(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, permissionsLoading]);
 
   // Loading state
   if (loading || permissionsLoading) {
@@ -28,6 +40,18 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   // Se não estiver autenticado, mostrar formulário de login
   if (!user) {
     return <LoginForm onLoginSuccess={() => {}} />;
+  }
+
+  // Se ainda não mostrou o conteúdo, mostrar loading
+  if (!showContent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Carregando painel...</span>
+        </div>
+      </div>
+    );
   }
 
   // Se não tiver role de admin, mostrar acesso negado
