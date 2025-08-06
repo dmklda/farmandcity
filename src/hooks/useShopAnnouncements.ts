@@ -38,7 +38,7 @@ export const useShopAnnouncements = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      setAnnouncements((data || []) as ShopAnnouncement[]);
     } catch (err) {
       console.error('Erro ao carregar avisos:', err);
       setError('Erro ao carregar avisos da loja');

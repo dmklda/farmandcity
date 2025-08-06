@@ -1425,6 +1425,181 @@ export type Database = {
           }
         ]
       }
+      shop_announcements: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          end_date: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          priority: number | null
+          start_date: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          priority?: number | null
+          start_date?: string | null
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          priority?: number | null
+          start_date?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      global_announcements: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          dismissible: boolean | null
+          end_date: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          priority: number | null
+          show_in_game: boolean | null
+          show_on_homepage: boolean | null
+          start_date: string | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          dismissible?: boolean | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          priority?: number | null
+          show_in_game?: boolean | null
+          show_on_homepage?: boolean | null
+          start_date?: string | null
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          dismissible?: boolean | null
+          end_date?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          priority?: number | null
+          show_in_game?: boolean | null
+          show_on_homepage?: boolean | null
+          start_date?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_announcement_views: {
+        Row: {
+          announcement_id: string
+          dismissed: boolean | null
+          dismissed_at: string | null
+          id: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          announcement_id: string
+          dismissed?: boolean | null
+          dismissed_at?: string | null
+          id?: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          announcement_id?: string
+          dismissed?: boolean | null
+          dismissed_at?: string | null
+          id?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_announcement_views_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "global_announcements"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      background_purchases: {
+        Row: {
+          id: string
+          user_id: string | null
+          background_id: string | null
+          purchase_type: string | null
+          amount_paid: number | null
+          currency_used: string | null
+          real_money_amount: number | null
+          purchased_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          background_id?: string | null
+          purchase_type?: string | null
+          amount_paid?: number | null
+          currency_used?: string | null
+          real_money_amount?: number | null
+          purchased_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          background_id?: string | null
+          purchase_type?: string | null
+          amount_paid?: number | null
+          currency_used?: string | null
+          real_money_amount?: number | null
+          purchased_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_purchases_background_id_fkey"
+            columns: ["background_id"]
+            isOneToOne: false
+            referencedRelation: "battlefield_customizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

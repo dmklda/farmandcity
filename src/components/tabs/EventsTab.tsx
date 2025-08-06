@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { useGameEvents } from '../../hooks/useGameEvents';
 import { 
   Calendar, 
   Trophy, 
@@ -20,21 +19,67 @@ import {
 } from 'lucide-react';
 
 export const EventsTab: React.FC = () => {
-  const { 
-    events, 
-    loading, 
-    error, 
-    joinEvent, 
-    leaveEvent, 
-    isParticipating,
-    getActiveEvents,
-    getUpcomingEvents 
-  } = useGameEvents();
+  // Mock data for events
+  const activeEvents = [
+    {
+      id: 1,
+      title: "Torneio de Verão",
+      description: "Competição especial com prêmios exclusivos",
+      type: "tournament",
+      participants: 156,
+      maxParticipants: 200,
+      endDate: "2024-02-15",
+      rewards: ["Cartas Lendárias", "1000 Moedas", "50 Gemas"],
+      status: "active",
+      progress: 78
+    },
+    {
+      id: 2,
+      title: "Festival da Colheita",
+      description: "Evento temático focado em cartas de fazenda",
+      type: "festival",
+      participants: 89,
+      maxParticipants: 100,
+      endDate: "2024-02-10",
+      rewards: ["Pack Especial", "500 Moedas"],
+      status: "active",
+      progress: 89
+    },
+    {
+      id: 3,
+      title: "Desafio Semanal",
+      description: "Complete missões especiais para recompensas",
+      type: "challenge",
+      participants: 234,
+      maxParticipants: 300,
+      endDate: "2024-02-08",
+      rewards: ["Boosters Premium", "200 Moedas"],
+      status: "active",
+      progress: 45
+    }
+  ];
 
-  const activeEvents = getActiveEvents();
-  const upcomingEvents = getUpcomingEvents();
+  const upcomingEvents = [
+    {
+      id: 4,
+      title: "Campeonato Mundial",
+      description: "A maior competição do ano",
+      type: "championship",
+      startDate: "2024-02-20",
+      rewards: ["Título Exclusivo", "5000 Moedas", "200 Gemas"],
+      status: "upcoming"
+    },
+    {
+      id: 5,
+      title: "Evento de Halloween",
+      description: "Cartas especiais com tema assustador",
+      type: "seasonal",
+      startDate: "2024-10-31",
+      rewards: ["Cartas Únicas", "Pack Temático"],
+      status: "upcoming"
+    }
+  ];
 
-  // Mock data para leaderboard (será implementado posteriormente)
   const leaderboard = [
     { rank: 1, name: "ImperadorMax", score: 12500, avatar: "👑", level: 25, trophies: 15 },
     { rank: 2, name: "ConstrutorPro", score: 11800, avatar: "🏗️", level: 23, trophies: 12 },
@@ -56,242 +101,146 @@ export const EventsTab: React.FC = () => {
 
   const getEventColor = (type: string) => {
     switch (type) {
-      case 'tournament': return 'bg-yellow-500/20 border-yellow-500/40 text-yellow-400';
-      case 'festival': return 'bg-purple-500/20 border-purple-500/40 text-purple-400';
-      case 'challenge': return 'bg-blue-500/20 border-blue-500/40 text-blue-400';
-      case 'championship': return 'bg-red-500/20 border-red-500/40 text-red-400';
-      case 'seasonal': return 'bg-orange-500/20 border-orange-500/40 text-orange-400';
-      default: return 'bg-gray-500/20 border-gray-500/40 text-gray-400';
+      case 'tournament': return 'from-yellow-500 to-orange-500';
+      case 'festival': return 'from-purple-500 to-pink-500';
+      case 'challenge': return 'from-blue-500 to-cyan-500';
+      case 'championship': return 'from-red-500 to-pink-500';
+      case 'seasonal': return 'from-green-500 to-emerald-500';
+      default: return 'from-gray-500 to-slate-500';
     }
   };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const handleJoinEvent = async (eventId: string) => {
-    const result = await joinEvent(eventId);
-    if (!result.success) {
-      alert(result.error);
-    }
-  };
-
-  const handleLeaveEvent = async (eventId: string) => {
-    const result = await leaveEvent(eventId);
-    if (!result.success) {
-      alert(result.error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto"></div>
-          <p className="text-white/60 mt-2">Carregando eventos...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-8">
-        <div className="text-center py-8">
-          <p className="text-red-400">Erro ao carregar eventos: {error}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
       {/* Eventos Ativos */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Trophy className="h-6 w-6 text-yellow-400" />
+          <Zap className="h-6 w-6 text-yellow-500" />
           Eventos Ativos
         </h2>
-        
-        {activeEvents.length === 0 ? (
-          <Card className="bg-slate-800/50 border-slate-700/50">
-            <CardContent className="p-6 text-center">
-              <p className="text-white/60">Nenhum evento ativo no momento.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {activeEvents.map((event) => {
-              const progress = (event.current_participants / event.max_participants) * 100;
-              const participating = isParticipating(event.id);
-              
-              return (
-                <Card key={event.id} className={`bg-slate-800/50 border-slate-700/50 ${getEventColor(event.type)}`}>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {getEventIcon(event.type)}
-                        <CardTitle className="text-lg">{event.title}</CardTitle>
-                      </div>
-                      <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                        Ativo
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-white/70">
-                      {event.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Participantes</span>
-                      <span>{event.current_participants}/{event.max_participants}</span>
-                    </div>
-                    <Progress value={progress} className="h-2" />
-                    
-                    <div className="text-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-4 w-4" />
-                        <span>Termina em: {formatDate(event.end_date)}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">Recompensas:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {event.rewards.map((reward, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {reward}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      {participating ? (
-                        <Button 
-                          onClick={() => handleLeaveEvent(event.id)}
-                          variant="outline" 
-                          size="sm"
-                          className="flex-1 bg-red-500/20 hover:bg-red-500/30 border-red-500/50 text-red-400"
-                        >
-                          Sair
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={() => handleJoinEvent(event.id)}
-                          size="sm"
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                          disabled={event.current_participants >= event.max_participants}
-                        >
-                          Participar
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Eventos Futuros */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-blue-400" />
-          Eventos Futuros
-        </h2>
-        
-        {upcomingEvents.length === 0 ? (
-          <Card className="bg-slate-800/50 border-slate-700/50">
-            <CardContent className="p-6 text-center">
-              <p className="text-white/60">Nenhum evento futuro programado.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingEvents.map((event) => (
-              <Card key={event.id} className={`bg-slate-800/50 border-slate-700/50 ${getEventColor(event.type)}`}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {activeEvents.map((event) => (
+            <Card key={event.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getEventColor(event.type)} flex items-center justify-center text-white`}>
                       {getEventIcon(event.type)}
-                      <CardTitle className="text-lg">{event.title}</CardTitle>
                     </div>
-                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400">
-                        Futuro
+                    <div>
+                      <CardTitle className="text-white">{event.title}</CardTitle>
+                      <CardDescription className="text-white/70">{event.description}</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                    Ativo
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/70">Participantes:</span>
+                  <span className="text-white font-medium">{event.participants}/{event.maxParticipants}</span>
+                </div>
+                <Progress value={event.progress} className="w-full" />
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/70">Termina em:</span>
+                  <span className="text-white font-medium">{event.endDate}</span>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-white">Recompensas:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {event.rewards.map((reward, index) => (
+                      <Badge key={index} variant="outline" className="text-xs border-yellow-500/30 text-yellow-400">
+                        {reward}
                       </Badge>
+                    ))}
                   </div>
-                  <CardDescription className="text-white/70">
-                    {event.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Inicia em: {formatDate(event.start_date)}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Recompensas:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {event.rewards.map((reward, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {reward}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full bg-slate-700/50 hover:bg-slate-600/50 border-slate-600 text-white"
-                    disabled
-                  >
-                    Em Breve
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                </div>
+                <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white">
+                  Participar
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      {/* Leaderboard */}
+      {/* Próximos Eventos */}
       <div>
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Award className="h-6 w-6 text-yellow-400" />
+          <Clock className="h-6 w-6 text-blue-500" />
+          Próximos Eventos
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {upcomingEvents.map((event) => (
+            <Card key={event.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getEventColor(event.type)} flex items-center justify-center text-white`}>
+                    {getEventIcon(event.type)}
+                  </div>
+                  <div>
+                    <CardTitle className="text-white">{event.title}</CardTitle>
+                    <CardDescription className="text-white/70">{event.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/70">Inicia em:</span>
+                  <span className="text-white font-medium">{event.startDate}</span>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-sm font-medium text-white">Recompensas:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {event.rewards.map((reward, index) => (
+                      <Badge key={index} variant="outline" className="text-xs border-purple-500/30 text-purple-400">
+                        {reward}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
+                  <Clock className="h-4 w-4 mr-2" />
+                  Lembrar
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Ranking */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+          <TrendingUp className="h-6 w-6 text-green-500" />
           Ranking Global
         </h2>
-        
-        <Card className="bg-slate-800/50 border-slate-700/50">
+        <Card className="bg-slate-800/80 border-slate-700/50">
           <CardContent className="p-6">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {leaderboard.map((player, index) => (
-                <div key={player.rank} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold text-sm">
-                      {player.rank}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{player.avatar}</span>
-                      <div>
-                        <div className="font-semibold text-white">{player.name}</div>
-                        <div className="text-xs text-white/60">Nível {player.level}</div>
-                      </div>
+                <div key={player.rank} className="flex items-center gap-4 p-3 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-colors">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold text-sm">
+                    {player.rank}
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-2xl">{player.avatar}</span>
+                    <div>
+                      <div className="font-medium text-white">{player.name}</div>
+                      <div className="text-sm text-white/70">Nível {player.level}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-yellow-400">{player.score.toLocaleString()}</div>
-                    <div className="text-xs text-white/60">{player.trophies} troféus</div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-medium text-white">{player.score.toLocaleString()}</div>
+                      <div className="text-sm text-white/70">pontos</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Trophy className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm text-white/70">{player.trophies}</span>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -1,6 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
 import { GameState } from '../types/gameState';
-import { AchievementService } from './AchievementService';
 
 export interface SavedGame {
   id: string;
@@ -127,7 +126,6 @@ export class GameStorageService {
       }
 
       const score = this.calculateScore(gameState);
-      const isVictory = gameState.victorySystem?.victoryAchieved || false;
 
       // Salvar no histórico
       const { error: historyError } = await supabase
@@ -151,29 +149,12 @@ export class GameStorageService {
         .eq('player_id', user.id)
         .eq('is_finished', false);
 
-      // TODO: Atualizar estatísticas do jogador
-      // await this.updatePlayerStats(user.id, {
-      //   games_played: 1,
-      //   games_won: isVictory ? 1 : 0,
-      //   total_playtime_minutes: gameDurationMinutes || 0,
-      //   experience_points: Math.floor(score / 10),
-      //   last_activity: new Date().toISOString()
-      // });
-
-      // TODO: Verificar conquistas após finalizar o jogo
-      // await AchievementService.forceCheckAchievements(user.id);
-
       return { success: true };
     } catch (error: any) {
       console.error('Erro ao finalizar jogo:', error);
       return { success: false, error: error.message };
     }
   }
-
-  // TODO: Implementar atualização de estatísticas do jogador
-  // static async updatePlayerStats(playerId: string, updates: any): Promise<void> {
-  //   // Implementação futura
-  // }
 
   // Calcular pontuação do jogo
   private static calculateScore(gameState: GameState): number {

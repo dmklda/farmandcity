@@ -58,12 +58,12 @@ export const useGlobalAnnouncements = (location: 'homepage' | 'game' = 'homepage
       const { data: viewsData, error: viewsError } = await supabase
         .from('user_announcement_views')
         .select('*')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id || '');
 
       if (viewsError) throw viewsError;
 
-      setAnnouncements(announcementsData || []);
-      setUserViews(viewsData || []);
+      setAnnouncements((announcementsData || []) as GlobalAnnouncement[]);
+      setUserViews((viewsData || []) as UserAnnouncementView[]);
     } catch (err) {
       console.error('Erro ao carregar anúncios globais:', err);
       setError('Erro ao carregar anúncios');
@@ -112,13 +112,13 @@ export const useGlobalAnnouncements = (location: 'homepage' | 'game' = 'homepage
       }
 
       // Atualizar estado local sem recarregar tudo
-      const newView = {
+      const newView: UserAnnouncementView = {
         id: existingView?.id || `temp-${Date.now()}`,
         user_id: userId,
         announcement_id: announcementId,
         viewed_at: new Date().toISOString(),
         dismissed: false,
-        dismissed_at: null
+        dismissed_at: undefined
       };
 
       setUserViews(prev => {
@@ -164,7 +164,7 @@ export const useGlobalAnnouncements = (location: 'homepage' | 'game' = 'homepage
       }
 
       // Atualizar estado local sem recarregar tudo
-      const newView = {
+      const newView: UserAnnouncementView = {
         id: existingView?.id || `temp-${Date.now()}`,
         user_id: userId,
         announcement_id: announcementId,

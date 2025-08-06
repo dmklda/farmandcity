@@ -1,17 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { AdminAuthGuard } from '../components/auth/AdminAuthGuard';
+import React, { useState } from 'react';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
-import { UsersPage } from './admin/UsersPage';
-import { CardsPage } from './admin/CardsPage';
-import { DecksPage } from './admin/DecksPage';
-import { CustomizationManager } from '../components/admin/CustomizationManager';
-import { AnnouncementManager } from '../components/admin/AnnouncementManager';
-import { GlobalAnnouncementManager } from '../components/admin/GlobalAnnouncementManager';
-import { AchievementManager } from '../components/admin/AchievementManager';
-import { ReportsPage } from './admin/ReportsPage';
-import { SettingsPage } from './admin/SettingsPage';
-import { SecurityPage } from './admin/SecurityPage';
 import { CardManager } from '../components/admin/CardManager';
 import { PackManager } from '../components/admin/PackManager';
 import { EventManager } from '../components/admin/EventManager';
@@ -21,7 +10,14 @@ import { GameStatsPanel } from '../components/admin/GameStatsPanel';
 import { AdvancedStatsPanel } from '../components/admin/AdvancedStatsPanel';
 import { MonetizationPanel } from '../components/admin/MonetizationPanel';
 import { BoosterPacksPage } from './admin/BoosterPacksPage';
+import { ReportsPage } from './admin/ReportsPage';
 import { SystemLogsPage } from './admin/SystemLogsPage';
+import { SettingsPage } from './admin/SettingsPage';
+import { SecurityPage } from './admin/SecurityPage';
+import { UsersPage } from './admin/UsersPage';
+import { CustomizationsPage } from './admin/CustomizationsPage';
+import { AnnouncementManager } from '../components/admin/AnnouncementManager';
+import { GlobalAnnouncementManager } from '../components/admin/GlobalAnnouncementManager';
 
 export const AdminPage: React.FC = () => {
   // Persistir a aba ativa no localStorage
@@ -63,13 +59,11 @@ export const AdminPage: React.FC = () => {
       case 'logs':
         return <SystemLogsPage />;
       case 'customizations':
-        return <CustomizationManager />;
+        return <CustomizationsPage />;
       case 'announcements':
         return <AnnouncementManager />;
       case 'global-announcements':
         return <GlobalAnnouncementManager />;
-      case 'achievements':
-        return <AchievementManager />;
       case 'settings':
         return <SettingsPage />;
       case 'security':

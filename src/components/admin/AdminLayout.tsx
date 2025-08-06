@@ -17,8 +17,7 @@ import {
   Calendar,
   Palette,
   Megaphone,
-  Bell,
-  Trophy
+  Bell
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -46,7 +45,6 @@ const menuItems = [
   { id: 'customizations', label: 'Customizações', description: 'Campos de batalha e containers', icon: Palette },
   { id: 'settings', label: 'Configurações', description: 'Configurações gerais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
-  { id: 'achievements', label: 'Conquistas', description: 'Gerenciar conquistas', icon: Trophy },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab, onTabChange }) => {
