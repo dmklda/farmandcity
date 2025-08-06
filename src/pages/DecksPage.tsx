@@ -74,8 +74,6 @@ const DecksPage: React.FC = () => {
   };
 
   const addCardCopy = (baseId: string) => {
-    if (!selectedDeck) return;
-    
     const group = groupedCards.find(g => g.baseId === baseId);
     if (!group) return;
     
@@ -89,8 +87,6 @@ const DecksPage: React.FC = () => {
   };
 
   const removeCardCopy = (baseId: string) => {
-    if (!selectedDeck) return;
-    
     const group = groupedCards.find(g => g.baseId === baseId);
     if (!group) return;
     
@@ -107,6 +103,18 @@ const DecksPage: React.FC = () => {
   const handleSaveDeck = async () => {
     setErrorMsg(null);
     if (!deckName.trim()) return;
+    
+    // Validar tamanho mínimo do deck
+    if (selectedCards.length < 23) {
+      setErrorMsg(`Deck deve ter pelo menos 23 cartas (atual: ${selectedCards.length})`);
+      return;
+    }
+    
+    // Validar tamanho máximo do deck
+    if (selectedCards.length > 40) {
+      setErrorMsg(`Deck deve ter no máximo 40 cartas (atual: ${selectedCards.length})`);
+      return;
+    }
     
     try {
       setIsProcessing(true);
@@ -378,7 +386,7 @@ const DecksPage: React.FC = () => {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleSaveDeck}
-                    disabled={!deckName.trim() || isProcessing}
+                    disabled={!deckName.trim() || selectedCards.length < 23 || selectedCards.length > 40 || isProcessing}
                     className="bg-yellow-600 hover:bg-yellow-700 text-black font-bold"
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -398,6 +406,25 @@ const DecksPage: React.FC = () => {
                   )}
                 </div>
               </div>
+              
+              {/* Mensagem informativa sobre o tamanho do deck */}
+              {selectedCards.length < 23 && (
+                <div className="mt-2 text-sm text-yellow-400">
+                  Adicione mais {23 - selectedCards.length} carta{(23 - selectedCards.length) > 1 ? 's' : ''} para completar o deck mínimo (23 cartas).
+                </div>
+              )}
+              
+              {selectedCards.length >= 23 && selectedCards.length <= 40 && (
+                <div className="mt-2 text-sm text-green-400">
+                  Deck válido! ({selectedCards.length}/40 cartas)
+                </div>
+              )}
+              
+              {selectedCards.length > 40 && (
+                <div className="mt-2 text-sm text-red-400">
+                  Deck muito grande! Remova {selectedCards.length - 40} carta{(selectedCards.length - 40) > 1 ? 's' : ''} (máximo 40 cartas).
+                </div>
+              )}
             </div>
 
             {/* Cards Selection */}

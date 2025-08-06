@@ -26,6 +26,7 @@ import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
 
 import { useAppContext } from '../contexts/AppContext';
+import { GlobalAnnouncements } from '../components/GlobalAnnouncements';
 
 const GamePage: React.FC = () => {
   // Estados de autenticação
@@ -321,6 +322,11 @@ const GamePage: React.FC = () => {
         userEmail={user?.email}
         activeDeck={activeDeck}
       />
+
+      {/* Anúncios Globais */}
+      <div className="fixed top-16 left-0 right-0 z-20 px-4 py-2">
+        <GlobalAnnouncements location="game" maxVisible={2} />
+      </div>
 
       {/* Main Content Area - Scrollable with proper spacing */}
       <div

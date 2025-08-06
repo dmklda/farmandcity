@@ -16,7 +16,9 @@ import {
   Gift,
   Calendar,
   Palette,
-  Megaphone
+  Megaphone,
+  Bell,
+  Trophy
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -34,6 +36,7 @@ const menuItems = [
   { id: 'events', label: 'Eventos', description: 'Eventos especiais', icon: Gift },
   { id: 'rotation', label: 'Rotação Diária', description: 'Ciclo diário de cartas', icon: Calendar },
   { id: 'announcements', label: 'Avisos da Loja', description: 'Gerenciar anúncios', icon: Megaphone },
+  { id: 'global-announcements', label: 'Anúncios Globais', description: 'Avisos em todo o jogo', icon: Bell },
   { id: 'users', label: 'Usuários', description: 'Gerenciar jogadores', icon: Users },
   { id: 'stats', label: 'Estatísticas', description: 'Dados do jogo', icon: BarChart3 },
   { id: 'advanced-stats', label: 'Estatísticas Avançadas', description: 'Análises detalhadas', icon: TrendingUp },
@@ -43,6 +46,7 @@ const menuItems = [
   { id: 'customizations', label: 'Customizações', description: 'Campos de batalha e containers', icon: Palette },
   { id: 'settings', label: 'Configurações', description: 'Configurações gerais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
+  { id: 'achievements', label: 'Conquistas', description: 'Gerenciar conquistas', icon: Trophy },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab, onTabChange }) => {

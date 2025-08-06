@@ -48,8 +48,9 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
 
   // Validar deck
   const deckValidation = React.useMemo(() => {
+    // Permitir deck vazio durante a criação/edição
     if (deckCardsObjects.length === 0) {
-      return { valid: false, errors: ['Deck deve ter pelo menos uma carta'], stats: null };
+      return { valid: true, errors: [], stats: null };
     }
     
     const minCards = gameSettings.deckMinCards || 23;
@@ -123,6 +124,21 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
   };
 
   const handleSave = async () => {
+    // Validar tamanho mínimo apenas ao salvar
+    const minCards = gameSettings.deckMinCards || 23;
+    const maxCards = gameSettings.deckMaxCards || 40;
+    
+    if (deckCards.length < minCards) {
+      setValidationErrors([`Deck deve ter pelo menos ${minCards} cartas (atual: ${deckCards.length})`]);
+      return;
+    }
+    
+    if (deckCards.length > maxCards) {
+      setValidationErrors([`Deck deve ter no máximo ${maxCards} cartas (atual: ${deckCards.length})`]);
+      return;
+    }
+    
+    // Validar outras regras (cópias, etc.)
     if (!deckValidation.valid) {
       setValidationErrors(deckValidation.errors);
       return;
@@ -145,12 +161,16 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
       onClose();
     } catch (err: any) {
       console.error('Error saving deck:', err);
+      setValidationErrors([err.message]);
     } finally {
       setSaving(false);
     }
   };
 
-  const canSave = deckName.trim() && deckValidation.valid;
+  const canSave = deckName.trim() && 
+                 deckCards.length >= (gameSettings.deckMinCards || 23) && 
+                 deckCards.length <= (gameSettings.deckMaxCards || 40) && 
+                 deckValidation.valid;
 
   if (cardsLoading) {
     return (
@@ -235,7 +255,7 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                     <div className="relative">
                       <CardMiniature
                         card={card}
-                        onSelect={() => addCardToDeck(card.id)}
+                        onSelect={(selectedCard) => addCardToDeck(selectedCard.id)}
                         isPlayable={canAdd && deckCards.length < (gameSettings.deckMaxCards || 40)}
                         size="small"
                         showInfo={true}
@@ -298,9 +318,18 @@ export const DeckBuilder: React.FC<DeckBuilderProps> = ({ deckId, onClose }) => 
                 
                 {deckCards.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Nenhuma carta no deck. Adicione cartas da aba "Cartas Disponíveis".
+                    <p className="mb-2">Nenhuma carta no deck.</p>
+                    <p className="text-sm">Adicione pelo menos {gameSettings.deckMinCards || 23} cartas da aba "Cartas Disponíveis" para criar o deck.</p>
                   </div>
-                ) : (
+                ) : deckCards.length < (gameSettings.deckMinCards || 23) ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Adicione mais {(gameSettings.deckMinCards || 23) - deckCards.length} carta{(gameSettings.deckMinCards || 23) - deckCards.length > 1 ? 's' : ''} para completar o deck mínimo.
+                    </p>
+                  </div>
+                ) : null}
+                
+                {deckCards.length > 0 && (
                   <div className="space-y-2">
                     {Object.entries(
                       deckCards.reduce((acc, cardId) => {

@@ -274,6 +274,10 @@ export const usePlayerDecks = () => {
       
       // Recarregar decks
       await fetchPlayerDecks();
+
+      // Verificar conquistas após criar deck
+      await AchievementService.forceCheckAchievements(user.data.user.id);
+
       return data;
     } catch (err: any) {
       console.error('Error creating deck:', err);

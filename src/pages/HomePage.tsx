@@ -14,6 +14,7 @@ import { NewsTab } from '../components/tabs/NewsTab';
 import { AnimatedBackground } from '../components/AnimatedBackground';
 import { Button } from '../components/ui/button';
 import { User, LogOut, Settings } from 'lucide-react';
+import { GlobalAnnouncements } from '../components/GlobalAnnouncements';
 
 const HomePage: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -116,6 +117,11 @@ const HomePage: React.FC = () => {
 
       {/* Conteúdo principal */}
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Anúncios Globais */}
+        <div className="mb-8">
+          <GlobalAnnouncements location="homepage" maxVisible={3} />
+        </div>
+
         {/* Seção de boas-vindas */}
         <div className="text-center mb-12">
           <div className="relative">
