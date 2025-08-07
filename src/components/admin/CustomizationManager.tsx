@@ -424,32 +424,34 @@ export const CustomizationManager: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-            <Palette className="w-8 h-8 text-purple-500" />
-            Customizações
+            <h1 className="text-3xl font-bold text-gray-200 mb-2 flex items-center gap-3">
+              <Palette className="w-8 h-8 text-purple-400" />
+              Gerenciar Customizações
           </h1>
-          <p className="text-gray-300">Gerencie as customizações de campo de batalha e containers</p>
+            <p className="text-gray-400">Gerencie as customizações de campo de batalha e containers</p>
           {error && (
             <p className="text-red-400 text-sm mt-2">Erro: {error}</p>
           )}
         </div>
-        <div className="flex gap-2">
+          <div className="flex gap-3">
           <Button
             onClick={() => { setIsCreating(true); setCreatingType('battlefield'); }}
-            className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white"
+              className="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-500 hover:to-yellow-600 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
           >
             <Plus className="w-4 h-4 mr-2" />
             Campo de Batalha
           </Button>
           <Button
             onClick={() => { setIsCreating(true); setCreatingType('container'); }}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
           >
             <Plus className="w-4 h-4 mr-2" />
             Container
           </Button>
+          </div>
         </div>
       </div>
 

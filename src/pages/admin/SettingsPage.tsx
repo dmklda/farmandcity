@@ -176,56 +176,68 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Configurações</h1>
-          <p className="text-muted-foreground">Configurações gerais do sistema</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={resetToDefaults}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Redefinir
-          </Button>
-          <Button onClick={saveSettings} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Salvando...' : 'Salvar'}
-          </Button>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Configurações do Sistema</h1>
+            <p className="text-gray-400">Configurações gerais do sistema</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={resetToDefaults}
+              className="border-2 border-orange-500/30 text-orange-400 hover:bg-orange-600/20 rounded-xl"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Redefinir
+            </Button>
+            <Button 
+              onClick={saveSettings} 
+              disabled={saving}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* General Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
+      <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+        <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <Globe className="h-5 w-5 text-purple-400" />
             Configurações Gerais
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="gameName">Nome do Jogo</Label>
+              <Label htmlFor="gameName" className="text-gray-300">Nome do Jogo</Label>
               <Input
                 id="gameName"
                 value={settings.gameName}
                 onChange={(e) => setSettings({ ...settings, gameName: e.target.value })}
+                className="bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="version">Versão</Label>
+              <Label htmlFor="version" className="text-gray-300">Versão</Label>
               <Input
                 id="version"
                 value={settings.version}
                 onChange={(e) => setSettings({ ...settings, version: e.target.value })}
+                className="bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-4 border-2 border-gray-600 rounded-xl bg-gray-700/50">
               <div className="space-y-0.5">
-                <Label>Modo de Manutenção</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label className="text-gray-200">Modo de Manutenção</Label>
+                <p className="text-sm text-gray-400">
                   Bloqueia o acesso ao jogo para todos os usuários
                 </p>
               </div>
@@ -234,10 +246,10 @@ export const SettingsPage: React.FC = () => {
                 onCheckedChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
               />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-4 border-2 border-gray-600 rounded-xl bg-gray-700/50">
               <div className="space-y-0.5">
-                <Label>Permitir Novos Registros</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label className="text-gray-200">Permitir Novos Registros</Label>
+                <p className="text-sm text-gray-400">
                   Permite que novos usuários se registrem
                 </p>
               </div>

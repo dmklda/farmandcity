@@ -195,10 +195,10 @@ export const EventManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gerenciar Eventos da Loja</h2>
-          <p className="text-muted-foreground">Crie e gerencie eventos especiais e promoções</p>
+          <h2 className="text-2xl font-bold text-white">Gerenciar Eventos da Loja</h2>
+          <p className="text-gray-300">Crie e gerencie eventos especiais e promoções</p>
         </div>
-        <Button onClick={resetForm} className="flex items-center gap-2">
+        <Button onClick={resetForm} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
           <Plus className="h-4 w-4" />
           Novo Evento
         </Button>
@@ -211,36 +211,37 @@ export const EventManager: React.FC = () => {
         </TabsList>
 
         <TabsContent value="form" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader className="border-b border-gray-700">
+              <CardTitle className="text-white">
                 {editingEvent ? 'Editar Evento' : 'Criar Novo Evento'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Evento *</Label>
+                  <Label htmlFor="name" className="text-gray-300">Nome do Evento *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Ex: Black Friday"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="type">Tipo de Evento</Label>
+                  <Label htmlFor="type" className="text-gray-300">Tipo de Evento</Label>
                   <Select
                     value={formData.event_type}
                     onValueChange={(value: 'sale' | 'limited' | 'exclusive' | 'seasonal') => 
                       setFormData(prev => ({ ...prev, event_type: value }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       <SelectItem value="sale">Promoção</SelectItem>
                       <SelectItem value="limited">Edição Limitada</SelectItem>
                       <SelectItem value="exclusive">Exclusivo</SelectItem>
@@ -250,27 +251,29 @@ export const EventManager: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Data de Início *</Label>
+                  <Label htmlFor="start_date" className="text-gray-300">Data de Início *</Label>
                   <Input
                     id="start_date"
                     type="datetime-local"
                     value={formData.start_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">Data de Fim *</Label>
+                  <Label htmlFor="end_date" className="text-gray-300">Data de Fim *</Label>
                   <Input
                     id="end_date"
                     type="datetime-local"
                     value={formData.end_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="discount">Desconto (%)</Label>
+                  <Label htmlFor="discount" className="text-gray-300">Desconto (%)</Label>
                   <Input
                     id="discount"
                     type="number"
@@ -279,17 +282,19 @@ export const EventManager: React.FC = () => {
                     value={formData.discount_percentage}
                     onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: Number(e.target.value) }))}
                     placeholder="0"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
+                  <Label htmlFor="description" className="text-gray-300">Descrição</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Descreva o evento..."
                     rows={3}
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -300,16 +305,16 @@ export const EventManager: React.FC = () => {
                   checked={formData.is_active}
                   onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
                 />
-                <Label htmlFor="is_active">Evento Ativo</Label>
+                <Label htmlFor="is_active" className="text-gray-300">Evento Ativo</Label>
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={handleSubmit} className="flex items-center gap-2">
+                <Button onClick={handleSubmit} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
                   <Save className="h-4 w-4" />
                   {editingEvent ? 'Atualizar' : 'Criar'} Evento
                 </Button>
                 {editingEvent && (
-                  <Button variant="outline" onClick={resetForm} className="flex items-center gap-2">
+                  <Button variant="outline" onClick={resetForm} className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700">
                     <X className="h-4 w-4" />
                     Cancelar
                   </Button>
@@ -322,24 +327,24 @@ export const EventManager: React.FC = () => {
         <TabsContent value="list" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <Card key={event.id}>
-                <CardHeader>
+              <Card key={event.id} className="bg-gray-900 border-gray-700">
+                <CardHeader className="border-b border-gray-700">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <Gift className="h-4 w-4 text-purple-500" />
-                      <CardTitle className="text-lg">{event.name}</CardTitle>
+                      <CardTitle className="text-lg text-white">{event.name}</CardTitle>
                     </div>
                     <Badge className={getEventTypeColor(event.event_type)}>
                       {getEventTypeLabel(event.event_type)}
                     </Badge>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-gray-300">
                     <Calendar className="h-4 w-4 inline mr-1" />
                     {new Date(event.start_date).toLocaleDateString()} - {new Date(event.end_date).toLocaleDateString()}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">{event.description}</p>
+                  <p className="text-sm text-gray-300">{event.description}</p>
                   
                   <div className="flex items-center gap-2">
                     <Badge variant={event.is_active ? "default" : "secondary"}>
@@ -357,7 +362,7 @@ export const EventManager: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => editEvent(event)}
-                      className="flex-1"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0"
                     >
                       <Edit className="h-4 w-4" />
                       Editar
@@ -366,7 +371,7 @@ export const EventManager: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => deleteEvent(event.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="bg-red-600 hover:bg-red-700 text-white rounded-lg border-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

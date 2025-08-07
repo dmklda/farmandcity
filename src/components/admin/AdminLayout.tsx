@@ -17,7 +17,12 @@ import {
   Calendar,
   Palette,
   Megaphone,
-  Bell
+  Bell,
+  MessageSquare,
+  Newspaper,
+  Trophy,
+  Target,
+  ShoppingCart
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -32,8 +37,13 @@ const menuItems = [
   { id: 'dashboard', label: 'Dashboard', description: 'Visão geral do sistema', icon: LayoutDashboard },
   { id: 'cards', label: 'Gerenciar Cartas', description: 'Criar e editar cartas', icon: FileText },
   { id: 'packs', label: 'Packs e Boosters', description: 'Gerenciar pacotes', icon: Package },
+  { id: 'shop', label: 'Loja', description: 'Gerenciar itens da loja', icon: ShoppingCart },
   { id: 'events', label: 'Eventos', description: 'Eventos especiais', icon: Gift },
   { id: 'rotation', label: 'Rotação Diária', description: 'Ciclo diário de cartas', icon: Calendar },
+  { id: 'community', label: 'Comunidade', description: 'Gerenciar fórum e tópicos', icon: MessageSquare },
+  { id: 'news', label: 'Notícias', description: 'Gerenciar blog e posts', icon: Newspaper },
+  { id: 'achievements', label: 'Conquistas', description: 'Gerenciar conquistas', icon: Trophy },
+  { id: 'missions', label: 'Missões', description: 'Gerenciar missões', icon: Target },
   { id: 'announcements', label: 'Avisos da Loja', description: 'Gerenciar anúncios', icon: Megaphone },
   { id: 'global-announcements', label: 'Anúncios Globais', description: 'Avisos em todo o jogo', icon: Bell },
   { id: 'users', label: 'Usuários', description: 'Gerenciar jogadores', icon: Users },
@@ -43,7 +53,7 @@ const menuItems = [
   { id: 'reports', label: 'Relatórios', description: 'Relatórios gerenciais', icon: FileBarChart },
   { id: 'logs', label: 'Logs do Sistema', description: 'Logs e auditoria', icon: ScrollText },
   { id: 'customizations', label: 'Customizações', description: 'Campos de batalha e containers', icon: Palette },
-  { id: 'settings', label: 'Configurações', description: 'Configurações gerais', icon: Settings },
+  { id: 'settings', label: 'Configurações', description: 'Configurações gerenciais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
 ];
 

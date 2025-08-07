@@ -6,15 +6,17 @@ import { usePlayerDecks } from '../hooks/usePlayerDecks';
 import { useAdminPermissions } from '../hooks/useAdminPermissions';
 import { useAppContext } from '../contexts/AppContext';
 import PlayerStatsModal from '../components/PlayerStatsModal';
-import { HorizontalTabs } from '../components/HorizontalTabs';
-import { OverviewTab } from '../components/tabs/OverviewTab';
-import { EventsTab } from '../components/tabs/EventsTab';
-import { CommunityTab } from '../components/tabs/CommunityTab';
-import { NewsTab } from '../components/tabs/NewsTab';
-import { AnimatedBackground } from '../components/AnimatedBackground';
-import { Button } from '../components/ui/button';
-import { User, LogOut, Settings } from 'lucide-react';
+import { MedievalHorizontalTabs } from '../components/MedievalHorizontalTabs';
+import { MedievalOverviewTab } from '../components/tabs/MedievalOverviewTab';
+import EventsTab from '../components/tabs/EventsTab';
+import CommunityTab from '../components/tabs/CommunityTab';
+import NewsTab from '../components/tabs/NewsTab';
+import AchievementsTab from '../components/AchievementsTab';
+import MissionsTab from '../components/MissionsTab';
+import { MedievalAnimatedBackground } from '../components/MedievalAnimatedBackground';
+import { MedievalHeader } from '../components/MedievalHeader';
 import { GlobalAnnouncements } from '../components/GlobalAnnouncements';
+import { MedievalNotifications } from '../components/MedievalNotifications';
 
 const HomePage: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -50,70 +52,19 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Animated Background */}
-      <AnimatedBackground />
+      {/* Medieval Animated Background */}
+      <MedievalAnimatedBackground />
 
-      {/* Header */}
-      <div className="relative z-20">
-        <div className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
-                  <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                    <span className="text-purple-600 font-bold text-lg">F</span>
-                  </div>
-              </div>
-                <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                    FarmandCity
-              </h1>
-                  <p className="text-xs text-white/60">Seu império aguarda</p>
-            </div>
-              </div>
+      {/* Medieval Header */}
+      <MedievalHeader
+        user={user}
+        hasAdminAccess={hasAdminAccess}
+        onShowPlayerStats={() => setShowPlayerStats(true)}
+        onLogout={handleLogout}
+      />
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-white/80 text-sm">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Online</span>
-              </div>
-              
-              <Button
-                onClick={() => setShowPlayerStats(true)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 border-slate-600 text-white hover:text-blue-400 transition-all duration-300"
-              >
-                <User className="h-4 w-4" />
-                Perfil
-              </Button>
-                
-                {hasAdminAccess && (
-                  <Button
-                    onClick={() => window.location.href = '/admin/debug'}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/30 border-purple-500/50 text-purple-400 hover:text-purple-300 transition-all duration-300"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Admin
-                  </Button>
-                )}
-              
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 border-red-500/50 text-red-400 hover:text-red-300 transition-all duration-300"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Medieval Notifications */}
+      <MedievalNotifications />
 
       {/* Conteúdo principal */}
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 relative z-10">
@@ -122,29 +73,18 @@ const HomePage: React.FC = () => {
           <GlobalAnnouncements location="homepage" maxVisible={3} />
         </div>
 
-        {/* Seção de boas-vindas */}
-        <div className="text-center mb-12">
-          <div className="relative">
-            <h2 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent mb-4">
-              Bem-vindo de volta, {user?.email?.split('@')[0]}!
-            </h2>
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 blur-xl opacity-20 -z-10"></div>
-          </div>
-          <p className="text-xl text-white/80 mb-8">
-            Pronto para construir seu império?
-          </p>
-          <div className="w-32 h-1 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto rounded-full"></div>
-        </div>
 
-        {/* Horizontal Tabs Navigation */}
-        <HorizontalTabs
+
+        {/* Medieval Horizontal Tabs Navigation */}
+        <MedievalHorizontalTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <OverviewTab
+          <MedievalOverviewTab
+            userName={user?.email?.split('@')[0] || 'Guerreiro'}
             onStartGame={startNewGame}
             onSelectGameMode={selectGameMode}
             onGoToShop={() => setCurrentView('shop')}
@@ -163,24 +103,30 @@ const HomePage: React.FC = () => {
         {activeTab === 'community' && <CommunityTab />}
 
         {activeTab === 'news' && <NewsTab />}
+
+        {activeTab === 'achievements' && <AchievementsTab />}
+
+        {activeTab === 'missions' && <MissionsTab />}
       </div>
 
       {/* Modal de estatísticas do jogador */}
       {showPlayerStats && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl w-full max-w-4xl h-full max-h-[90vh] overflow-hidden border border-slate-700/50 shadow-2xl">
-            <div className="flex justify-between items-center p-6 border-b border-slate-700/50">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
+          <div className="relative bg-gradient-to-br from-slate-900/95 via-purple-900/90 to-slate-900/95 rounded-3xl w-full max-w-4xl h-full max-h-[90vh] overflow-hidden border border-purple-500/30 shadow-2xl backdrop-blur-md">
+            {/* Decorative border */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent opacity-60"></div>
+            
+            <div className="flex justify-between items-center p-8 border-b border-purple-500/30">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
                 Estatísticas do Jogador
               </h2>
-              <Button
+              <button
                 onClick={() => setShowPlayerStats(false)}
-                variant="outline"
-                size="sm"
-                className="bg-slate-700/50 hover:bg-slate-600/50 border-slate-600 text-white hover:text-red-400 transition-all duration-300"
+                className="relative group p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 border border-purple-500/30 hover:border-purple-400/50 text-purple-200 hover:text-red-300 transition-all duration-300 backdrop-blur-sm"
               >
-                ✕
-              </Button>
+                <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-orange-600/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative z-10 text-xl font-bold">✕</span>
+              </button>
             </div>
             <div className="overflow-auto h-full">
               <PlayerStatsModal 

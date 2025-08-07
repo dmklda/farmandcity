@@ -287,6 +287,86 @@ body {
   animation: scale-in 0.3s ease-out;
 }
 
+/* Medieval Theme Animations */
+@keyframes medievalFloat {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% { 
+    transform: translateY(-30px) rotate(180deg);
+    opacity: 0.6;
+  }
+}
+
+.animate-medieval-float {
+  animation: medievalFloat 8s ease-in-out infinite;
+}
+
+@keyframes medievalGlow {
+  0% { 
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.4), 0 0 50px rgba(168, 85, 247, 0.2); 
+  }
+  100% { 
+    box-shadow: 0 0 35px rgba(168, 85, 247, 0.6), 0 0 70px rgba(168, 85, 247, 0.3); 
+  }
+}
+
+.animate-medieval-glow {
+  animation: medievalGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Slide in animation for notifications */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
 /* Glass morphism effects */
 .glass {
   background: rgba(255, 255, 255, 0.1);

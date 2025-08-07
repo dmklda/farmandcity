@@ -164,46 +164,68 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Relatórios</h1>
-          <p className="text-muted-foreground">Relatórios gerenciais e análises</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => exportReport('pdf')}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar PDF
-          </Button>
-          <Button variant="outline" onClick={() => exportReport('csv')}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
-          <Button onClick={() => generateReport('comprehensive')}>
-            <FileText className="h-4 w-4 mr-2" />
-            Gerar Relatório
-          </Button>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Relatórios Gerenciais</h1>
+            <p className="text-gray-400">Relatórios gerenciais e análises detalhadas</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => exportReport('pdf')}
+              className="border-2 border-blue-500/30 text-blue-400 hover:bg-blue-600/20 rounded-xl"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar PDF
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => exportReport('csv')}
+              className="border-2 border-green-500/30 text-green-400 hover:bg-green-600/20 rounded-xl"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+            <Button 
+              onClick={() => generateReport('comprehensive')}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Gerar Relatório
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Period Selector */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-2">
+      <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+        <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <Calendar className="h-5 w-5 text-purple-400" />
+            Período do Relatório
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="flex gap-3">
             <Button
               variant={selectedPeriod === 'daily' ? 'default' : 'outline'}
               onClick={() => setSelectedPeriod('daily')}
+              className={selectedPeriod === 'daily' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
             >
               Diário
             </Button>
             <Button
               variant={selectedPeriod === 'weekly' ? 'default' : 'outline'}
               onClick={() => setSelectedPeriod('weekly')}
+              className={selectedPeriod === 'weekly' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
             >
               Semanal
             </Button>
             <Button
               variant={selectedPeriod === 'monthly' ? 'default' : 'outline'}
               onClick={() => setSelectedPeriod('monthly')}
+              className={selectedPeriod === 'monthly' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
             >
               Mensal
             </Button>
@@ -213,29 +235,33 @@ export const ReportsPage: React.FC = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Novos Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Users className="h-5 w-5 text-purple-400" />
+              Novos Usuários
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentReport.newUsers}</div>
-            <div className="flex items-center text-xs text-green-600">
-              <TrendingUp className="h-3 w-3 mr-1" />
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-gray-200">{currentReport.newUsers}</div>
+            <div className="flex items-center text-sm text-green-400 mt-2">
+              <TrendingUp className="h-4 w-4 mr-1" />
               +18.4% vs semana anterior
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Activity className="h-5 w-5 text-purple-400" />
+              Usuários Ativos
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentReport.activeUsers}</div>
-            <div className="flex items-center text-xs text-green-600">
-              <TrendingUp className="h-3 w-3 mr-1" />
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-gray-200">{currentReport.activeUsers}</div>
+            <div className="flex items-center text-sm text-green-400 mt-2">
+              <TrendingUp className="h-4 w-4 mr-1" />
               +18.2% vs semana anterior
             </div>
           </CardContent>

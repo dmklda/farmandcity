@@ -176,43 +176,55 @@ export const BoosterPacksPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Booster Packs</h1>
-          <p className="text-muted-foreground">Gerenciar pacotes de cartas disponíveis na loja</p>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Gerenciar Booster Packs</h1>
+            <p className="text-gray-400">Gerenciar pacotes de cartas disponíveis na loja</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setShowForm(true)} 
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Pacote
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setShowForm(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Pacote
-        </Button>
       </div>
 
       {/* Form Modal */}
       {showForm && (
-        <Card className="border-2 border-primary">
-          <CardHeader>
-            <CardTitle>{editingPack ? 'Editar Pacote' : 'Novo Pacote'}</CardTitle>
+        <Card className="shadow-xl border-2 border-purple-500/30 bg-purple-900/10">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Package className="h-5 w-5 text-purple-400" />
+              {editingPack ? 'Editar Pacote' : 'Novo Pacote'}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">Nome do Pacote</Label>
+                  <Label htmlFor="name" className="text-gray-300">Nome do Pacote</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    className="bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="price">Preço (Moedas)</Label>
+                  <Label htmlFor="price" className="text-gray-300">Preço (Moedas)</Label>
                   <Input
                     id="price"
                     type="number"
                     value={formData.price_coins}
                     onChange={(e) => setFormData({ ...formData, price_coins: parseInt(e.target.value) })}
                     required
+                    className="bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
               </div>

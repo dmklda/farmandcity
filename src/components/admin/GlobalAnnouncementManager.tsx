@@ -250,12 +250,12 @@ export const GlobalAnnouncementManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gerenciar Anúncios Globais</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold text-white">Gerenciar Anúncios Globais</h1>
+          <p className="text-gray-300">
             Crie e gerencie anúncios que aparecem em todo o jogo
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
+        <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
           <Plus className="w-4 h-4" />
           Novo Anúncio Global
         </Button>
@@ -263,46 +263,47 @@ export const GlobalAnnouncementManager: React.FC = () => {
 
       {/* Form */}
       {(isCreating || editingId) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-gray-900 border-gray-700">
+          <CardHeader className="border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-white">
               {editingId ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               {editingId ? 'Editar Anúncio Global' : 'Novo Anúncio Global'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4 pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Título *</Label>
+                  <Label htmlFor="title" className="text-gray-300">Título *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Ex: Manutenção Programada"
                     required
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="type">Tipo</Label>
+                  <Label htmlFor="type" className="text-gray-300">Tipo</Label>
                   <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info">Informação</SelectItem>
-                      <SelectItem value="news">Notícia</SelectItem>
-                      <SelectItem value="update">Atualização</SelectItem>
-                      <SelectItem value="event">Evento</SelectItem>
-                      <SelectItem value="maintenance">Manutenção</SelectItem>
-                      <SelectItem value="warning">Aviso</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="info" className="text-white hover:bg-gray-700">Informação</SelectItem>
+                      <SelectItem value="news" className="text-white hover:bg-gray-700">Notícia</SelectItem>
+                      <SelectItem value="update" className="text-white hover:bg-gray-700">Atualização</SelectItem>
+                      <SelectItem value="event" className="text-white hover:bg-gray-700">Evento</SelectItem>
+                      <SelectItem value="maintenance" className="text-white hover:bg-gray-700">Manutenção</SelectItem>
+                      <SelectItem value="warning" className="text-white hover:bg-gray-700">Aviso</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="message">Mensagem *</Label>
+                <Label htmlFor="message" className="text-gray-300">Mensagem *</Label>
                 <Textarea
                   id="message"
                   value={formData.message}
@@ -310,68 +311,72 @@ export const GlobalAnnouncementManager: React.FC = () => {
                   placeholder="Digite a mensagem do anúncio..."
                   rows={3}
                   required
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="icon">Ícone</Label>
+                  <Label htmlFor="icon" className="text-gray-300">Ícone</Label>
                   <Input
                     id="icon"
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="📢"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="color">Cor</Label>
+                  <Label htmlFor="color" className="text-gray-300">Cor</Label>
                   <Select value={formData.color} onValueChange={(value: any) => setFormData({ ...formData, color: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="red">Vermelho</SelectItem>
-                      <SelectItem value="green">Verde</SelectItem>
-                      <SelectItem value="blue">Azul</SelectItem>
-                      <SelectItem value="purple">Roxo</SelectItem>
-                      <SelectItem value="orange">Laranja</SelectItem>
-                      <SelectItem value="yellow">Amarelo</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="red" className="text-white hover:bg-gray-700">Vermelho</SelectItem>
+                      <SelectItem value="green" className="text-white hover:bg-gray-700">Verde</SelectItem>
+                      <SelectItem value="blue" className="text-white hover:bg-gray-700">Azul</SelectItem>
+                      <SelectItem value="purple" className="text-white hover:bg-gray-700">Roxo</SelectItem>
+                      <SelectItem value="orange" className="text-white hover:bg-gray-700">Laranja</SelectItem>
+                      <SelectItem value="yellow" className="text-white hover:bg-gray-700">Amarelo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="priority">Prioridade</Label>
+                  <Label htmlFor="priority" className="text-gray-300">Prioridade</Label>
                   <Select value={formData.priority.toString()} onValueChange={(value) => setFormData({ ...formData, priority: parseInt(value) as any })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Baixa</SelectItem>
-                      <SelectItem value="2">Média</SelectItem>
-                      <SelectItem value="3">Alta</SelectItem>
-                      <SelectItem value="4">Crítica</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="1" className="text-white hover:bg-gray-700">Baixa</SelectItem>
+                      <SelectItem value="2" className="text-white hover:bg-gray-700">Média</SelectItem>
+                      <SelectItem value="3" className="text-white hover:bg-gray-700">Alta</SelectItem>
+                      <SelectItem value="4" className="text-white hover:bg-gray-700">Crítica</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="start_date">Data de Início</Label>
+                  <Label htmlFor="start_date" className="text-gray-300">Data de Início</Label>
                   <Input
                     id="start_date"
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="end_date">Data de Fim (Opcional)</Label>
+                  <Label htmlFor="end_date" className="text-gray-300">Data de Fim (Opcional)</Label>
                   <Input
                     id="end_date"
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
                 <div className="space-y-4">
@@ -381,7 +386,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                       checked={formData.is_active}
                       onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                     />
-                    <Label htmlFor="is_active">Ativo</Label>
+                    <Label htmlFor="is_active" className="text-gray-300">Ativo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -389,7 +394,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                       checked={formData.show_on_homepage}
                       onCheckedChange={(checked) => setFormData({ ...formData, show_on_homepage: checked })}
                     />
-                    <Label htmlFor="show_on_homepage">Mostrar na Página Inicial</Label>
+                    <Label htmlFor="show_on_homepage" className="text-gray-300">Mostrar na Página Inicial</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -397,7 +402,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                       checked={formData.show_in_game}
                       onCheckedChange={(checked) => setFormData({ ...formData, show_in_game: checked })}
                     />
-                    <Label htmlFor="show_in_game">Mostrar Durante o Jogo</Label>
+                    <Label htmlFor="show_in_game" className="text-gray-300">Mostrar Durante o Jogo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -405,17 +410,17 @@ export const GlobalAnnouncementManager: React.FC = () => {
                       checked={formData.dismissible}
                       onCheckedChange={(checked) => setFormData({ ...formData, dismissible: checked })}
                     />
-                    <Label htmlFor="dismissible">Permitir Fechar</Label>
+                    <Label htmlFor="dismissible" className="text-gray-300">Permitir Fechar</Label>
                   </div>
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="flex items-center gap-2">
+                <Button type="submit" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
                   <Save className="w-4 h-4" />
                   {editingId ? 'Atualizar' : 'Criar'}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="flex items-center gap-2">
+                <Button type="button" variant="outline" onClick={resetForm} className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700">
                   <X className="w-4 h-4" />
                   Cancelar
                 </Button>
@@ -427,14 +432,14 @@ export const GlobalAnnouncementManager: React.FC = () => {
 
       {/* List */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Anúncios Globais Existentes ({announcements.length})</h2>
+        <h2 className="text-xl font-semibold text-white">Anúncios Globais Existentes ({announcements.length})</h2>
         
         {announcements.length === 0 ? (
-          <Card>
+          <Card className="bg-gray-900 border-gray-700">
             <CardContent className="flex items-center justify-center h-32">
               <div className="text-center">
-                <Megaphone className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">Nenhum anúncio global criado ainda</p>
+                <Megaphone className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-300">Nenhum anúncio global criado ainda</p>
               </div>
             </CardContent>
           </Card>
@@ -489,6 +494,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleToggleActive(announcement.id, announcement.is_active)}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
                       >
                         {announcement.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
@@ -496,6 +502,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(announcement)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -503,6 +510,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(announcement.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-lg border-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

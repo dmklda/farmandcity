@@ -36,6 +36,7 @@ interface Pack {
   sold_quantity: number | null;
   is_active: boolean | null;
   discount_percentage: number | null;
+  real_discount_percentage: number | null;
   is_daily_rotation: boolean | null;
   rotation_date: string | null;
   event_id: string | null;
@@ -44,6 +45,7 @@ interface Pack {
   max_purchases_per_user: number | null;
   purchase_time_limit: string | null;
   cards_per_pack: number | null;
+  is_special: boolean | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -71,13 +73,21 @@ export const PackManager: React.FC = () => {
     stock_quantity: 0,
     is_active: true,
     discount_percentage: 0,
+    real_discount_percentage: 0,
     is_daily_rotation: false,
     event_id: undefined as string | undefined,
     pack_type: 'unrestricted' as 'unrestricted' | 'random' | 'conditional' | 'unlimited',
     pack_conditions: {} as Record<string, number>,
     max_purchases_per_user: null as number | null,
     purchase_time_limit: null as string | null,
-    cards_per_pack: null as number | null
+    cards_per_pack: null as number | null,
+    is_special: false
+  });
+
+  // Estados para filtros de cartas
+  const [cardFilters, setCardFilters] = useState({
+    type: 'all' as string,
+    rarity: 'all' as string
   });
 
   // Debug: Log formData changes
@@ -146,13 +156,19 @@ export const PackManager: React.FC = () => {
       stock_quantity: 0,
       is_active: true,
       discount_percentage: 0,
+      real_discount_percentage: 0,
       is_daily_rotation: false,
       event_id: undefined,
       pack_type: 'unrestricted',
       pack_conditions: {},
       max_purchases_per_user: null,
       purchase_time_limit: null,
-      cards_per_pack: null
+      cards_per_pack: null,
+      is_special: false
+    });
+    setCardFilters({
+      type: 'all',
+      rarity: 'all'
     });
     setEditingPack(null);
     setActiveTab('form');
@@ -185,6 +201,7 @@ export const PackManager: React.FC = () => {
         sold_quantity: editingPack ? editingPack.sold_quantity : 0,
         is_active: formData.is_active,
         discount_percentage: formData.discount_percentage,
+        real_discount_percentage: formData.real_discount_percentage,
         is_daily_rotation: formData.is_daily_rotation,
         event_id: formData.event_id,
         pack_type: formData.pack_type,
@@ -192,6 +209,7 @@ export const PackManager: React.FC = () => {
         max_purchases_per_user: formData.max_purchases_per_user,
         purchase_time_limit: formData.purchase_time_limit,
         cards_per_pack: formData.cards_per_pack,
+        is_special: formData.is_special,
         updated_at: new Date().toISOString()
       };
 
@@ -256,13 +274,15 @@ export const PackManager: React.FC = () => {
       stock_quantity: pack.stock_quantity || 0,
       is_active: pack.is_active || false,
       discount_percentage: pack.discount_percentage || 0,
+      real_discount_percentage: pack.real_discount_percentage || 0,
       is_daily_rotation: pack.is_daily_rotation || false,
       event_id: pack.event_id || undefined,
       pack_type: (pack.pack_type as 'unrestricted' | 'random' | 'conditional' | 'unlimited') || 'unrestricted',
       pack_conditions: pack.pack_conditions || {},
       max_purchases_per_user: pack.max_purchases_per_user,
       purchase_time_limit: pack.purchase_time_limit,
-      cards_per_pack: pack.cards_per_pack
+      cards_per_pack: pack.cards_per_pack,
+      is_special: pack.is_special || false
     });
     
             /*// console.log('FormData atualizado:', {
@@ -469,6 +489,59 @@ export const PackManager: React.FC = () => {
     });
   };
 
+  // Função para selecionar todas as cartas visíveis
+  const selectAllVisibleCards = () => {
+    const filteredCards = cards.filter(card => {
+      const typeMatch = cardFilters.type === 'all' || card.type === cardFilters.type;
+      const rarityMatch = cardFilters.rarity === 'all' || card.rarity === cardFilters.rarity;
+      return typeMatch && rarityMatch;
+    });
+
+    setFormData(prev => {
+      const newCardQuantities = { ...prev.card_quantities };
+      
+      // Adicionar todas as cartas filtradas com quantidade 1
+      filteredCards.forEach(card => {
+        newCardQuantities[card.id] = 1;
+      });
+      
+      // Reconstruir card_ids baseado nas quantidades
+      const newCardIds: string[] = [];
+      Object.entries(newCardQuantities).forEach(([id, quantity]) => {
+        for (let i = 0; i < quantity; i++) {
+          newCardIds.push(id);
+        }
+      });
+      
+      return {
+        ...prev,
+        card_ids: newCardIds,
+        card_quantities: newCardQuantities
+      };
+    });
+  };
+
+  // Função para desmarcar todas as cartas
+  const deselectAllCards = () => {
+    setFormData(prev => ({
+      ...prev,
+      card_ids: [],
+      card_quantities: {}
+    }));
+  };
+
+  // Função para obter tipos únicos de cartas
+  const getUniqueCardTypes = () => {
+    const types = cards.map(card => card.type);
+    return ['all', ...Array.from(new Set(types))];
+  };
+
+  // Função para obter raridades únicas de cartas
+  const getUniqueCardRarities = () => {
+    const rarities = cards.map(card => card.rarity);
+    return ['all', ...Array.from(new Set(rarities))];
+  };
+
   const testPackOpening = async (packId: string) => {
     const result = await openPack(packId);
     if (result) {
@@ -502,7 +575,7 @@ export const PackManager: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Carregando...</div>
+        <div className="text-lg text-white">Carregando...</div>
       </div>
     );
   }
@@ -511,10 +584,10 @@ export const PackManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gerenciar Packs e Boosters</h2>
-          <p className="text-muted-foreground">Crie e gerencie packs de cartas e boosters</p>
+          <h2 className="text-2xl font-bold text-white">Gerenciar Packs e Boosters</h2>
+          <p className="text-gray-300">Crie e gerencie packs de cartas e boosters</p>
         </div>
-        <Button onClick={resetForm} className="flex items-center gap-2">
+        <Button onClick={resetForm} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
           <Plus className="h-4 w-4" />
           Novo Pack
         </Button>
@@ -526,8 +599,8 @@ export const PackManager: React.FC = () => {
             onClick={() => setActiveTab('form')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'form'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
           >
             Criar/Editar Pack
@@ -536,8 +609,8 @@ export const PackManager: React.FC = () => {
             onClick={() => setActiveTab('list')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'list'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
           >
             Packs Existentes
@@ -545,13 +618,13 @@ export const PackManager: React.FC = () => {
         </div>
 
         {activeTab === 'form' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader className="border-b border-gray-700">
+              <CardTitle className="text-white">
                 {editingPack ? 'Editar Pack' : 'Criar Novo Pack'}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome do Pack *</Label>
@@ -646,16 +719,29 @@ export const PackManager: React.FC = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="discount">Desconto (%)</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    value={formData.discount_percentage}
-                    onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
-                    placeholder="0"
-                  />
-                </div>
+                                 <div className="space-y-2">
+                   <Label htmlFor="discount">Desconto Falso (%)</Label>
+                   <Input
+                     id="discount"
+                     type="number"
+                     value={formData.discount_percentage}
+                     onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
+                     placeholder="0"
+                   />
+                   <p className="text-xs text-gray-500">Desconto mostrado na loja (50% falso multiplica preço por 2)</p>
+                 </div>
+
+                 <div className="space-y-2">
+                   <Label htmlFor="real_discount">Desconto Real (%)</Label>
+                   <Input
+                     id="real_discount"
+                     type="number"
+                     value={formData.real_discount_percentage}
+                     onChange={(e) => setFormData(prev => ({ ...prev, real_discount_percentage: parseInt(e.target.value) || 0 }))}
+                     placeholder="0"
+                   />
+                   <p className="text-xs text-gray-500">Desconto real aplicado na compra</p>
+                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="stock">Quantidade em Estoque</Label>
@@ -689,6 +775,15 @@ export const PackManager: React.FC = () => {
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_limited: checked }))}
                   />
                   <Label htmlFor="is_limited">Pack Limitado</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_special"
+                    checked={formData.is_special}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_special: checked }))}
+                  />
+                  <Label htmlFor="is_special">Pack Especial</Label>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -827,17 +922,17 @@ export const PackManager: React.FC = () => {
                     <div className="space-y-2">
                       <Label htmlFor="time_limit">Limite de Tempo entre Compras</Label>
                       <Select
-                        value={formData.purchase_time_limit || ''}
+                        value={formData.purchase_time_limit || 'none'}
                         onValueChange={(value) => setFormData(prev => ({ 
                           ...prev, 
-                          purchase_time_limit: value || null 
+                          purchase_time_limit: value === 'none' ? null : value 
                         }))}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um limite de tempo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sem limite</SelectItem>
+                          <SelectItem value="none">Sem limite</SelectItem>
                           <SelectItem value="1 hour">1 hora</SelectItem>
                           <SelectItem value="6 hours">6 horas</SelectItem>
                           <SelectItem value="12 hours">12 horas</SelectItem>
@@ -853,76 +948,157 @@ export const PackManager: React.FC = () => {
 
               <div className="space-y-4">
                 <Label>Cartas do Pack *</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto border rounded-lg p-4">
-                  {cards.map((card) => {
-                    const quantity = formData.card_quantities[card.id] || 0;
-                    const isSelected = quantity > 0;
-                    
-                    return (
-                      <div
-                        key={card.id}
-                        className={`p-3 border rounded-lg transition-colors ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                
+                {/* Filtros e controles */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllVisibleCards}
+                        className="text-sm"
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleCardSelection(card.id)}
-                            className="rounded"
-                            aria-label={`Selecionar ${card.name}`}
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">{card.name}</div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <Badge variant="outline" className="text-xs">
-                                {card.type}
-                              </Badge>
-                              <Badge className={`text-xs ${getRarityColor(card.rarity)}`}>
-                                {card.rarity}
-                              </Badge>
+                        Selecionar Todas (Filtradas)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={deselectAllCards}
+                        className="text-sm"
+                      >
+                        Desmarcar Todas
+                      </Button>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {formData.card_ids.length} cartas selecionadas
+                    </div>
+                  </div>
+
+                  {/* Filtros */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="filter-type">Filtrar por Tipo</Label>
+                      <Select
+                        value={cardFilters.type}
+                        onValueChange={(value) => setCardFilters(prev => ({ ...prev, type: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getUniqueCardTypes().map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type === 'all' ? 'Todos os Tipos' : type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="filter-rarity">Filtrar por Raridade</Label>
+                      <Select
+                        value={cardFilters.rarity}
+                        onValueChange={(value) => setCardFilters(prev => ({ ...prev, rarity: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getUniqueCardRarities().map((rarity) => (
+                            <SelectItem key={rarity} value={rarity}>
+                              {rarity === 'all' ? 'Todas as Raridades' : rarity}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de cartas filtradas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto border rounded-lg p-4">
+                  {cards
+                    .filter(card => {
+                      const typeMatch = cardFilters.type === 'all' || card.type === cardFilters.type;
+                      const rarityMatch = cardFilters.rarity === 'all' || card.rarity === cardFilters.rarity;
+                      return typeMatch && rarityMatch;
+                    })
+                    .map((card) => {
+                      const quantity = formData.card_quantities[card.id] || 0;
+                      const isSelected = quantity > 0;
+                      
+                      return (
+                        <div
+                          key={card.id}
+                          className={`p-3 border rounded-lg transition-colors ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleCardSelection(card.id)}
+                              className="rounded"
+                              aria-label={`Selecionar ${card.name}`}
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{card.name}</div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <Badge variant="outline" className="text-xs">
+                                  {card.type}
+                                </Badge>
+                                <Badge className={`text-xs ${getRarityColor(card.rarity)}`}>
+                                  {card.rarity}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
+                          
+                          {isSelected && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeCardQuantity(card.id);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                -
+                              </Button>
+                              <span className="text-sm font-medium min-w-[20px] text-center">
+                                {quantity}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addCardQuantity(card.id);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                        
-                        {isSelected && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeCardQuantity(card.id);
-                              }}
-                              className="h-6 w-6 p-0"
-                            >
-                              -
-                            </Button>
-                            <span className="text-sm font-medium min-w-[20px] text-center">
-                              {quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addCardQuantity(card.id);
-                              }}
-                              className="h-6 w-6 p-0"
-                            >
-                              +
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
+                
                 <div className="text-sm text-gray-500">
-                  {formData.card_ids.length} cartas selecionadas
+                  Mostrando {cards.filter(card => {
+                    const typeMatch = cardFilters.type === 'all' || card.type === cardFilters.type;
+                    const rarityMatch = cardFilters.rarity === 'all' || card.rarity === cardFilters.rarity;
+                    return typeMatch && rarityMatch;
+                  }).length} de {cards.length} cartas
                 </div>
               </div>
 
@@ -1052,6 +1228,11 @@ export const PackManager: React.FC = () => {
                     </Badge>
                     {pack.is_limited && (
                       <Badge variant="outline">Limitado</Badge>
+                    )}
+                    {pack.is_special && (
+                      <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                        Especial
+                      </Badge>
                     )}
                     {pack.is_daily_rotation && (
                       <Badge variant="outline">Rotação</Badge>

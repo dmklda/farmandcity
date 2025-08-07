@@ -38,6 +38,8 @@ module.exports = {
         'shimmer': 'shimmer 2s linear infinite',
         'float': 'float 6s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'medieval-float': 'medievalFloat 8s ease-in-out infinite',
+        'medieval-glow': 'medievalGlow 3s ease-in-out infinite alternate',
       },
       keyframes: {
         fadeIn: {
@@ -73,6 +75,24 @@ module.exports = {
         glow: {
           '0%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)' },
           '100%': { boxShadow: '0 0 30px rgba(139, 92, 246, 0.6)' },
+        },
+        medievalFloat: {
+          '0%, 100%': { 
+            transform: 'translateY(0px) rotate(0deg)',
+            opacity: '0.3'
+          },
+          '50%': { 
+            transform: 'translateY(-30px) rotate(180deg)',
+            opacity: '0.6'
+          },
+        },
+        medievalGlow: {
+          '0%': { 
+            boxShadow: '0 0 25px rgba(168, 85, 247, 0.4), 0 0 50px rgba(168, 85, 247, 0.2)' 
+          },
+          '100%': { 
+            boxShadow: '0 0 35px rgba(168, 85, 247, 0.6), 0 0 70px rgba(168, 85, 247, 0.3)' 
+          },
         },
       },
       boxShadow: {

@@ -215,56 +215,66 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Usuários</h1>
-          <p className="text-muted-foreground">Gerencie jogadores e suas estatísticas</p>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Gerenciar Usuários</h1>
+            <p className="text-gray-400">Gerencie jogadores e suas estatísticas</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              onClick={() => setShowAddUserModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-xl border-0"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Adicionar Usuário
+            </Button>
+          </div>
         </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => setShowAddUserModal(true)}
-        >
-          <UserPlus className="h-4 w-4" />
-          Adicionar Usuário
-        </Button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Users className="h-5 w-5 text-purple-400" />
+              Total de Usuários
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-gray-200">{stats.total}</div>
+            <p className="text-sm text-gray-400 mt-2">
               +{stats.newThisMonth} este mês
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuários Ativos</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Activity className="h-5 w-5 text-purple-400" />
+              Usuários Ativos
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-gray-200">{stats.active}</div>
+            <p className="text-sm text-gray-400 mt-2">
               Últimos 30 dias
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Novos Usuários</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+        <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-gray-200">
+              <Calendar className="h-5 w-5 text-purple-400" />
+              Novos Usuários
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.newThisMonth}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-gray-200">{stats.newThisMonth}</div>
+            <p className="text-sm text-gray-400 mt-2">
               Este mês
             </p>
           </CardContent>
@@ -272,17 +282,23 @@ export const UsersPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+        <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <Filter className="h-5 w-5 text-purple-400" />
+            Filtros e Busca
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Buscar por email ou nome..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                 />
               </div>
             </div>
@@ -290,18 +306,21 @@ export const UsersPage: React.FC = () => {
               <Button
                 variant={filterActive === 'all' ? 'default' : 'outline'}
                 onClick={() => setFilterActive('all')}
+                className={filterActive === 'all' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
               >
                 Todos
               </Button>
               <Button
                 variant={filterActive === 'active' ? 'default' : 'outline'}
                 onClick={() => setFilterActive('active')}
+                className={filterActive === 'active' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
               >
                 Ativos
               </Button>
               <Button
                 variant={filterActive === 'inactive' ? 'default' : 'outline'}
                 onClick={() => setFilterActive('inactive')}
+                className={filterActive === 'inactive' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
               >
                 Inativos
               </Button>

@@ -208,47 +208,51 @@ export const SecurityPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Segurança</h1>
-          <p className="text-muted-foreground">Controle de acesso e monitoramento de segurança</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={activeTab === 'roles' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('roles')}
-          >
-            Funções de Admin
-          </Button>
-          <Button
-            variant={activeTab === 'events' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('events')}
-          >
-            Eventos de Segurança
-          </Button>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Segurança do Sistema</h1>
+            <p className="text-gray-400">Controle de acesso e monitoramento de segurança</p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant={activeTab === 'roles' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('roles')}
+              className={activeTab === 'roles' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
+            >
+              Funções de Admin
+            </Button>
+            <Button
+              variant={activeTab === 'events' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('events')}
+              className={activeTab === 'events' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}
+            >
+              Eventos de Segurança
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Admin Roles Tab */}
       {activeTab === 'roles' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+          <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+            <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+              <CardTitle className="flex items-center gap-2 text-gray-200">
+                <Users className="h-5 w-5 text-purple-400" />
                 Funções Administrativas ({adminRoles.length})
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {adminRoles.map((role) => (
-                  <div key={role.id} className="border rounded-lg p-4">
+                  <div key={role.id} className="p-4 border-2 border-gray-600 rounded-2xl bg-gray-700/50 hover:bg-gray-700 transition-all duration-300 hover:scale-[1.01]">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         {getRoleIcon(role.role)}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">
+                            <span className="font-medium text-gray-200">
                               {role.profiles?.display_name || role.profiles?.username || 'Usuário sem nome'}
                             </span>
                             <Badge className={getRoleColor(role.role)}>
@@ -258,7 +262,7 @@ export const SecurityPage: React.FC = () => {
                               {role.is_active ? "Ativo" : "Inativo"}
                             </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-gray-400">
                             Concedido em: {new Date(role.granted_at).toLocaleDateString('pt-BR')}
                             {role.expires_at && (
                               <span> • Expira em: {new Date(role.expires_at).toLocaleDateString('pt-BR')}</span>
@@ -280,6 +284,7 @@ export const SecurityPage: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => toggleRoleStatus(role.id, role.is_active)}
+                          className="border-gray-600 text-gray-300 hover:bg-gray-700"
                         >
                           {role.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                           {role.is_active ? 'Desativar' : 'Ativar'}

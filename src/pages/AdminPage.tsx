@@ -18,6 +18,11 @@ import { UsersPage } from './admin/UsersPage';
 import { CustomizationsPage } from './admin/CustomizationsPage';
 import { AnnouncementManager } from '../components/admin/AnnouncementManager';
 import { GlobalAnnouncementManager } from '../components/admin/GlobalAnnouncementManager';
+import { CommunityManager } from '../components/admin/CommunityManager';
+import { NewsManager } from '../components/admin/NewsManager';
+import { AchievementsManager } from '../components/admin/AchievementsManager';
+import { MissionsManager } from '../components/admin/MissionsManager';
+import { ShopManager } from '../components/admin/ShopManager';
 
 export const AdminPage: React.FC = () => {
   // Persistir a aba ativa no localStorage
@@ -40,10 +45,20 @@ export const AdminPage: React.FC = () => {
         return <CardManager onStatsUpdate={() => {}} />;
       case 'packs':
         return <PackManager />;
+      case 'shop':
+        return <ShopManager />;
       case 'events':
         return <EventManager />;
       case 'rotation':
         return <DailyRotationManager />;
+      case 'community':
+        return <CommunityManager />;
+      case 'news':
+        return <NewsManager />;
+      case 'achievements':
+        return <AchievementsManager />;
+      case 'missions':
+        return <MissionsManager />;
       case 'users':
         return <UsersPage />;
       case 'stats':

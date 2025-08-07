@@ -12,6 +12,7 @@ import { ShoppingCart, Coins, Gem, Package, Zap, Star, Crown, Sword, Shield, His
 import { supabase } from '../integrations/supabase/client';
 import { useToast } from './ui/toast';
 import { SpecialPacksDisplay } from './SpecialPacksDisplay';
+import { BundlePacksDisplay } from './BundlePacksDisplay';
 import { getRarityIconPNG } from './IconComponentsPNG';
 import DailyCardComponent from './DailyCardComponent';
 import { useBattlefieldCustomization } from '../hooks/useBattlefieldCustomization';
@@ -37,6 +38,8 @@ export const Shop: React.FC = () => {
     getCurrencyGems,
     getCurrencyCoins,
     getSpecialPacks,
+    getBundlePacks,
+    getDollarPacks,
     fetchShopItems,
     testFetchPurchases
   } = useShop();
@@ -601,16 +604,27 @@ export const Shop: React.FC = () => {
     const gemAmount = extractGemAmount(item.description || item.name);
     const priceDollars = parseFloat(item.price_dollars || '0');
     const discountPercentage = item.discount_percentage || 0;
+    const realDiscountPercentage = item.real_discount_percentage || 0;
     const isSpecial = item.is_special || false;
     
-    // Calculate original price if there's a discount
-    const originalPrice = discountPercentage > 0 ? priceDollars / (1 - discountPercentage / 100) : priceDollars;
-    const savings = originalPrice - priceDollars;
+    // Lógica de desconto falso: multiplica por 2 se for 50% falso
+    let originalPrice = priceDollars;
+    let savings = 0;
+    
+    if (discountPercentage === 50 && isSpecial) {
+      // Desconto falso: multiplica o preço por 2 para mostrar "50% de desconto"
+      originalPrice = priceDollars * 2;
+      savings = originalPrice - priceDollars;
+    } else if (discountPercentage > 0) {
+      // Desconto real: calcula normalmente
+      originalPrice = priceDollars / (1 - discountPercentage / 100);
+      savings = originalPrice - priceDollars;
+    }
 
     return (
       <Card key={item.id} className={`relative overflow-hidden backdrop-blur-sm border-2 transition-all duration-300 group hover:shadow-xl ${
         isSpecial && discountPercentage > 0 
-          ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/50 hover:border-red-400/70' 
+          ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/50 hover:border-red-400/70'
           : 'bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-yellow-600/30 hover:border-yellow-500/60'
       }`}>
         {/* Glow effect */}
@@ -631,7 +645,7 @@ export const Shop: React.FC = () => {
         {/* Promoção badge */}
         {isSpecial && discountPercentage > 0 && (
           <div className="absolute top-12 left-3 z-10">
-            <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-0 animate-pulse">
+            <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-0">
               -{discountPercentage}%
             </Badge>
           </div>
@@ -1143,8 +1157,33 @@ export const Shop: React.FC = () => {
                 {getCurrencyCoins().map(item => renderCurrencyItem(item))}
               </div>
             </div>
+
+            {/* Pacotes Premium */}
+            {getBundlePacks().length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Crown className="w-6 h-6 text-green-400" />
+                    Pacotes Premium
+                    <Badge className="bg-gradient-to-r from-green-600 to-emerald-700 text-white">
+                      💎 Dinheiro Real
+                    </Badge>
+                  </h3>
+                  <div className="text-sm text-gray-400">
+                    {getBundlePacks().length} pacotes disponíveis
+                  </div>
+                </div>
+                <BundlePacksDisplay
+                  bundles={getBundlePacks() as any}
+                  onPurchase={handlePurchase}
+                  purchasing={purchasing ? 'purchasing' : null}
+                />
+              </div>
+            )}
           </div>
         </TabsContent>
+
+
 
         <TabsContent value="events" className="mt-6">
           {/* Seção de Eventos */}

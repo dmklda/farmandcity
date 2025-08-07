@@ -67,13 +67,13 @@ export const AdminDashboard: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle>Acesso Restrito</CardTitle>
+        <Card className="w-96 bg-gray-900 border-gray-700">
+          <CardHeader className="border-b border-gray-700">
+            <CardTitle className="text-white">Acesso Restrito</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">Você precisa estar logado para acessar o painel administrativo.</p>
-            <Button onClick={() => window.location.href = '/admin'} className="w-full">
+            <p className="mb-4 text-gray-300">Você precisa estar logado para acessar o painel administrativo.</p>
+            <Button onClick={() => window.location.href = '/admin'} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
               Fazer Login
             </Button>
           </CardContent>
@@ -88,15 +88,15 @@ export const AdminDashboard: React.FC = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold">Painel Administrativo - Famand</h1>
-              <p className="text-muted-foreground">Gerencie cartas, usuários e estatísticas do jogo</p>
+              <h1 className="text-3xl font-bold text-white">Painel Administrativo - Famand</h1>
+              <p className="text-gray-300">Gerencie cartas, usuários e estatísticas do jogo</p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-gray-300">
                 <User className="h-4 w-4" />
                 <span>{user?.email}</span>
               </div>
-              <Button variant="outline" onClick={signOut} className="flex items-center gap-2">
+              <Button variant="outline" onClick={signOut} className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700">
                 <LogOut className="h-4 w-4" />
                 Sair
               </Button>
@@ -105,43 +105,43 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Cartas</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white">Total de Cartas</CardTitle>
+                <FileText className="h-4 w-4 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalCards}</div>
+                <div className="text-2xl font-bold text-white">{stats.totalCards}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white">Usuários</CardTitle>
+                <Users className="h-4 w-4 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Compras</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white">Compras</CardTitle>
+                <TrendingUp className="h-4 w-4 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalPurchases}</div>
+                <div className="text-2xl font-bold text-white">{stats.totalPurchases}</div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Receita (Moedas)</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-white">Receita (Moedas)</CardTitle>
+                <DollarSign className="h-4 w-4 text-gray-400" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-white">{stats.totalRevenue.toLocaleString()}</div>
               </CardContent>
             </Card>
           </div>

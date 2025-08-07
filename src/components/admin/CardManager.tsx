@@ -194,7 +194,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Carregando cartas...</div>
+        <div className="text-lg text-white">Carregando cartas...</div>
       </div>
     );
   }
@@ -204,21 +204,21 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
       {/* Header with Create Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gerenciar Cartas</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl font-bold text-white">Gerenciar Cartas</h2>
+          <p className="text-gray-300">
             Crie, edite e gerencie todas as cartas do jogo
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleImportCards} className="flex items-center gap-2">
+          <Button onClick={handleImportCards} className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg border-0">
             <Upload className="h-4 w-4" />
             Importar
           </Button>
-          <Button onClick={handleExportCards} className="flex items-center gap-2">
+          <Button onClick={handleExportCards} className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg border-0">
             <Download className="h-4 w-4" />
             Exportar
           </Button>
-          <Button onClick={handleCreateCard} className="flex items-center gap-2">
+          <Button onClick={handleCreateCard} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
             <Plus className="h-4 w-4" />
             Nova Carta
           </Button>
@@ -226,11 +226,11 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
+      <Card className="bg-gray-900 border-gray-700">
+        <CardHeader className="border-b border-gray-700">
+          <CardTitle className="text-lg text-white">Filtros</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
@@ -240,7 +240,7 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
                 placeholder="Buscar cartas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white placeholder-gray-400"
               />
             </div>
 
@@ -249,17 +249,17 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
               title="Filtrar por tipo"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as CardType | 'all')}
-              className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
             >
-              <option value="all">Todos os Tipos</option>
-              <option value="farm">Farm</option>
-              <option value="city">City</option>
-              <option value="action">Action</option>
-              <option value="magic">Magic</option>
-              <option value="defense">Defense</option>
-              <option value="trap">Trap</option>
-              <option value="event">Event</option>
-              <option value="landmark">Landmark</option>
+              <option value="all" className="bg-gray-800 text-white">Todos os Tipos</option>
+              <option value="farm" className="bg-gray-800 text-white">Farm</option>
+              <option value="city" className="bg-gray-800 text-white">City</option>
+              <option value="action" className="bg-gray-800 text-white">Action</option>
+              <option value="magic" className="bg-gray-800 text-white">Magic</option>
+              <option value="defense" className="bg-gray-800 text-white">Defense</option>
+              <option value="trap" className="bg-gray-800 text-white">Trap</option>
+              <option value="event" className="bg-gray-800 text-white">Event</option>
+              <option value="landmark" className="bg-gray-800 text-white">Landmark</option>
             </select>
 
             {/* Rarity Filter */}
@@ -267,17 +267,17 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
               title="Filtrar por raridade"
               value={filterRarity}
               onChange={(e) => setFilterRarity(e.target.value as CardRarity | 'all')}
-              className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
             >
-              <option value="all">Todas as Raridades</option>
-              <option value="common">Common</option>
-              <option value="uncommon">Uncommon</option>
-              <option value="rare">Rare</option>
-              <option value="ultra">Ultra</option>
-              <option value="secret">Secret</option>
-              <option value="legendary">Legendary</option>
-              <option value="crisis">Crisis</option>
-              <option value="booster">Booster</option>
+              <option value="all" className="bg-gray-800 text-white">Todas as Raridades</option>
+              <option value="common" className="bg-gray-800 text-white">Common</option>
+              <option value="uncommon" className="bg-gray-800 text-white">Uncommon</option>
+              <option value="rare" className="bg-gray-800 text-white">Rare</option>
+              <option value="ultra" className="bg-gray-800 text-white">Ultra</option>
+              <option value="secret" className="bg-gray-800 text-white">Secret</option>
+              <option value="legendary" className="bg-gray-800 text-white">Legendary</option>
+              <option value="crisis" className="bg-gray-800 text-white">Crisis</option>
+              <option value="booster" className="bg-gray-800 text-white">Booster</option>
             </select>
 
             {/* Active Filter */}
@@ -288,11 +288,11 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
                 const value = e.target.value;
                 setFilterActive(value === 'all' ? 'all' : value === 'true');
               }}
-              className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
             >
-              <option value="all">Todos os Status</option>
-              <option value="true">Ativo</option>
-              <option value="false">Inativo</option>
+              <option value="all" className="bg-gray-800 text-white">Todos os Status</option>
+              <option value="true" className="bg-gray-800 text-white">Ativo</option>
+              <option value="false" className="bg-gray-800 text-white">Inativo</option>
             </select>
           </div>
         </CardContent>
@@ -301,28 +301,28 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCards.map((card) => (
-          <Card key={card.id} className="relative">
-            <CardHeader className="pb-3">
+          <Card key={card.id} className="relative bg-gray-900 border-gray-700">
+            <CardHeader className="pb-3 border-b border-gray-700">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-lg line-clamp-1">{card.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">#{card.slug}</p>
+                  <CardTitle className="text-lg line-clamp-1 text-white">{card.name}</CardTitle>
+                  <p className="text-sm text-gray-400 mt-1">#{card.slug}</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button onClick={() => handleEditCard(card)} className="p-2">
+                  <Button onClick={() => handleEditCard(card)} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button onClick={() => handleDuplicateCard(card)} className="p-2">
+                  <Button onClick={() => handleDuplicateCard(card)} className="p-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg border-0">
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button onClick={() => handleDeleteCard(card.id)} className="p-2 text-red-600">
+                  <Button onClick={() => handleDeleteCard(card.id)} className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg border-0">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pt-6">
               {/* Type and Rarity */}
               <div className="flex gap-2">
                 <Badge className={getRarityColor(card.rarity)}>
@@ -332,12 +332,12 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
                   {card.type}
                 </Badge>
                 {!card.is_active && (
-                  <Badge variant="destructive">Inativo</Badge>
+                  <Badge variant="destructive" className="bg-red-600 text-white">Inativo</Badge>
                 )}
               </div>
 
               {/* Costs */}
-              <div className="flex gap-3 text-sm">
+              <div className="flex gap-3 text-sm text-gray-300">
                 {card.cost_coins > 0 && (
                   <span className="flex items-center gap-1">
                     🪙 {card.cost_coins}
@@ -361,12 +361,12 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
               </div>
 
               {/* Effect */}
-              <p className="text-sm text-muted-foreground line-clamp-3">
+              <p className="text-sm text-gray-300 line-clamp-3">
                 {card.effect}
               </p>
 
               {/* Phase and Usage */}
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-xs text-gray-400">
                 <span>Fase: {card.phase}</span>
                 <span>Uso: {card.use_per_turn}/turno</span>
               </div>
@@ -377,8 +377,8 @@ export const CardManager: React.FC<CardManagerProps> = ({ onStatsUpdate }) => {
 
       {filteredCards.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-lg text-muted-foreground">Nenhuma carta encontrada</p>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-lg text-gray-300">Nenhuma carta encontrada</p>
+          <p className="text-sm text-gray-400 mt-2">
             Tente ajustar os filtros ou criar uma nova carta
           </p>
         </div>

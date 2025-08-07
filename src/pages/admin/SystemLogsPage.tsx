@@ -138,70 +138,80 @@ export const SystemLogsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Logs do Sistema</h1>
-          <p className="text-muted-foreground">Monitoramento e auditoria de eventos</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => fetchLogs(true)}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
-          <Button variant="outline" onClick={exportLogs}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
+      <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 p-6 rounded-2xl border border-purple-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-200 mb-2">Logs do Sistema</h1>
+            <p className="text-gray-400">Monitoramento e auditoria de eventos</p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => fetchLogs(true)}
+              className="border-2 border-blue-500/30 text-blue-400 hover:bg-blue-600/20 rounded-xl"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={exportLogs}
+              className="border-2 border-green-500/30 text-green-400 hover:bg-green-600/20 rounded-xl"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Exportar
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros
+      <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+        <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <Filter className="h-5 w-5 text-purple-400" />
+            Filtros e Busca
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Buscar logs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
                 />
               </div>
             </div>
             <div>
               <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20">
                   <SelectValue placeholder="Filtrar por severidade" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as severidades</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warning">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="all" className="text-gray-200 hover:bg-gray-700">Todas as severidades</SelectItem>
+                  <SelectItem value="info" className="text-gray-200 hover:bg-gray-700">Info</SelectItem>
+                  <SelectItem value="warning" className="text-gray-200 hover:bg-gray-700">Warning</SelectItem>
+                  <SelectItem value="error" className="text-gray-200 hover:bg-gray-700">Error</SelectItem>
+                  <SelectItem value="critical" className="text-gray-200 hover:bg-gray-700">Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20">
                   <SelectValue placeholder="Filtrar por tipo de evento" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value="auth">Autenticação</SelectItem>
-                  <SelectItem value="admin">Administração</SelectItem>
-                  <SelectItem value="game">Jogo</SelectItem>
-                  <SelectItem value="api">API</SelectItem>
-                  <SelectItem value="system">Sistema</SelectItem>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="all" className="text-gray-200 hover:bg-gray-700">Todos os tipos</SelectItem>
+                  <SelectItem value="auth" className="text-gray-200 hover:bg-gray-700">Autenticação</SelectItem>
+                  <SelectItem value="admin" className="text-gray-200 hover:bg-gray-700">Administração</SelectItem>
+                  <SelectItem value="game" className="text-gray-200 hover:bg-gray-700">Jogo</SelectItem>
+                  <SelectItem value="api" className="text-gray-200 hover:bg-gray-700">API</SelectItem>
+                  <SelectItem value="system" className="text-gray-200 hover:bg-gray-700">Sistema</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -210,33 +220,33 @@ export const SystemLogsPage: React.FC = () => {
       </Card>
 
       {/* Logs List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ScrollText className="h-5 w-5" />
+      <Card className="shadow-lg border-gray-700 bg-gray-800/50">
+        <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <ScrollText className="h-5 w-5 text-purple-400" />
             Logs do Sistema ({logs.length} registros)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
+        <CardContent className="p-6">
+          <div className="space-y-4">
             {logs.map((log) => (
-              <div key={log.id} className="border rounded-lg p-4 space-y-2">
+              <div key={log.id} className="p-4 border-2 border-gray-600 rounded-2xl bg-gray-700/50 hover:bg-gray-700 transition-all duration-300 hover:scale-[1.01]">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     {getSeverityIcon(log.severity)}
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{log.event_type}</span>
+                        <span className="font-medium text-gray-200">{log.event_type}</span>
                         <Badge className={getSeverityColor(log.severity)}>
                           {log.severity.toUpperCase()}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-gray-400 mt-1">
                         {log.event_description}
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-gray-400">
                     {formatDate(log.created_at)}
                   </span>
                 </div>

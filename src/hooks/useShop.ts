@@ -6,11 +6,11 @@ interface ShopItem {
   id: string;
   name: string;
   description: string;
-  item_type: 'pack' | 'booster' | 'card' | 'currency' | 'cosmetic' | 'event';
+  item_type: 'pack' | 'booster' | 'card' | 'currency' | 'cosmetic' | 'event' | 'bundle';
   price_coins: number;
   price_gems: number;
   price_dollars?: number;
-  currency_type: 'coins' | 'gems' | 'both';
+  currency_type: 'coins' | 'gems' | 'both' | 'dollars';
   rarity?: string;
   card_ids?: string[];
   guaranteed_cards?: any;
@@ -19,10 +19,18 @@ interface ShopItem {
   sold_quantity: number;
   is_active: boolean;
   discount_percentage: number;
+  real_discount_percentage: number;
   is_daily_rotation: boolean;
   rotation_date?: string;
   event_id?: string;
   is_special: boolean;
+  // Campos para pacotes de múltiplos itens
+  bundle_type?: 'single' | 'bundle' | 'starter' | 'premium';
+  included_customizations?: string[];
+  included_cards_count?: number;
+  bundle_contents?: any;
+  currency_amount_coins?: number;
+  currency_amount_gems?: number;
   created_at: string;
   updated_at: string;
 }
@@ -181,6 +189,7 @@ export const useShop = () => {
             card_ids: item.card_ids || [],
             guaranteed_cards: item.guaranteed_cards || {},
             discount_percentage: item.discount_percentage || 0,
+            real_discount_percentage: (item as any).real_discount_percentage || 0,
             is_daily_rotation: item.is_daily_rotation || false,
             rotation_date: item.rotation_date || undefined,
             event_id: item.event_id || undefined,
@@ -498,8 +507,17 @@ export const useShop = () => {
       }
 
       // Para outros tipos de item, usar o processo antigo
-      const totalPriceCoins = (item.price_coins || 0) * quantity;
-      const totalPriceGems = (item.price_gems || 0) * quantity;
+      // Aplicar desconto real se existir
+      let basePriceCoins = item.price_coins || 0;
+      let basePriceGems = item.price_gems || 0;
+      
+      if (item.real_discount_percentage > 0) {
+        basePriceCoins = Math.floor(basePriceCoins * (1 - item.real_discount_percentage / 100));
+        basePriceGems = Math.floor(basePriceGems * (1 - item.real_discount_percentage / 100));
+      }
+      
+      const totalPriceCoins = basePriceCoins * quantity;
+      const totalPriceGems = basePriceGems * quantity;
 
       // Verificar se o jogador tem moedas/gems suficientes
       if (item.currency_type === 'coins' && currency && (currency.coins || 0) < totalPriceCoins) {
@@ -602,9 +620,14 @@ export const useShop = () => {
 
       console.log('Carta encontrada:', cardToPurchase);
 
-      // Verificar se o jogador tem moedas/gems suficientes
-      const requiredCoins = cardToPurchase.price_coins;
-      const requiredGems = cardToPurchase.price_gems;
+      // Aplicar desconto real se existir
+      let requiredCoins = cardToPurchase.price_coins;
+      let requiredGems = cardToPurchase.price_gems;
+      
+      if (cardToPurchase.discount_percentage > 0) {
+        requiredCoins = Math.floor(requiredCoins * (1 - cardToPurchase.discount_percentage / 100));
+        requiredGems = Math.floor(requiredGems * (1 - cardToPurchase.discount_percentage / 100));
+      }
       
       console.log('Moedas necessárias:', requiredCoins);
       console.log('Gems necessárias:', requiredGems);
@@ -724,6 +747,71 @@ export const useShop = () => {
         await stableRefreshPlayerCards();
         break;
 
+      case 'bundle':
+        // Processar pacotes de múltiplos itens
+        const bundleItems = [];
+        
+        // 1. Adicionar moedas se incluídas
+        if (item.currency_amount_coins && item.currency_amount_coins > 0) {
+          const coinAmount = item.currency_amount_coins * quantity;
+          await addCoins(coinAmount);
+          itemsReceived.coins = coinAmount;
+          bundleItems.push(`${coinAmount} moedas`);
+        }
+        
+        // 2. Adicionar gemas se incluídas
+        if (item.currency_amount_gems && item.currency_amount_gems > 0) {
+          const gemAmount = item.currency_amount_gems * quantity;
+          await addGems(gemAmount);
+          itemsReceived.gems = gemAmount;
+          bundleItems.push(`${gemAmount} gemas`);
+        }
+        
+        // 3. Adicionar cartas se incluídas
+        if (item.included_cards_count && item.included_cards_count > 0 && item.card_ids && item.card_ids.length > 0) {
+          const receivedCards = [];
+          const cardsToGive = item.included_cards_count * quantity;
+          
+          for (let i = 0; i < cardsToGive; i++) {
+            const selectedCard = selectRandomCards(item.card_ids, 1)[0];
+            await addCardToPlayer(selectedCard, 1);
+            receivedCards.push(selectedCard);
+          }
+          
+          itemsReceived.cards = receivedCards;
+          bundleItems.push(`${cardsToGive} cartas`);
+          
+          // Atualizar as cartas do jogador no contexto global
+          await stableRefreshPlayerCards();
+        }
+        
+        // 4. Adicionar customizações se incluídas
+        if (item.included_customizations && item.included_customizations.length > 0) {
+          const receivedCustomizations = [];
+          
+          for (const customizationId of item.included_customizations) {
+            // Adicionar customização ao jogador
+            const { error } = await supabase
+              .from('player_customizations')
+              .upsert([{
+                player_id: (await supabase.auth.getUser()).data.user?.id,
+                customization_id: customizationId,
+                is_equipped: false,
+                acquired_at: new Date().toISOString()
+              }]);
+            
+            if (!error) {
+              receivedCustomizations.push(customizationId);
+            }
+          }
+          
+          itemsReceived.customizations = receivedCustomizations;
+          bundleItems.push(`${receivedCustomizations.length} customizações`);
+        }
+        
+        itemsReceived.bundleItems = bundleItems;
+        break;
+
       case 'currency':
         if (item.name.includes('Moedas')) {
           const coinAmount = extractCoinAmount(item.name) * quantity;
@@ -806,6 +894,14 @@ export const useShop = () => {
     );
   };
 
+  const getBundlePacks = () => {
+    return shopItems.filter(item => item.item_type === 'bundle' && item.is_active);
+  };
+
+  const getDollarPacks = () => {
+    return shopItems.filter(item => item.price_dollars && item.price_dollars > 0 && item.is_active);
+  };
+
   console.log('useShop return:', { 
     shopItems: shopItems?.length, 
     dailyRotationCards: dailyRotationCards?.length,
@@ -834,6 +930,8 @@ export const useShop = () => {
     getAvailableCurrency,
     getCurrencyPacks,
     getCurrencyGems,
+    getBundlePacks,
+    getDollarPacks,
     getCurrencyCoins,
     getSpecialPacks,
     hasUserPurchasedCard

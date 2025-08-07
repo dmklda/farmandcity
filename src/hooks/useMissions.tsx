@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { MissionService, Mission, PlayerMission, DailyMission } from '../services/MissionService';
+import { MissionsService, Mission, PlayerMission, ActiveDailyMission } from '../services/MissionsService';
 import { toast } from 'sonner';
 
 export const useMissions = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [playerMissions, setPlayerMissions] = useState<PlayerMission[]>([]);
-  const [dailyMissions, setDailyMissions] = useState<DailyMission[]>([]);
+  const [dailyMissions, setDailyMissions] = useState<ActiveDailyMission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMissions = useCallback(async () => {
     try {
-      const missionsData = await MissionService.getActiveMissions();
-      setMissions(missionsData);
+      const missionsData = await MissionsService.getMissions();
+      if (missionsData.success) {
+        setMissions(missionsData.missions || []);
+      }
     } catch (err: any) {
       console.error('Error fetching missions:', err);
       setError(err.message);
@@ -25,8 +27,10 @@ export const useMissions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const playerMissionsData = await MissionService.getPlayerMissions(user.id);
-      setPlayerMissions(playerMissionsData);
+      const playerMissionsData = await MissionsService.getPlayerMissions();
+      if (playerMissionsData.success) {
+        setPlayerMissions(playerMissionsData.missions || []);
+      }
     } catch (err: any) {
       console.error('Error fetching player missions:', err);
     }
@@ -34,8 +38,10 @@ export const useMissions = () => {
 
   const fetchDailyMissions = useCallback(async () => {
     try {
-      const dailyMissionsData = await MissionService.getDailyMissions();
-      setDailyMissions(dailyMissionsData);
+      const dailyMissionsData = await MissionsService.getActiveDailyMissions();
+      if (dailyMissionsData.success) {
+        setDailyMissions(dailyMissionsData.missions || []);
+      }
     } catch (err: any) {
       console.error('Error fetching daily missions:', err);
     }
@@ -46,84 +52,26 @@ export const useMissions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { newlyCompleted, updatedProgress } = await MissionService.checkAndUpdateMissions(user.id);
-      
-      // Mostrar notificações para missões recém-completadas
-      newlyCompleted.forEach((missionTitle) => {
-        const mission = missions.find(m => m.title === missionTitle);
-        if (mission) {
-          // Criar mensagem de recompensa
-          let rewardMessage = '';
-          if (mission.reward_coins > 0 && mission.reward_gems > 0) {
-            rewardMessage = `+${mission.reward_coins} moedas e +${mission.reward_gems} gemas`;
-          } else if (mission.reward_coins > 0) {
-            rewardMessage = `+${mission.reward_coins} moedas`;
-          } else if (mission.reward_gems > 0) {
-            rewardMessage = `+${mission.reward_gems} gemas`;
-          }
-
-          // Determinar cor baseada na dificuldade
-          let toastColor = 'default';
-          switch (mission.difficulty) {
-            case 'easy':
-              toastColor = 'default';
-              break;
-            case 'medium':
-              toastColor = 'blue';
-              break;
-            case 'hard':
-              toastColor = 'purple';
-              break;
-            case 'legendary':
-              toastColor = 'yellow';
-              break;
-          }
-
-          // Mostrar toast de missão
-          toast.success(
-            <div className="space-y-1">
-              <div className="font-bold text-lg">🎯 {mission.title}</div>
-              <div className="text-sm opacity-90">{mission.description}</div>
-              {rewardMessage && (
-                <div className="text-sm font-medium text-green-400">
-                  Recompensa: {rewardMessage}
-                </div>
-              )}
-            </div>,
-            {
-              duration: 5000,
-              icon: '🎯',
-              style: {
-                background: toastColor === 'yellow' ? '#fef3c7' : 
-                           toastColor === 'purple' ? '#f3e8ff' :
-                           toastColor === 'blue' ? '#dbeafe' : '#f8fafc',
-                border: toastColor === 'yellow' ? '1px solid #f59e0b' :
-                        toastColor === 'purple' ? '1px solid #8b5cf6' :
-                        toastColor === 'blue' ? '1px solid #3b82f6' : '1px solid #e2e8f0'
-              }
-            }
-          );
-        }
-      });
-
-      // Atualizar dados locais
+      // TODO: Implement mission checking logic when method is available
+      // For now, just refresh player missions
       await fetchPlayerMissions();
     } catch (err: any) {
       console.error('Error checking missions:', err);
     }
-  }, [fetchPlayerMissions, missions]);
+  }, [fetchPlayerMissions]);
 
   const claimMissionRewards = useCallback(async (missionId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
-      const success = await MissionService.claimMissionRewards(user.id, missionId);
-      if (success) {
+      const result = await MissionsService.claimMissionRewards(missionId);
+      if (result.success) {
         toast.success('Recompensas reivindicadas com sucesso!');
         await fetchPlayerMissions();
+        return true;
       }
-      return success;
+      return false;
     } catch (err: any) {
       console.error('Error claiming mission rewards:', err);
       toast.error('Erro ao reivindicar recompensas');

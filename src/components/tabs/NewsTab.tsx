@@ -1,322 +1,458 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { 
-  Newspaper, 
-  AlertTriangle, 
-  Sparkles, 
-  Clock, 
-  CheckCircle,
-  Wrench,
-  Star,
-  Zap,
-  Gift,
-  TrendingUp,
-  Users,
-  Settings
-} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { NewsService, BlogPost, BlogCategory } from '../../services/NewsService';
+import { useAuth } from '../../hooks/useAuth';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { ArrowLeft, Eye, ThumbsUp, Calendar, Clock, User, Tag, Filter, Heart, MessageSquare } from 'lucide-react';
 
-export const NewsTab: React.FC = () => {
-  // Mock data for news
-  const latestUpdates = [
-    {
-      id: 1,
-      title: "Nova Expansão: Reino das Sombras",
-      description: "Descubra 50 novas cartas com mecânicas únicas de sombra e escuridão",
-      type: "expansion",
-      date: "2024-02-01",
-      priority: "high",
-      tags: ["Expansão", "Novas Cartas", "Mecânicas"],
-      image: "🌙",
-      isNew: true
-    },
-    {
-      id: 2,
-      title: "Sistema de Clãs Implementado",
-      description: "Junte-se a clãs, participe de guerras e conquiste territórios",
-      type: "feature",
-      date: "2024-01-28",
-      priority: "medium",
-      tags: ["Clãs", "Guerras", "Territórios"],
-      image: "⚔️",
-      isNew: true
-    },
-    {
-      id: 3,
-      title: "Balanceamento de Cartas - Janeiro 2024",
-      description: "Ajustes importantes para melhorar a experiência competitiva",
-      type: "balance",
-      date: "2024-01-25",
-      priority: "medium",
-      tags: ["Balanceamento", "Competitivo"],
-      image: "⚖️",
-      isNew: false
-    }
-  ];
+interface NewsTabProps {
+  className?: string;
+}
 
-  const upcomingFeatures = [
-    {
-      id: 1,
-      title: "Modo Torneio Automático",
-      description: "Participe de torneios automáticos com jogadores de todo o mundo",
-      status: "development",
-      estimatedRelease: "Março 2024",
-      progress: 75,
-      icon: "🏆"
-    },
-    {
-      id: 2,
-      title: "Sistema de Crafting",
-      description: "Crie suas próprias cartas usando materiais coletados",
-      status: "planning",
-      estimatedRelease: "Abril 2024",
-      progress: 25,
-      icon: "🔨"
-    },
-    {
-      id: 3,
-      title: "Modo Cooperativo",
-      description: "Jogue com amigos em missões cooperativas",
-      status: "design",
-      estimatedRelease: "Maio 2024",
-      progress: 10,
-      icon: "🤝"
-    }
-  ];
+export default function NewsTab({ className }: NewsTabProps) {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showFullPost, setShowFullPost] = useState(false);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
-  const maintenanceSchedule = [
-    {
-      id: 1,
-      title: "Manutenção Programada - Servidores",
-      description: "Atualização de infraestrutura para melhor performance",
-      date: "2024-02-05",
-      time: "02:00 - 06:00 UTC",
-      status: "scheduled",
-      impact: "low"
-    },
-    {
-      id: 2,
-      title: "Manutenção de Emergência - Correção de Bugs",
-      description: "Correção de bugs críticos reportados pela comunidade",
-      date: "2024-01-30",
-      time: "14:00 - 16:00 UTC",
-      status: "completed",
-      impact: "medium"
-    }
-  ];
+  useEffect(() => {
+    loadNewsData();
+  }, [selectedCategory]);
 
-  const communityHighlights = [
-    {
-      id: 1,
-      title: "Melhor Deck do Mês",
-      description: "Deck 'Tempestade de Fogo' criado por ImperadorMax",
-      author: "ImperadorMax",
-      votes: 1247,
-      category: "deck"
-    },
-    {
-      id: 2,
-      title: "Estratégia Mais Inovadora",
-      description: "Técnica de 'Rush de Recursos' desenvolvida pela comunidade",
-      author: "Comunidade",
-      votes: 892,
-      category: "strategy"
-    },
-    {
-      id: 3,
-      title: "Melhor Contribuição",
-      description: "Guia completo de cartas raras por MestreCartas",
-      author: "MestreCartas",
-      votes: 567,
-      category: "guide"
-    }
-  ];
+  const loadNewsData = async () => {
+    setLoading(true);
+    try {
+      console.log('NewsTab: Carregando dados de notícias...');
+      
+      // Carregar categorias
+      const categoriesResult = await NewsService.getCategories();
+      console.log('NewsTab: Resultado categorias:', categoriesResult);
+      if (categoriesResult.success && categoriesResult.categories) {
+        setCategories(categoriesResult.categories);
+      } else {
+        console.error('NewsTab: Erro ao carregar categorias:', categoriesResult.error);
+      }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      default: return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      // Carregar posts
+      const filters = {
+        status: 'published' as const,
+        ...(selectedCategory !== 'all' ? { category: selectedCategory } : {})
+      };
+      console.log('NewsTab: Filtros aplicados:', filters);
+      
+      const postsResult = await NewsService.getPosts(filters);
+      console.log('NewsTab: Resultado posts:', postsResult);
+      if (postsResult.success && postsResult.posts) {
+        setPosts(postsResult.posts);
+      } else {
+        console.error('NewsTab: Erro ao carregar posts:', postsResult.error);
+      }
+    } catch (error) {
+      console.error('NewsTab: Erro ao carregar notícias:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'development': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'planning': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'design': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'scheduled': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  const handlePostClick = async (post: BlogPost) => {
+    setSelectedPost(post);
+    setShowFullPost(true);
+    
+    // Registrar visualização
+    if (user?.id) {
+      await NewsService.recordView(post.id);
+      // Atualizar contador localmente
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === post.id 
+            ? { ...p, views_count: p.views_count + 1 }
+            : p
+        )
+      );
     }
   };
+
+  const handleBackToList = () => {
+    setShowFullPost(false);
+    setSelectedPost(null);
+  };
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+  };
+
+  const handleLikePost = async (post: BlogPost, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user?.id) {
+      alert('Você precisa estar logado para curtir posts');
+      return;
+    }
+
+    try {
+      const result = await NewsService.toggleLike(post.id);
+      if (result.success) {
+        // Atualizar estado local
+        const isLiked = likedPosts.has(post.id);
+        if (isLiked) {
+          setLikedPosts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(post.id);
+            return newSet;
+          });
+          setPosts(prevPosts => 
+            prevPosts.map(p => 
+              p.id === post.id 
+                ? { ...p, likes_count: Math.max(0, p.likes_count - 1) }
+                : p
+            )
+          );
+        } else {
+          setLikedPosts(prev => new Set([...prev, post.id]));
+          setPosts(prevPosts => 
+            prevPosts.map(p => 
+              p.id === post.id 
+                ? { ...p, likes_count: p.likes_count + 1 }
+                : p
+            )
+          );
+        }
+      } else {
+        console.error('Erro ao curtir post:', result.error);
+      }
+    } catch (error) {
+      console.error('Erro ao curtir post:', error);
+    }
+  };
+
+  const handleLikeFullPost = async (e: React.MouseEvent) => {
+    if (!selectedPost || !user?.id) return;
+    await handleLikePost(selectedPost, e);
+    
+    // Atualizar o post selecionado também
+    setSelectedPost(prev => prev ? {
+      ...prev,
+      likes_count: likedPosts.has(prev.id) 
+        ? Math.max(0, prev.likes_count - 1)
+        : prev.likes_count + 1
+    } : null);
+  };
+
+  const getCategoryColor = (category: string) => {
+    const categoryData = categories.find(c => c.slug === category);
+    return categoryData?.color || '#6b7280';
+  };
+
+  const getCategoryName = (category: string) => {
+    const categoryData = categories.find(c => c.slug === category);
+    return categoryData?.name || category;
+  };
+
+  const formatReadTime = (minutes: number) => {
+    if (minutes < 1) return 'Menos de 1 min';
+    if (minutes === 1) return '1 min';
+    return `${minutes} mins`;
+  };
+
+  if (loading) {
+    return (
+      <div className={`flex items-center justify-center h-64 ${className}`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-300 text-lg">Carregando notícias...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showFullPost && selectedPost) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <Button 
+          variant="outline" 
+          onClick={handleBackToList} 
+          className="mb-4 bg-gray-800/50 border-gray-600 text-gray-200 hover:bg-gray-700/50 hover:border-gray-500"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar às Notícias
+        </Button>
+
+        <Card className="bg-gray-800/50 border-gray-700 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-b border-gray-700">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge 
+                  className="bg-purple-600/20 text-purple-400 border-purple-500/30"
+                  style={{ backgroundColor: getCategoryColor(selectedPost.category) + '20', borderColor: getCategoryColor(selectedPost.category) + '30' }}
+                >
+                  {getCategoryName(selectedPost.category)}
+                </Badge>
+                <span className="text-sm text-gray-400 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {formatDistanceToNow(new Date(selectedPost.published_at || selectedPost.created_at), { locale: ptBR, addSuffix: true })}
+                </span>
+                <span className="text-sm text-gray-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {formatReadTime(selectedPost.read_time_minutes)}
+                </span>
+              </div>
+              
+              <CardTitle className="text-2xl text-gray-100">{selectedPost.title}</CardTitle>
+              
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 ring-2 ring-purple-500/30">
+                  <AvatarImage src={selectedPost.author_avatar} />
+                  <AvatarFallback className="bg-gray-600 text-gray-200">{selectedPost.author_name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-gray-200">{selectedPost.author_name}</p>
+                  <p className="text-sm text-gray-400 flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    Autor
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="bg-gray-800/30">
+            {selectedPost.featured_image_url && (
+              <img
+                src={selectedPost.featured_image_url}
+                alt={selectedPost.title}
+                className="w-full h-64 object-cover rounded-lg mb-6 border border-gray-600"
+              />
+            )}
+            
+            <div className="prose prose-invert max-w-none text-gray-300">
+              <div dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <div className="flex items-center justify-between text-sm text-gray-400">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{selectedPost.views_count} visualizações</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>{selectedPost.likes_count} curtidas</span>
+                  </div>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLikeFullPost}
+                  className={`flex items-center gap-2 ${
+                    likedPosts.has(selectedPost.id)
+                      ? 'text-red-400 hover:text-red-300'
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${likedPosts.has(selectedPost.id) ? 'fill-current' : ''}`} />
+                  {likedPosts.has(selectedPost.id) ? 'Curtido' : 'Curtir'}
+                </Button>
+              </div>
+              
+              {selectedPost.tags && selectedPost.tags.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      Tags:
+                    </span>
+                    {selectedPost.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs bg-gray-700/50 border-gray-600 text-gray-300">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Últimas Atualizações */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Sparkles className="h-6 w-6 text-yellow-500" />
-          Últimas Atualizações
-        </h2>
-        <div className="space-y-6">
-          {latestUpdates.map((update) => (
-            <Card key={update.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="text-4xl">{update.image}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-semibold text-white">{update.title}</h3>
-                      {update.isNew && (
-                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
-                          Novo
-                        </Badge>
-                      )}
-                      <Badge variant="outline" className={getPriorityColor(update.priority)}>
-                        {update.priority === 'high' ? 'Alta' : update.priority === 'medium' ? 'Média' : 'Baixa'}
-                      </Badge>
+    <div className={`space-y-6 ${className}`}>
+      {/* Header com estatísticas */}
+      <Card className="bg-gray-800/50 border-gray-700 shadow-xl">
+        <CardHeader className="pb-4 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-purple-400">
+            <MessageSquare className="h-6 w-6 text-purple-500" />
+            Notícias e Atualizações
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-700/50 rounded-xl border border-gray-600">
+              <div className="text-2xl font-bold text-purple-400">
+                {posts.length}
+              </div>
+              <div className="text-sm text-purple-300">Notícias</div>
+            </div>
+            <div className="text-center p-4 bg-gray-700/50 rounded-xl border border-gray-600">
+              <div className="text-2xl font-bold text-purple-400">
+                {categories.length}
+              </div>
+              <div className="text-sm text-purple-300">Categorias</div>
+            </div>
+            <div className="text-center p-4 bg-gray-700/50 rounded-xl border border-gray-600">
+              <div className="text-2xl font-bold text-purple-400">
+                {posts.reduce((sum, post) => sum + (post.views_count || 0), 0)}
+              </div>
+              <div className="text-sm text-purple-300">Visualizações</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filtros */}
+      <Card className="shadow-md border-gray-700 bg-gray-800/50">
+        <CardHeader className="pb-3 border-b border-gray-700">
+          <CardTitle className="flex items-center gap-2 text-gray-200">
+            <Filter className="h-5 w-5 text-purple-400" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCategoryChange('all')}
+              className={selectedCategory === 'all' 
+                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50 hover:border-gray-500'
+              }
+            >
+              Todas as Categorias
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.slug ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleCategoryChange(category.slug)}
+                className={selectedCategory === category.slug 
+                  ? 'text-white' 
+                  : 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600/50 hover:border-gray-500'
+                }
+                style={selectedCategory === category.slug ? { backgroundColor: category.color } : {}}
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de Posts */}
+      <div className="space-y-4">
+        {posts.map((post) => (
+          <Card 
+            key={post.id} 
+            className="cursor-pointer hover:shadow-xl transition-all duration-200 bg-gray-800/50 border-gray-700 hover:bg-gray-700/50 hover:border-gray-600" 
+            onClick={() => handlePostClick(post)}
+          >
+            <CardContent className="p-6">
+              <div className="flex gap-4">
+                {post.featured_image_url && (
+                  <img
+                    src={post.featured_image_url}
+                    alt={post.title}
+                    className="w-24 h-24 object-cover rounded-lg flex-shrink-0 border border-gray-600"
+                  />
+                )}
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <Badge 
+                      className="bg-purple-600/20 text-purple-400 border-purple-500/30"
+                      style={{ backgroundColor: getCategoryColor(post.category) + '20', borderColor: getCategoryColor(post.category) + '30' }}
+                    >
+                      {getCategoryName(post.category)}
+                    </Badge>
+                    <span className="text-sm text-gray-400 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {formatDistanceToNow(new Date(post.published_at || post.created_at), { locale: ptBR, addSuffix: true })}
+                    </span>
+                    <span className="text-sm text-gray-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatReadTime(post.read_time_minutes)}
+                    </span>
+                  </div>
+                  
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-200">{post.title}</h3>
+                  
+                  {post.excerpt && (
+                    <p className="text-gray-400 mb-3 line-clamp-2">{post.excerpt}</p>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 ring-2 ring-purple-500/30">
+                        <AvatarImage src={post.author_avatar} />
+                        <AvatarFallback className="bg-gray-600 text-gray-200">{post.author_name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-gray-300">{post.author_name}</span>
                     </div>
-                    <p className="text-white/70 mb-3">{update.description}</p>
-                    <div className="flex items-center gap-2 mb-3">
-                      {update.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs border-blue-500/30 text-blue-400">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/50">{update.date}</span>
-                      <Button variant="outline" size="sm" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-                        Ler Mais
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        <span>{post.views_count}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ThumbsUp className="w-3 h-3" />
+                        <span>{post.likes_count}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => handleLikePost(post, e)}
+                        className={`p-1 h-auto ${
+                          likedPosts.has(post.id)
+                            ? 'text-red-400 hover:text-red-300'
+                            : 'text-gray-400 hover:text-gray-300'
+                        }`}
+                      >
+                        <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? 'fill-current' : ''}`} />
                       </Button>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Próximas Features */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <TrendingUp className="h-6 w-6 text-green-500" />
-          Próximas Features
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {upcomingFeatures.map((feature) => (
-            <Card key={feature.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl">{feature.icon}</div>
-                  <div>
-                    <CardTitle className="text-white">{feature.title}</CardTitle>
-                    <Badge variant="outline" className={getStatusColor(feature.status)}>
-                      {feature.status === 'development' ? 'Desenvolvimento' : 
-                       feature.status === 'planning' ? 'Planejamento' : 
-                       feature.status === 'design' ? 'Design' : 'Concluído'}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <CardDescription className="text-white/70">{feature.description}</CardDescription>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/70">Progresso:</span>
-                    <span className="text-white font-medium">{feature.progress}%</span>
-                  </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${feature.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-white/70">
-                  <Clock className="h-4 w-4" />
-                  <span>Lançamento: {feature.estimatedRelease}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Manutenções */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Wrench className="h-6 w-6 text-orange-500" />
-          Manutenções
-        </h2>
-        <div className="space-y-4">
-          {maintenanceSchedule.map((maintenance) => (
-            <Card key={maintenance.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-slate-700/50 flex items-center justify-center">
-                      <Wrench className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">{maintenance.title}</h3>
-                      <p className="text-white/70 text-sm">{maintenance.description}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-white/50">
-                        <span>{maintenance.date}</span>
-                        <span>{maintenance.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="outline" className={getStatusColor(maintenance.status)}>
-                      {maintenance.status === 'scheduled' ? 'Agendada' : 'Concluída'}
-                    </Badge>
-                    <div className="text-sm text-white/70 mt-1">
-                      Impacto: {maintenance.impact === 'low' ? 'Baixo' : 'Médio'}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Destaques da Comunidade */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-          <Star className="h-6 w-6 text-purple-500" />
-          Destaques da Comunidade
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {communityHighlights.map((highlight) => (
-            <Card key={highlight.id} className="bg-slate-800/80 border-slate-700/50 hover:border-slate-600/50 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-white text-lg">{highlight.title}</CardTitle>
-                <CardDescription className="text-white/70">{highlight.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-white/70">
-                    por <span className="text-blue-400">{highlight.author}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    <Star className="h-4 w-4" />
-                    <span className="text-sm font-medium">{highlight.votes}</span>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="w-full mt-3 border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                  Ver Detalhes
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {posts.length === 0 && (
+        <Card className="bg-gray-800/50 border-gray-700 shadow-xl">
+          <CardContent className="p-12 text-center">
+            <div className="text-6xl mb-4">📰</div>
+            <h3 className="text-lg font-semibold mb-2 text-gray-200">Nenhuma notícia encontrada</h3>
+            <p className="text-gray-400">
+              {selectedCategory === 'all' 
+                ? 'Não há notícias publicadas no momento.'
+                : `Não há notícias na categoria "${getCategoryName(selectedCategory)}".`
+              }
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
-}; 
+} 

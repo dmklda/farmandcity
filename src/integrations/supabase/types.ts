@@ -996,10 +996,13 @@ export type Database = {
           price_dollars: number | null
           purchase_time_limit: unknown | null
           rarity: string | null
+          real_discount_percentage: number | null
           rotation_date: string | null
           sold_quantity: number | null
           stock_quantity: number | null
           updated_at: string | null
+          currency_amount_coins: number | null
+          currency_amount_gems: number | null
         }
         Insert: {
           card_ids?: string[] | null
@@ -1024,10 +1027,13 @@ export type Database = {
           price_dollars?: number | null
           purchase_time_limit?: unknown | null
           rarity?: string | null
+          real_discount_percentage?: number | null
           rotation_date?: string | null
           sold_quantity?: number | null
           stock_quantity?: number | null
           updated_at?: string | null
+          currency_amount_coins?: number | null
+          currency_amount_gems?: number | null
         }
         Update: {
           card_ids?: string[] | null
@@ -1052,10 +1058,13 @@ export type Database = {
           price_dollars?: number | null
           purchase_time_limit?: unknown | null
           rarity?: string | null
+          real_discount_percentage?: number | null
           rotation_date?: string | null
           sold_quantity?: number | null
           stock_quantity?: number | null
           updated_at?: string | null
+          currency_amount_coins?: number | null
+          currency_amount_gems?: number | null
         }
         Relationships: []
       }
@@ -1599,6 +1608,163 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      }
+      community_topics: {
+        Row: {
+          id: string
+          title: string
+          content: string
+          author_id: string
+          category: string | null
+          tags: string[] | null
+          likes_count: number | null
+          replies_count: number | null
+          views_count: number | null
+          is_pinned: boolean | null
+          is_locked: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          content: string
+          author_id: string
+          category?: string | null
+          tags?: string[] | null
+          likes_count?: number | null
+          replies_count?: number | null
+          views_count?: number | null
+          is_pinned?: boolean | null
+          is_locked?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          content?: string
+          author_id?: string
+          category?: string | null
+          tags?: string[] | null
+          likes_count?: number | null
+          replies_count?: number | null
+          views_count?: number | null
+          is_pinned?: boolean | null
+          is_locked?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      community_replies: {
+        Row: {
+          id: string
+          topic_id: string
+          author_id: string
+          content: string
+          parent_reply_id: string | null
+          likes_count: number | null
+          is_solution: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          topic_id: string
+          author_id: string
+          content: string
+          parent_reply_id?: string | null
+          likes_count?: number | null
+          is_solution?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          topic_id?: string
+          author_id?: string
+          content?: string
+          parent_reply_id?: string | null
+          likes_count?: number | null
+          is_solution?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+      }
+      community_rankings: {
+        Row: {
+          id: string
+          user_id: string
+          ranking_type: string
+          score: number | null
+          level: number | null
+          contributions_count: number | null
+          last_updated: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          ranking_type: string
+          score?: number | null
+          level?: number | null
+          contributions_count?: number | null
+          last_updated?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          ranking_type?: string
+          score?: number | null
+          level?: number | null
+          contributions_count?: number | null
+          last_updated?: string | null
+        }
+      }
+      community_likes: {
+        Row: {
+          id: string
+          user_id: string
+          target_type: string
+          target_id: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          target_type: string
+          target_id: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          target_type?: string
+          target_id?: string
+          created_at?: string | null
+        }
+      }
+      community_views: {
+        Row: {
+          id: string
+          topic_id: string
+          user_id: string | null
+          ip_address: string | null
+          viewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          topic_id: string
+          user_id?: string | null
+          ip_address?: string | null
+          viewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          topic_id?: string
+          user_id?: string | null
+          ip_address?: string | null
+          viewed_at?: string | null
+        }
       }
     }
     Views: {

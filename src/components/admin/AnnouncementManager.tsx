@@ -223,7 +223,7 @@ export const AnnouncementManager: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Carregando avisos...</div>
+        <div className="text-lg text-white">Carregando avisos...</div>
       </div>
     );
   }
@@ -232,12 +232,12 @@ export const AnnouncementManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Gerenciar Avisos da Loja</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold text-white">Gerenciar Avisos da Loja</h1>
+          <p className="text-gray-300">
             Crie e gerencie avisos e anúncios que aparecem na loja
           </p>
         </div>
-        <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2">
+        <Button onClick={() => setIsCreating(true)} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
           <Plus className="w-4 h-4" />
           Novo Aviso
         </Button>
@@ -245,44 +245,45 @@ export const AnnouncementManager: React.FC = () => {
 
       {/* Form */}
       {(isCreating || editingId) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-gray-900 border-gray-700">
+          <CardHeader className="border-b border-gray-700">
+            <CardTitle className="flex items-center gap-2 text-white">
               {editingId ? <Edit className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               {editingId ? 'Editar Aviso' : 'Novo Aviso'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4 pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Título *</Label>
+                  <Label htmlFor="title" className="text-gray-300">Título *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Ex: MEGA PROMOÇÃO!"
                     required
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="type">Tipo</Label>
+                  <Label htmlFor="type" className="text-gray-300">Tipo</Label>
                   <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info">Informação</SelectItem>
-                      <SelectItem value="promotion">Promoção</SelectItem>
-                      <SelectItem value="alert">Alerta</SelectItem>
-                      <SelectItem value="warning">Aviso</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="info" className="text-white hover:bg-gray-700">Informação</SelectItem>
+                      <SelectItem value="promotion" className="text-white hover:bg-gray-700">Promoção</SelectItem>
+                      <SelectItem value="alert" className="text-white hover:bg-gray-700">Alerta</SelectItem>
+                      <SelectItem value="warning" className="text-white hover:bg-gray-700">Aviso</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="message">Mensagem *</Label>
+                <Label htmlFor="message" className="text-gray-300">Mensagem *</Label>
                 <Textarea
                   id="message"
                   value={formData.message}
@@ -290,67 +291,71 @@ export const AnnouncementManager: React.FC = () => {
                   placeholder="Digite a mensagem do aviso..."
                   rows={3}
                   required
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="icon">Ícone</Label>
+                  <Label htmlFor="icon" className="text-gray-300">Ícone</Label>
                   <Input
                     id="icon"
                     value={formData.icon}
                     onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                     placeholder="🔥"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="color">Cor</Label>
+                  <Label htmlFor="color" className="text-gray-300">Cor</Label>
                   <Select value={formData.color} onValueChange={(value: any) => setFormData({ ...formData, color: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="red">Vermelho</SelectItem>
-                      <SelectItem value="green">Verde</SelectItem>
-                      <SelectItem value="blue">Azul</SelectItem>
-                      <SelectItem value="purple">Roxo</SelectItem>
-                      <SelectItem value="orange">Laranja</SelectItem>
-                      <SelectItem value="yellow">Amarelo</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="red" className="text-white hover:bg-gray-700">Vermelho</SelectItem>
+                      <SelectItem value="green" className="text-white hover:bg-gray-700">Verde</SelectItem>
+                      <SelectItem value="blue" className="text-white hover:bg-gray-700">Azul</SelectItem>
+                      <SelectItem value="purple" className="text-white hover:bg-gray-700">Roxo</SelectItem>
+                      <SelectItem value="orange" className="text-white hover:bg-gray-700">Laranja</SelectItem>
+                      <SelectItem value="yellow" className="text-white hover:bg-gray-700">Amarelo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="priority">Prioridade</Label>
+                  <Label htmlFor="priority" className="text-gray-300">Prioridade</Label>
                   <Select value={formData.priority.toString()} onValueChange={(value) => setFormData({ ...formData, priority: parseInt(value) as any })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Baixa</SelectItem>
-                      <SelectItem value="2">Média</SelectItem>
-                      <SelectItem value="3">Alta</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="1" className="text-white hover:bg-gray-700">Baixa</SelectItem>
+                      <SelectItem value="2" className="text-white hover:bg-gray-700">Média</SelectItem>
+                      <SelectItem value="3" className="text-white hover:bg-gray-700">Alta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="start_date">Data de Início</Label>
+                  <Label htmlFor="start_date" className="text-gray-300">Data de Início</Label>
                   <Input
                     id="start_date"
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="end_date">Data de Fim (Opcional)</Label>
+                  <Label htmlFor="end_date" className="text-gray-300">Data de Fim (Opcional)</Label>
                   <Input
                     id="end_date"
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -359,16 +364,16 @@ export const AnnouncementManager: React.FC = () => {
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
-                  <Label htmlFor="is_active">Ativo</Label>
+                  <Label htmlFor="is_active" className="text-gray-300">Ativo</Label>
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="flex items-center gap-2">
+                <Button type="submit" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
                   <Save className="w-4 h-4" />
                   {editingId ? 'Atualizar' : 'Criar'}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="flex items-center gap-2">
+                <Button type="button" variant="outline" onClick={resetForm} className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700">
                   <X className="w-4 h-4" />
                   Cancelar
                 </Button>
@@ -380,14 +385,14 @@ export const AnnouncementManager: React.FC = () => {
 
       {/* List */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Avisos Existentes ({announcements.length})</h2>
+        <h2 className="text-xl font-semibold text-white">Avisos Existentes ({announcements.length})</h2>
         
         {announcements.length === 0 ? (
-          <Card>
+          <Card className="bg-gray-900 border-gray-700">
             <CardContent className="flex items-center justify-center h-32">
               <div className="text-center">
-                <Megaphone className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">Nenhum aviso criado ainda</p>
+                <Megaphone className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-300">Nenhum aviso criado ainda</p>
               </div>
             </CardContent>
           </Card>
@@ -415,8 +420,8 @@ export const AnnouncementManager: React.FC = () => {
                           </Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-2">{announcement.message}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <p className="text-sm text-gray-300 mb-2">{announcement.message}</p>
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span>Início: {new Date(announcement.start_date).toLocaleDateString()}</span>
                         {announcement.end_date && (
                           <span>Fim: {new Date(announcement.end_date).toLocaleDateString()}</span>
@@ -429,6 +434,7 @@ export const AnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleToggleActive(announcement.id, announcement.is_active)}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
                       >
                         {announcement.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
@@ -436,6 +442,7 @@ export const AnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEdit(announcement)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -443,6 +450,7 @@ export const AnnouncementManager: React.FC = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDelete(announcement.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-lg border-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

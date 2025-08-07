@@ -52,6 +52,18 @@ const tabItems: TabItem[] = [
     label: 'Notícias',
     icon: Newspaper,
     description: 'Últimas atualizações, manutenções, próximas features'
+  },
+  {
+    id: 'achievements',
+    label: 'Conquistas',
+    icon: Trophy,
+    description: 'Conquistas desbloqueadas, progresso, recompensas'
+  },
+  {
+    id: 'missions',
+    label: 'Missões',
+    icon: Target,
+    description: 'Missões diárias, semanais, progresso, recompensas'
   }
 ];
 

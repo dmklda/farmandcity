@@ -39,7 +39,9 @@ interface SpecialPack {
   stock_quantity?: number;
   sold_quantity: number;
   discount_percentage: number;
+  real_discount_percentage: number;
   guaranteed_cards?: any;
+  is_special?: boolean; // Added for fake discount logic
 }
 
 interface SpecialPacksDisplayProps {
@@ -112,30 +114,59 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
   };
 
   const getPriceDisplay = (pack: SpecialPack) => {
+    // Lógica de desconto falso para packs especiais
+    const isFakeDiscount = pack.is_special && pack.discount_percentage === 50 && pack.real_discount_percentage < pack.discount_percentage;
+    
     if (pack.currency_type === 'coins') {
+      let originalPrice = pack.price_coins;
+      let displayPrice = pack.price_coins;
+      
+      if (isFakeDiscount) {
+        // Desconto falso: multiplica o preço por 2 para mostrar "50% de desconto"
+        originalPrice = pack.price_coins * 2;
+        displayPrice = pack.price_coins;
+      } else if (pack.discount_percentage > 0) {
+        // Desconto real: calcula normalmente
+        originalPrice = pack.price_coins / (1 - pack.discount_percentage / 100);
+        displayPrice = pack.price_coins;
+      }
+      
       return (
         <div className="flex items-center gap-2">
           <Coins className="w-5 h-5 text-yellow-500" />
           <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : 'text-yellow-400 font-bold text-xl'}>
-            {pack.price_coins}
+            {Math.round(originalPrice)}
           </span>
           {pack.discount_percentage > 0 && (
             <span className="text-green-400 font-bold text-xl">
-              {Math.round(pack.price_coins * (1 - pack.discount_percentage / 100))}
+              {Math.round(displayPrice)}
             </span>
           )}
         </div>
       );
     } else if (pack.currency_type === 'gems') {
+      let originalPrice = pack.price_gems;
+      let displayPrice = pack.price_gems;
+      
+      if (isFakeDiscount) {
+        // Desconto falso: multiplica o preço por 2 para mostrar "50% de desconto"
+        originalPrice = pack.price_gems * 2;
+        displayPrice = pack.price_gems;
+      } else if (pack.discount_percentage > 0) {
+        // Desconto real: calcula normalmente
+        originalPrice = pack.price_gems / (1 - pack.discount_percentage / 100);
+        displayPrice = pack.price_gems;
+      }
+      
       return (
         <div className="flex items-center gap-2">
           <Gem className="w-5 h-5 text-purple-500" />
           <span className={pack.discount_percentage > 0 ? 'line-through text-gray-400' : 'text-purple-400 font-bold text-xl'}>
-            {pack.price_gems}
+            {Math.round(originalPrice)}
           </span>
           {pack.discount_percentage > 0 && (
             <span className="text-green-400 font-bold text-xl">
-              {Math.round(pack.price_gems * (1 - pack.discount_percentage / 100))}
+              {Math.round(displayPrice)}
             </span>
           )}
         </div>
@@ -173,6 +204,28 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
     }
   };
 
+  const getDiscountBadge = (pack: SpecialPack) => {
+    if (pack.discount_percentage > 0) {
+      return (
+        <div className="absolute top-3 right-3 z-10">
+          <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0">
+            -{pack.discount_percentage}%
+          </Badge>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const getPackCardStyle = (pack: SpecialPack) => {
+    return `
+      relative overflow-hidden transition-all duration-300 hover:scale-105 group
+      bg-gradient-to-br from-slate-800/80 to-slate-900/80 
+      border-2 border-gray-600/30 hover:border-gray-500/60
+      shadow-lg hover:shadow-xl
+    `;
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -196,26 +249,13 @@ export const SpecialPacksDisplay: React.FC<SpecialPacksDisplayProps> = ({
           return (
             <Card 
               key={pack.id}
-              className={`
-                relative overflow-hidden transition-all duration-300 hover:scale-105 group
-                bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm
-                border-2 border-yellow-600/30 hover:border-yellow-500/60
-                shadow-lg ${getPackGlow(pack.rarity)} hover:shadow-xl
-                ${pack.is_limited ? 'ring-2 ring-orange-400/50' : ''}
-                ${pack.discount_percentage > 0 ? 'ring-2 ring-green-400/50' : ''}
-              `}
+              className={getPackCardStyle(pack)}
             >
               {/* Glow effect */}
               <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${getPackRarityColor(pack.rarity)} blur-xl -z-10`} />
               
               {/* Discount Badge */}
-              {pack.discount_percentage > 0 && (
-                <div className="absolute top-3 right-3 z-10">
-                  <Badge className="bg-gradient-to-r from-green-600 to-green-700 text-white border-0 shadow-lg">
-                    -{pack.discount_percentage}%
-                  </Badge>
-                </div>
-              )}
+              {getDiscountBadge(pack)}
 
               {/* Limited Badge */}
               {pack.is_limited && (

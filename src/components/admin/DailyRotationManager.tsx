@@ -188,7 +188,7 @@ export const DailyRotationManager: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Carregando...</div>
+        <div className="text-lg text-white">Carregando...</div>
       </div>
     );
   }
@@ -197,71 +197,72 @@ export const DailyRotationManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gerenciar Rotação Diária</h2>
-          <p className="text-muted-foreground">Configure o ciclo diário de cartas à venda</p>
+          <h2 className="text-2xl font-bold text-white">Gerenciar Rotação Diária</h2>
+          <p className="text-gray-300">Configure o ciclo diário de cartas à venda</p>
         </div>
-        <Button onClick={resetForm} className="flex items-center gap-2">
+        <Button onClick={resetForm} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
           <Plus className="h-4 w-4" />
           Nova Carta
         </Button>
       </div>
 
       <Tabs defaultValue="create" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="create">Adicionar Carta</TabsTrigger>
-          <TabsTrigger value="cards">Cartas em Rotação</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-600">
+          <TabsTrigger value="create" className="text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Adicionar Carta</TabsTrigger>
+          <TabsTrigger value="cards" className="text-gray-300 data-[state=active]:bg-blue-600 data-[state=active]:text-white">Cartas em Rotação</TabsTrigger>
         </TabsList>
 
         <TabsContent value="create" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Adicionar Carta à Rotação Diária</CardTitle>
+          <Card className="bg-gray-900 border-gray-700">
+            <CardHeader className="border-b border-gray-700">
+              <CardTitle className="text-white">Adicionar Carta à Rotação Diária</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="date">Data da Rotação *</Label>
+                  <Label htmlFor="date" className="text-gray-300">Data da Rotação *</Label>
                   <Input
                     id="date"
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="slot_type">Tipo de Slot</Label>
+                  <Label htmlFor="slot_type" className="text-gray-300">Tipo de Slot</Label>
                   <Select
                     value={formData.slot_type}
                     onValueChange={(value: 'common' | 'rare' | 'legendary' | 'magic' | 'landmark') => 
                       setFormData(prev => ({ ...prev, slot_type: value }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="common">Comum</SelectItem>
-                      <SelectItem value="rare">Rara</SelectItem>
-                      <SelectItem value="legendary">Lendária</SelectItem>
-                      <SelectItem value="magic">Magia</SelectItem>
-                      <SelectItem value="landmark">Landmark</SelectItem>
+                    <SelectContent className="bg-gray-800 border-gray-600">
+                      <SelectItem value="common" className="text-white hover:bg-gray-700">Comum</SelectItem>
+                      <SelectItem value="rare" className="text-white hover:bg-gray-700">Rara</SelectItem>
+                      <SelectItem value="legendary" className="text-white hover:bg-gray-700">Lendária</SelectItem>
+                      <SelectItem value="magic" className="text-white hover:bg-gray-700">Magia</SelectItem>
+                      <SelectItem value="landmark" className="text-white hover:bg-gray-700">Landmark</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="card">Carta *</Label>
+                  <Label htmlFor="card" className="text-gray-300">Carta *</Label>
                   <Select
                     value={formData.card_id}
                     onValueChange={(value) => setFormData(prev => ({ ...prev, card_id: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                       <SelectValue placeholder="Selecione uma carta" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-gray-800 border-gray-600">
                       {cards.map((card) => (
-                        <SelectItem key={card.id} value={card.id}>
+                        <SelectItem key={card.id} value={card.id} className="text-white hover:bg-gray-700">
                           {card.name} ({card.rarity})
                         </SelectItem>
                       ))}
@@ -270,35 +271,38 @@ export const DailyRotationManager: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="discount">Desconto (%)</Label>
+                  <Label htmlFor="discount" className="text-gray-300">Desconto (%)</Label>
                   <Input
                     id="discount"
                     type="number"
                     value={formData.discount_percentage}
                     onChange={(e) => setFormData(prev => ({ ...prev, discount_percentage: parseInt(e.target.value) || 0 }))}
                     placeholder="0"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price_coins">Preço em Moedas</Label>
+                  <Label htmlFor="price_coins" className="text-gray-300">Preço em Moedas</Label>
                   <Input
                     id="price_coins"
                     type="number"
                     value={formData.price_coins}
                     onChange={(e) => setFormData(prev => ({ ...prev, price_coins: parseInt(e.target.value) || 0 }))}
                     placeholder="100"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price_gems">Preço em Gems</Label>
+                  <Label htmlFor="price_gems" className="text-gray-300">Preço em Gems</Label>
                   <Input
                     id="price_gems"
                     type="number"
                     value={formData.price_gems}
                     onChange={(e) => setFormData(prev => ({ ...prev, price_gems: parseInt(e.target.value) || 0 }))}
                     placeholder="0"
+                    className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -310,16 +314,16 @@ export const DailyRotationManager: React.FC = () => {
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
                   />
-                  <Label htmlFor="is_active">Ativo</Label>
+                  <Label htmlFor="is_active" className="text-gray-300">Ativo</Label>
                 </div>
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={createDailyRotation} className="flex items-center gap-2">
+                <Button onClick={createDailyRotation} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg border-0">
                   <Save className="h-4 w-4" />
                   Adicionar à Rotação
                 </Button>
-                <Button variant="outline" onClick={resetForm} className="flex items-center gap-2">
+                <Button variant="outline" onClick={resetForm} className="flex items-center gap-2 border-gray-600 text-gray-300 hover:bg-gray-700">
                   <X className="h-4 w-4" />
                   Limpar
                 </Button>
@@ -330,45 +334,45 @@ export const DailyRotationManager: React.FC = () => {
 
         <TabsContent value="cards" className="mt-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Cartas em Rotação</h3>
+            <h3 className="text-lg font-semibold text-white">Cartas em Rotação</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {dailyRotationCards.map((rotationCard) => {
                 const card = cards.find(c => c.id === rotationCard.card_id);
                 return (
-                  <Card key={rotationCard.id}>
-                    <CardHeader>
+                  <Card key={rotationCard.id} className="bg-gray-900 border-gray-700">
+                    <CardHeader className="border-b border-gray-700">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{card?.name || 'Carta não encontrada'}</CardTitle>
+                        <CardTitle className="text-lg text-white">{card?.name || 'Carta não encontrada'}</CardTitle>
                         <Badge className={getRarityColor(card?.rarity || 'common')}>
                           {card?.rarity || 'Desconhecida'}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-gray-400">
                         {new Date(rotationCard.rotation_date).toLocaleDateString('pt-BR')}
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pt-6">
                       <div className="flex items-center gap-4 text-sm">
                         {rotationCard.price_coins && rotationCard.price_coins > 0 && (
                           <div className="flex items-center gap-1">
-                            <span className="text-yellow-600">🪙</span>
-                            <span>{rotationCard.price_coins}</span>
+                            <span className="text-yellow-400">🪙</span>
+                            <span className="text-gray-300">{rotationCard.price_coins}</span>
                           </div>
                         )}
                         {rotationCard.price_gems && rotationCard.price_gems > 0 && (
                           <div className="flex items-center gap-1">
-                            <span className="text-purple-600">💎</span>
-                            <span>{rotationCard.price_gems}</span>
+                            <span className="text-purple-400">💎</span>
+                            <span className="text-gray-300">{rotationCard.price_gems}</span>
                           </div>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Badge variant={rotationCard.is_active ? "default" : "secondary"}>
+                        <Badge variant={rotationCard.is_active ? "default" : "secondary"} className={rotationCard.is_active ? "bg-green-600 text-white" : "bg-gray-600 text-white"}>
                           {rotationCard.is_active ? 'Ativo' : 'Inativo'}
                         </Badge>
                         {rotationCard.discount_percentage && rotationCard.discount_percentage > 0 && (
-                          <Badge variant="outline" className="text-green-600">
+                          <Badge variant="outline" className="text-green-400 border-green-400">
                             -{rotationCard.discount_percentage}%
                           </Badge>
                         )}
@@ -378,7 +382,7 @@ export const DailyRotationManager: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => deleteRotationCard(rotationCard.id)}
-                        className="w-full text-red-600 hover:text-red-700"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white rounded-lg border-0"
                       >
                         <Trash2 className="h-4 w-4" />
                         Remover da Rotação
