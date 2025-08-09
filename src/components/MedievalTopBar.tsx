@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, Save, LogOut, User, Home, Settings } from 'lucide-react';
+import { Save, LogOut, User, Home, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MedievalTopBarProps {
@@ -29,12 +29,20 @@ interface MedievalTopBarProps {
     materials: string[];
     population: string[];
   };
+  catastropheLosses?: {
+    coins: number;
+    food: number;
+    materials: number;
+    population: number;
+  };
+  catastropheDuration?: number;
   onShowStats?: () => void;
   onShowSavedGames?: () => void;
   onLogout?: () => void;
   onGoHome?: () => void;
   onSettingsClick?: () => void;
   userEmail?: string;
+  userName?: string;
   activeDeck?: {
     id: string;
     name: string;
@@ -52,13 +60,15 @@ const ResourceChip: React.FC<{
   color: string;
   perTurn?: number;
   details?: string[];
-}> = ({ icon, value, label, color, perTurn = 0, details = [] }) => {
+  catastropheLoss?: number;
+  catastropheDuration?: number;
+}> = ({ icon, value, label, color, perTurn = 0, details = [], catastropheLoss = 0, catastropheDuration }) => {
   const getIconComponent = (iconType: string) => {
     switch (iconType) {
-      case '💰': return <CoinsIconPNG size={16} />;
-      case '🌾': return <FoodsIconPNG size={16} />;
-      case '🏗️': return <MaterialsIconPNG size={16} />;
-      case '👥': return <PopulationIconPNG size={16} />;
+      case '💰': return <CoinsIconPNG size={24} />;
+      case '🌾': return <FoodsIconPNG size={24} />;
+      case '🏗️': return <MaterialsIconPNG size={24} />;
+      case '👥': return <PopulationIconPNG size={24} />;
       default: return <span className="text-xs">{icon}</span>;
     }
   };
@@ -75,9 +85,14 @@ const ResourceChip: React.FC<{
         </div>
         <div className="flex flex-col min-w-0">
           <span className="font-bold text-amber-100 text-sm leading-tight">{value}</span>
-          {perTurn > 0 && (
-            <span className="text-xs text-green-400 font-medium leading-tight">+{perTurn}/t</span>
-          )}
+          <div className="flex flex-col gap-0.5">
+            {perTurn > 0 && (
+              <span className="text-xs text-green-400 font-medium leading-tight">+{perTurn}/t</span>
+            )}
+            {catastropheLoss > 0 && (
+              <span className="text-xs text-red-400 font-medium leading-tight">-{catastropheLoss}/t</span>
+            )}
+          </div>
         </div>
       </div>
       
@@ -85,13 +100,27 @@ const ResourceChip: React.FC<{
       <div 
         className="absolute left-0 top-full mt-2 px-3 py-2 bg-gradient-to-br from-stone-900 to-stone-800 text-amber-100 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 min-w-[160px] max-w-[300px] shadow-2xl border border-amber-700"
       >
-        <div className="font-bold text-amber-100 mb-1">{label}: {value}{perTurn > 0 && <span className='text-green-400'> (+{perTurn}/turno)</span>}</div>
+        <div className="font-bold text-amber-100 mb-1">
+          {label}: {value}
+          {perTurn > 0 && <span className='text-green-400'> (+{perTurn}/turno)</span>}
+          {catastropheLoss > 0 && <span className='text-red-400'> (-{catastropheLoss}/turno)</span>}
+        </div>
+        {catastropheLoss > 0 && (
+          <div className="text-xs text-red-300 mb-2 border-b border-red-700/50 pb-1">
+            🌪️ Redução de produção devido a catástrofe
+            {catastropheDuration !== undefined && catastropheDuration > 0 && (
+              <div className="text-xs text-red-200 mt-1">
+                ⏰ Duração restante: {catastropheDuration} turno{catastropheDuration !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        )}
         {perTurn > 0 && details && details.length > 0 && (
           <ul className="text-xs text-amber-200 list-disc pl-4 space-y-0.5">
             {details.map((d, i) => <li key={i}>{d}</li>)}
           </ul>
         )}
-        {perTurn === 0 && <div className="text-xs text-amber-300">Nenhum ganho por turno de cartas em campo.</div>}
+        {perTurn === 0 && catastropheLoss === 0 && <div className="text-xs text-amber-300">Nenhum ganho por turno de cartas em campo.</div>}
       </div>
     </motion.div>
   );
@@ -125,12 +154,15 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
   onToggleSidebar,
   productionPerTurn = { coins: 0, food: 0, materials: 0, population: 0 },
   productionDetails = { coins: [], food: [], materials: [], population: [] },
+  catastropheLosses = { coins: 0, food: 0, materials: 0, population: 0 },
+  catastropheDuration,
   onShowStats,
   onShowSavedGames,
   onLogout,
   onGoHome,
   onSettingsClick,
   userEmail,
+  userName,
   activeDeck,
 
 }) => {
@@ -172,6 +204,8 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
             color="text-yellow-400"
             perTurn={productionPerTurn.coins}
             details={productionDetails.coins}
+            catastropheLoss={catastropheLosses.coins}
+            catastropheDuration={catastropheDuration}
           />
           
           <ResourceChip
@@ -181,6 +215,8 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
             color="text-green-400"
             perTurn={productionPerTurn.food}
             details={productionDetails.food}
+            catastropheLoss={catastropheLosses.food}
+            catastropheDuration={catastropheDuration}
           />
           
           <ResourceChip
@@ -190,6 +226,8 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
             color="text-blue-400"
             perTurn={productionPerTurn.materials}
             details={productionDetails.materials}
+            catastropheLoss={catastropheLosses.materials}
+            catastropheDuration={catastropheDuration}
           />
           
           <ResourceChip
@@ -199,6 +237,8 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
             color="text-purple-400"
             perTurn={productionPerTurn.population}
             details={productionDetails.population}
+            catastropheLoss={catastropheLosses.population}
+            catastropheDuration={catastropheDuration}
           />
         </motion.div>
 
@@ -252,18 +292,6 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            {onShowStats && (
-              <motion.button
-                onClick={onShowStats}
-                className="p-2 bg-gradient-to-br from-blue-900/30 to-cyan-900/30 text-blue-400 rounded-lg border border-blue-600 hover:from-blue-800/40 hover:to-cyan-800/40 transition-all duration-300"
-                title="Estatísticas"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <BarChart3 size={20} />
-              </motion.button>
-            )}
 
             {onSettingsClick && (
               <motion.button
@@ -318,23 +346,26 @@ const MedievalTopBar: React.FC<MedievalTopBarProps> = ({
             )}
           </div>
 
-          {/* User Info */}
-          {userEmail && (
-            <motion.div 
-              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-stone-800/80 to-stone-900/80 rounded-lg border border-amber-700/50"
+          {/* User Info - Clickable Profile Card */}
+          {(userName || userEmail) && (
+            <motion.button
+              onClick={onShowStats}
+              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-br from-stone-800/80 to-stone-900/80 rounded-lg border border-amber-700/50 hover:border-amber-500/70 hover:from-stone-700/80 hover:to-stone-800/80 transition-all duration-300 cursor-pointer"
               whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              title="Ver perfil e estatísticas"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-amber-600 to-yellow-600 rounded-full flex items-center justify-center border border-amber-500">
                 <User size={16} className="text-amber-100" />
               </div>
               <div className="hidden md:block">
-                <div className="text-xs text-amber-200">Jogador</div>
+                <div className="text-xs text-amber-200">Guerreiro</div>
                 <div className="text-xs text-amber-100 font-medium truncate max-w-[120px]">
-                  {userEmail}
+                  {userName || userEmail?.split('@')[0] || 'Guerreiro'}
                 </div>
               </div>
-            </motion.div>
+            </motion.button>
           )}
         </motion.div>
       </div>

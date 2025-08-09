@@ -14,6 +14,7 @@ import { getCardTypeIconPNG } from '../components/IconComponentsPNG';
 import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from '../components/IconComponentsPNG';
 import { cn } from '../lib/utils';
 import { useAppContext } from '../contexts/AppContext';
+import { MedievalAnimatedBackground } from '../components/MedievalAnimatedBackground';
 
 // Componente de carta completa baseado no CardDetailModal
 const FullCardComponent: React.FC<{ card: Card }> = ({ card }) => {
@@ -478,18 +479,23 @@ const CollectionPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black">
+    <div className="min-h-screen relative">
+      {/* Medieval Animated Background */}
+      <MedievalAnimatedBackground />
+      
       {/* Header Medieval */}
-      <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-b border-yellow-600/30 p-6">
+      <div className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 relative z-50 p-6">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-6">
               <Button
-              variant="outline"
                 onClick={() => setCurrentView('home')}
-              className="border-yellow-600/50 text-yellow-400 hover:bg-yellow-600/20"
+                className="group relative overflow-hidden bg-gradient-to-r from-slate-700/90 to-slate-800/90 hover:from-slate-600 hover:to-slate-700 text-white font-bold py-2 px-4 rounded-xl transition-all duration-300 shadow-lg border border-slate-600/30 hover:border-amber-400/50 hover:scale-105 backdrop-blur-sm"
               >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Menu Principal
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar ao Reino
+                </span>
               </Button>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">

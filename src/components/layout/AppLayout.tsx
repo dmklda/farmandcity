@@ -68,6 +68,7 @@ interface AppLayoutProps {
   onLogout?: () => void;
   onGoHome?: () => void;
   userEmail?: string;
+  userName?: string;
   activeDeck?: {
     id: string;
     name: string;
@@ -124,6 +125,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   onLogout,
   onGoHome,
   userEmail,
+  userName,
   activeDeck
 }) => {
   // Debug log para verificar se o activeDeck está chegando no AppLayout
@@ -154,6 +156,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
         onLogout={onLogout}
         onGoHome={onGoHome}
         userEmail={userEmail}
+        userName={userName}
         activeDeck={activeDeck}
       />
 

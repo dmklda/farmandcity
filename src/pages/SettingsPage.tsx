@@ -31,15 +31,19 @@ import {
   Music,
   Download,
   Shield,
-  Eye
+  Eye,
+  Lock,
+  Gamepad2
 } from 'lucide-react';
+import { MedievalAnimatedBackground } from '../components/MedievalAnimatedBackground';
 
 export const SettingsPage: React.FC = () => {
   const {
     settings,
     loading: settingsLoading,
     error: settingsError,
-    updateUserSettings
+    updateUserSettings,
+    changePassword
   } = useUserSettings();
 
   const {
@@ -65,16 +69,66 @@ export const SettingsPage: React.FC = () => {
   const { showToast, ToastContainer } = useToast();
   const { setCurrentView } = useAppContext();
   const [saving, setSaving] = useState(false);
+  const [localSettings, setLocalSettings] = useState<any>(null);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
-  const handleSaveSettings = async (updates: Partial<any>) => {
+  // Inicializar settings locais quando settings carregar
+  React.useEffect(() => {
+    if (settings && !localSettings) {
+      setLocalSettings(settings);
+    }
+  }, [settings, localSettings]);
+
+  const handleInputChange = (field: string, value: any) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveSettings = async () => {
+    if (!localSettings) return;
+    
     try {
       setSaving(true);
-      await updateUserSettings(updates);
+      await updateUserSettings(localSettings);
       showToast('Configurações salvas com sucesso!', 'success');
     } catch (err: any) {
       showToast(`Erro ao salvar: ${err.message}`, 'error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showToast('As senhas não coincidem!', 'error');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      showToast('A nova senha deve ter pelo menos 6 caracteres!', 'error');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+      showToast('Senha alterada com sucesso!', 'success');
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (err: any) {
+      showToast(`Erro ao alterar senha: ${err.message}`, 'error');
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -143,25 +197,34 @@ export const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="min-h-screen relative">
+      {/* Medieval Animated Background */}
+      <MedievalAnimatedBackground />
+      
       <ToastContainer />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto p-6 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <Button
             onClick={() => setCurrentView('home')}
-            variant="outline"
-            className="flex items-center gap-2 bg-slate-700/50 hover:bg-slate-600/50 border-slate-600 text-white hover:text-blue-400 transition-all duration-300"
+            className="group relative overflow-hidden bg-gradient-to-r from-slate-700/90 to-slate-800/90 hover:from-slate-600 hover:to-slate-700 text-white font-bold py-2 px-4 rounded-xl transition-all duration-300 shadow-lg border border-slate-600/30 hover:border-amber-400/50 hover:scale-105 backdrop-blur-sm"
           >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <span className="relative flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Voltar
+              Voltar ao Reino
+            </span>
           </Button>
           <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2 flex items-center justify-center gap-3">
-            <Settings className="w-8 h-8 text-yellow-500" />
-            Configurações do Reino
+            <div className="relative inline-block">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent mb-2 flex items-center justify-center gap-3">
+                <Settings className="w-8 h-8 text-amber-400" />
+                Conselho Real
           </h1>
-          <p className="text-gray-300">Personalize sua experiência no jogo</p>
+              {/* Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 blur-xl opacity-20 -z-10"></div>
+            </div>
+            <p className="text-purple-200/90">Personalize sua experiência no reino</p>
         </div>
           <div className="w-24"></div>
         </div>
@@ -186,37 +249,39 @@ export const SettingsPage: React.FC = () => {
 
                  {/* Tabs de Configurações */}
         <Tabs defaultValue="profile" className="w-full">
-           <TabsList className="grid w-full grid-cols-5 bg-slate-800/50 border border-yellow-600/30">
-             <TabsTrigger value="profile" className="text-white data-[state=active]:bg-yellow-600/30">
+           <TabsList className="grid w-full grid-cols-5 bg-slate-800/50 backdrop-blur-sm border border-slate-600/30 rounded-xl p-1">
+             <TabsTrigger value="profile" className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-300">
               <User className="w-4 h-4 mr-2" />
               Perfil
             </TabsTrigger>
-             <TabsTrigger value="preferences" className="text-white data-[state=active]:bg-yellow-600/30">
+             <TabsTrigger value="preferences" className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-300">
               <Palette className="w-4 h-4 mr-2" />
               Preferências
             </TabsTrigger>
-             <TabsTrigger value="battlefield" className="text-white data-[state=active]:bg-yellow-600/30">
+             <TabsTrigger value="battlefield" className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-300">
               <Image className="w-4 h-4 mr-2" />
                Campo de Batalha
              </TabsTrigger>
-             <TabsTrigger value="containers" className="text-white data-[state=active]:bg-yellow-600/30">
+             <TabsTrigger value="containers" className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-300">
                <Shield className="w-4 h-4 mr-2" />
                Containers
             </TabsTrigger>
-             <TabsTrigger value="notifications" className="text-white data-[state=active]:bg-yellow-600/30">
+             <TabsTrigger value="notifications" className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-300">
               <Bell className="w-4 h-4 mr-2" />
               Notificações
             </TabsTrigger>
           </TabsList>
 
           {/* Aba: Perfil */}
-          <TabsContent value="profile" className="mt-6">
-            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-yellow-600/30">
+          <TabsContent value="profile" className="mt-6 space-y-6">
+            {/* Informações Básicas */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30 shadow-2xl">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <User className="w-5 h-5 text-yellow-500" />
-                  Informações do Perfil
+                  <User className="w-5 h-5 text-amber-400" />
+                  Informações Básicas
                 </CardTitle>
+                <p className="text-gray-400 text-sm">Configure suas informações principais de perfil</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -224,9 +289,9 @@ export const SettingsPage: React.FC = () => {
                     <Label htmlFor="username" className="text-gray-300">Nome de Usuário</Label>
                     <Input
                       id="username"
-                      value={settings?.username || ''}
-                      onChange={(e) => handleSaveSettings({ username: e.target.value })}
-                      className="bg-slate-700/50 border-yellow-600/30 text-white"
+                      value={localSettings?.username || ''}
+                      onChange={(e) => handleInputChange('username', e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
                       placeholder="Seu nome de usuário"
                     />
                   </div>
@@ -234,46 +299,273 @@ export const SettingsPage: React.FC = () => {
                     <Label htmlFor="display_name" className="text-gray-300">Nome de Exibição</Label>
                     <Input
                       id="display_name"
-                      value={settings?.display_name || ''}
-                      onChange={(e) => handleSaveSettings({ display_name: e.target.value })}
-                      className="bg-slate-700/50 border-yellow-600/30 text-white"
+                      value={localSettings?.display_name || ''}
+                      onChange={(e) => handleInputChange('display_name', e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
                       placeholder="Nome que aparece no jogo"
                     />
                   </div>
                 </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-300">Email</Label>
+                                  <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-300">Email</Label>
+                  <div className="flex gap-2">
                     <Input
                       id="email"
                       type="email"
-                      value={settings?.email || ''}
-                      onChange={(e) => handleSaveSettings({ email: e.target.value })}
-                      className="bg-slate-700/50 border-yellow-600/30 text-white"
+                      value={localSettings?.email || ''}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
                       placeholder="seu@email.com"
                     />
+                    <Badge variant={localSettings?.email_verified ? "default" : "secondary"} className="px-3 py-2">
+                      {localSettings?.email_verified ? "✓ Verificado" : "⚠ Não verificado"}
+                    </Badge>
                   </div>
+                </div>
 
-                  <div className="space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="avatar_url" className="text-gray-300">URL do Avatar</Label>
                   <Input
                     id="avatar_url"
-                    value={settings?.avatar_url || ''}
-                    onChange={(e) => handleSaveSettings({ avatar_url: e.target.value })}
-                    className="bg-slate-700/50 border-yellow-600/30 text-white"
+                    value={localSettings?.avatar_url || ''}
+                    onChange={(e) => handleInputChange('avatar_url', e.target.value)}
+                    className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
                     placeholder="https://exemplo.com/avatar.jpg"
                   />
                 </div>
 
-                <Button
-                  onClick={() => handleSaveSettings({})}
-                  disabled={saving}
-                  className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                >
-                  {saving ? 'Salvando...' : 'Salvar Perfil'}
-                </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="text-gray-300">Biografia</Label>
+                  <textarea
+                    id="bio"
+                    value={localSettings?.bio || ''}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20 rounded-lg p-3 min-h-[100px] resize-none"
+                    placeholder="Conte um pouco sobre você..."
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500">{(localSettings?.bio?.length || 0)}/500 caracteres</p>
+                </div>
               </CardContent>
             </Card>
+
+            {/* Informações Pessoais */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30 shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <User className="w-5 h-5 text-amber-400" />
+                  Informações Pessoais
+                </CardTitle>
+                <p className="text-gray-400 text-sm">Informações opcionais para personalizar seu perfil</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-gray-300">Localização</Label>
+                    <Input
+                      id="location"
+                      value={localSettings?.location || ''}
+                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                      placeholder="Sua cidade, país"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gender" className="text-gray-300">Gênero</Label>
+                    <Select value={localSettings?.gender || ''} onValueChange={(value) => handleInputChange('gender', value)}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="masculino">Masculino</SelectItem>
+                        <SelectItem value="feminino">Feminino</SelectItem>
+                        <SelectItem value="nao_binario">Não-binário</SelectItem>
+                        <SelectItem value="prefiro_nao_dizer">Prefiro não dizer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="birth_date" className="text-gray-300">Data de Nascimento</Label>
+                    <Input
+                      id="birth_date"
+                      type="date"
+                      value={localSettings?.birth_date || ''}
+                      onChange={(e) => handleInputChange('birth_date', e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_number" className="text-gray-300">Telefone</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="phone_number"
+                        value={localSettings?.phone_number || ''}
+                        onChange={(e) => handleInputChange('phone_number', e.target.value)}
+                        className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                        placeholder="+55 (11) 99999-9999"
+                      />
+                      <Badge variant={localSettings?.phone_verified ? "default" : "secondary"} className="px-3 py-2">
+                        {localSettings?.phone_verified ? "✓ Verificado" : "⚠ Não verificado"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="website_url" className="text-gray-300">Website</Label>
+                  <Input
+                    id="website_url"
+                    value={localSettings?.website_url || ''}
+                    onChange={(e) => handleInputChange('website_url', e.target.value)}
+                    className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                    placeholder="https://meusite.com"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Configurações de Segurança */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30 shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-amber-400" />
+                  Segurança da Conta
+                </CardTitle>
+                <p className="text-gray-400 text-sm">Configure as opções de segurança da sua conta</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-gray-300">Autenticação de Dois Fatores</Label>
+                    <p className="text-sm text-gray-400">Adicione uma camada extra de segurança</p>
+                  </div>
+                  <Switch
+                    checked={localSettings?.two_factor_enabled || false}
+                    onCheckedChange={(checked) => handleInputChange('two_factor_enabled', checked)}
+                  />
+                </div>
+                <Separator className="bg-slate-600/30" />
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-gray-300">Status da Conta</Label>
+                    <p className="text-sm text-gray-400">Status atual da sua conta</p>
+                  </div>
+                  <Badge variant={localSettings?.account_status === 'active' ? "default" : "destructive"}>
+                    {localSettings?.account_status === 'active' ? 'Ativa' : localSettings?.account_status || 'Ativa'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Alteração de Senha */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30 shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-amber-400" />
+                  Alterar Senha
+                </CardTitle>
+                <p className="text-gray-400 text-sm">Altere sua senha de acesso ao reino</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword" className="text-gray-300">Senha Atual</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                    placeholder="Digite sua senha atual"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="text-gray-300">Nova Senha</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                    placeholder="Digite a nova senha"
+                  />
+                  <p className="text-xs text-gray-500">Mínimo 6 caracteres</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-gray-300">Confirmar Nova Senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="bg-slate-700/50 border-slate-600/30 text-white focus:border-amber-400/50 focus:ring-amber-400/20"
+                    placeholder="Confirme a nova senha"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                  className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  {changingPassword ? 'Alterando Senha...' : 'Alterar Senha'}
+                </Button>
+
+                {localSettings?.last_password_change && (
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">
+                      Última alteração: {new Date(localSettings.last_password_change).toLocaleDateString('pt-BR')}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Total de alterações: {localSettings.password_change_count || 0}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Estatísticas do Perfil */}
+            <Card className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border-2 border-slate-600/30 shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-amber-400" />
+                  Estatísticas do Perfil
+                </CardTitle>
+                <p className="text-gray-400 text-sm">Informações sobre sua atividade no jogo</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border border-slate-600/30 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-amber-400">{localSettings?.profile_completion_percentage || 0}%</div>
+                    <div className="text-sm text-gray-400">Perfil Completo</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border border-slate-600/30 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-green-400">{localSettings?.login_count || 0}</div>
+                    <div className="text-sm text-gray-400">Logins</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 border border-slate-600/30 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {localSettings?.last_login ? new Date(localSettings.last_login).toLocaleDateString('pt-BR') : 'Nunca'}
+                    </div>
+                    <div className="text-sm text-gray-400">Último Login</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              {saving ? 'Salvando...' : 'Salvar Todas as Configurações'}
+            </Button>
           </TabsContent>
 
           {/* Aba: Preferências */}

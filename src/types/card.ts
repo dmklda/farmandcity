@@ -26,4 +26,6 @@ export interface Card {
   rarity: CardRarity;
   activation: string;
   artworkUrl?: string;
+  deactivated?: boolean; // Se a carta está desativada por catástrofe
+  deactivationTurns?: number; // Quantos turnos restam de desativação
 }

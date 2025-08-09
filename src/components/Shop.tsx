@@ -215,31 +215,7 @@ export const Shop: React.FC = () => {
     }
   };
 
-  const testDirectQuery = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('shop_items')
-        .select('*')
-        .limit(5);
-      
-      if (error) {
-        console.error('Erro na query direta:', error);
-      } else {
-        console.log('Query direta bem-sucedida:', data);
-      }
-    } catch (err) {
-      console.error('Erro no teste direto:', err);
-    }
-  };
 
-  const testRefreshCurrency = async () => {
-    try {
-      await refreshCurrency();
-      console.log('Refresh de moeda executado');
-    } catch (err) {
-      console.error('Erro no refresh de moeda:', err);
-    }
-  };
 
   const getRarityColor = (rarity?: string) => {
     switch (rarity) {
@@ -791,25 +767,11 @@ export const Shop: React.FC = () => {
   // Mostrar loading se qualquer um dos hooks estiver carregando
   if (loading || currencyLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-        <div className="fixed inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-amber-500 border-t-transparent mx-auto mb-4"></div>
           <div className="text-lg text-white">
-            {loading ? 'Carregando loja...' : 'Carregando moeda...'}
-          </div>
-          <div className="text-sm text-gray-400">
-          Status: {authStatus}
-        </div>
-        <div className="flex gap-2">
-            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Recarregar
-          </Button>
-            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Testar Query
-          </Button>
+            {loading ? 'Carregando Taverna do Comerciante...' : 'Carregando moedas...'}
           </div>
         </div>
       </div>
@@ -819,26 +781,18 @@ export const Shop: React.FC = () => {
   // Mostrar erro se houver
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-        <div className="fixed inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="text-lg text-red-400">
-            Erro ao carregar loja: {error}
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <div className="text-lg text-red-400 mb-2">
+            Erro ao carregar a Taverna
           </div>
-          <div className="text-sm text-gray-400">
-          Status: {authStatus}
-        </div>
-        <div className="flex gap-2">
-            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
+          <div className="text-sm text-gray-400 mb-4">
+            Tente novamente em alguns instantes
+          </div>
+          <Button onClick={handleReload} className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 px-4 rounded-xl transition-all duration-300">
             Tentar Novamente
           </Button>
-            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Testar Query
-          </Button>
-          </div>
         </div>
       </div>
     );
@@ -847,42 +801,26 @@ export const Shop: React.FC = () => {
   // Se não há itens, mostrar mensagem
   if (!shopItems || shopItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-        <div className="fixed inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="text-lg text-gray-400">
-          Nenhum item disponível na loja
-        </div>
-        <div className="text-sm text-gray-500">
-          Status: {authStatus}
-        </div>
-        <div className="flex gap-2">
-            <Button onClick={handleReload} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Recarregar
-          </Button>
-            <Button onClick={testDirectQuery} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Testar Query
-          </Button>
-            <Button onClick={testRefreshCurrency} variant="outline" className="bg-black/40 backdrop-blur-sm border-yellow-600/30 text-white">
-            Testar Refresh Moedas
-          </Button>
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🏪</div>
+          <div className="text-lg text-gray-300 mb-2">
+            Taverna Temporariamente Fechada
           </div>
+          <div className="text-sm text-gray-500 mb-4">
+            Nenhum item disponível no momento
+          </div>
+          <Button onClick={handleReload} className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-2 px-4 rounded-xl transition-all duration-300">
+            Verificar Novamente
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      {/* Background texture */}
-      <div className="fixed inset-0 opacity-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.1)_1px,transparent_0)] bg-[length:20px_20px]" />
-          </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto p-4">
+    <>
+      <div className="max-w-7xl mx-auto p-4">
         {/* Coin Display */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-4">
@@ -1410,9 +1348,9 @@ export const Shop: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
-    
-    <ToastContainer />
-  </div>
-);
+      </div>
+      
+      <ToastContainer />
+    </>
+  );
 }; 

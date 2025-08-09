@@ -1,7 +1,6 @@
 import React from 'react';
 import { MedievalHeroSection } from '../MedievalHeroSection';
 import { MedievalNavigationCards } from '../MedievalNavigationCards';
-import { MedievalAdvancedStats } from '../MedievalAdvancedStats';
 import { MedievalStarterPackDisplay } from '../MedievalStarterPackDisplay';
 
 interface MedievalOverviewTabProps {
@@ -33,34 +32,27 @@ export const MedievalOverviewTab: React.FC<MedievalOverviewTabProps> = ({
 }) => {
   return (
     <div className="space-y-12">
-      {/* Medieval Hero Section */}
+      {/* 1. Hero Section - Boas-vindas e Ações Principais */}
       <MedievalHeroSection
         userName={userName}
         onStartGame={onStartGame}
         onSelectGameMode={onSelectGameMode}
-        currency={currency}
-        playerCards={playerCards}
+        onGoToDecks={onGoToDecks}
         decks={decks}
       />
 
-      {/* Medieval Navigation Cards */}
+      {/* 2. Pacote Inicial - PRIORIDADE MÁXIMA para novos jogadores */}
+      <MedievalStarterPackDisplay onGoToDecks={onGoToDecks} />
+
+      {/* 3. Portais do Reino - Navegação Principal */}
       <MedievalNavigationCards
-        onStartGame={onStartGame}
+        onStartGame={onSelectGameMode}
         onGoToShop={onGoToShop}
         onGoToCollection={onGoToCollection}
         onGoToMissions={onGoToMissions}
         onGoToDecks={onGoToDecks}
         onGoToSettings={onGoToSettings}
-      />
-
-      {/* Medieval Starter Pack Display */}
-      <MedievalStarterPackDisplay />
-
-      {/* Medieval Advanced Stats */}
-      <MedievalAdvancedStats
-        playerCards={playerCards}
         decks={decks}
-        currency={currency}
       />
     </div>
   );

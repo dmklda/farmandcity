@@ -2,7 +2,7 @@
 
 ## 📋 **Lista Completa das Cartas Starter**
 
-### **Total: 28 cartas starter + 10 cartas adicionais = 38 cartas**
+### **Total: 27 cartas starter + 10 cartas adicionais = 37 cartas**
 
 | Tipo       | Nome da Carta            | Qtd | Observações                                 |
 | ---------- | ------------------------ | --- | ------------------------------------------- |
@@ -21,9 +21,10 @@
 | `defense`  | Rede de Defesa           | 1   | Bloqueia carta de evento                    |
 | `magic`    | Magia do Crescimento     | 1   | Dobrar comida (efeito básico)               |
 | `magic`    | Chama do Trabalho        | 1   | Faz todas cidades produzirem 2x neste turno |
-| `trap`     | Poço Raso                | 1   | Anula ativação de fazenda do oponente       |
 | `event`    | Chuva Leve               | 1   | +1 comida para todos                        |
 | `landmark` | Estátua Simples          | 1   | +1 reputação                                |
+| `landmark` | Torre de Vigia           | 1   | +2 população e +1 defesa                    |
+| `landmark` | Fonte da Prosperidade    | 1   | +1 comida e +1 moeda por turno             |
 
 ---
 
@@ -54,14 +55,16 @@
 - Magia do Crescimento: 1x
 - Chama do Trabalho: 1x
 
-### **Trap Cards (1 total)**
-- Poço Raso: 1x
-
 ### **Event Cards (1 total)**
 - Chuva Leve: 1x
 
-### **Landmark Cards (1 total)**
+### **Landmark Cards (3 total) - ✅ MÍNIMO NECESSÁRIO**
 - Estátua Simples: 1x
+- Torre de Vigia: 1x
+- Fonte da Prosperidade: 1x
+
+### **❌ Trap Cards (0 total) - REMOVIDAS**
+- Nenhuma trap no deck inicial
 
 ---
 
@@ -69,14 +72,8 @@
 
 ### **Passo 1: Aplicar Migrações na Ordem**
 ```sql
--- 1. Inserir cartas exatas
-supabase/migrations/20250127000011-update-starter-cards-exact.sql
-
--- 2. Atualizar trigger com quantidades exatas
-supabase/migrations/20250127000012-update-trigger-exact-quantities.sql
-
--- 3. Atualizar função de correção
-supabase/migrations/20250127000013-fix-existing-users-exact.sql
+-- 1. Corrigir deck inicial (3 landmarks, sem traps)
+supabase/migrations/20250127000022-fix-starter-deck-landmarks-no-traps.sql
 ```
 
 ### **Passo 2: Verificar Cartas no Banco**
@@ -93,13 +90,13 @@ ORDER BY type, name;
 
 -- Verificar total de cartas starter
 SELECT COUNT(*) FROM public.cards WHERE is_starter = true AND is_active = true;
--- Deve retornar 24 (24 cartas únicas)
+-- Deve retornar 26 (26 cartas únicas)
 ```
 
 ### **Passo 3: Corrigir Usuário Atual**
 ```sql
 -- Corrigir seu usuário específico
-SELECT public.fix_user_cards('SEU_EMAIL_AQUI');
+SELECT public.fix_user_cards_landmarks('SEU_EMAIL_AQUI');
 ```
 
 ---
@@ -150,11 +147,13 @@ ORDER BY c.is_starter DESC, c.type, c.name;
 ## 🎯 **Resultado Esperado**
 
 ### **Após aplicar as correções:**
-- ✅ **24 cartas starter únicas** no banco
-- ✅ **28 cartas starter** no deck (com quantidades corretas)
+- ✅ **26 cartas starter únicas** no banco
+- ✅ **27 cartas starter** no deck (com quantidades corretas)
 - ✅ **10 cartas adicionais** aleatórias
-- ✅ **Total de 38 cartas** no deck inicial
-- ✅ **Deck Manager** mostra "38 cartas (28 básicas + 10 adicionais)"
+- ✅ **Total de 37 cartas** no deck inicial
+- ✅ **3 landmarks** (mínimo necessário para jogar)
+- ✅ **0 traps** (removidas do deck inicial)
+- ✅ **Deck Manager** mostra "37 cartas (27 básicas + 10 adicionais)"
 
 ### **Quantidades por Tipo no Deck:**
 - **Farm**: 8 cartas (3+2+2+1)
@@ -162,9 +161,9 @@ ORDER BY c.is_starter DESC, c.type, c.name;
 - **Action**: 5 cartas (2+2+1)
 - **Defense**: 3 cartas (2+1)
 - **Magic**: 2 cartas (1+1)
-- **Trap**: 1 carta (1)
 - **Event**: 1 carta (1)
-- **Landmark**: 1 carta (1)
+- **Landmark**: 3 cartas (1+1+1) ✅
+- **Trap**: 0 cartas ❌
 - **Adicionais**: 10 cartas aleatórias
 
 ---
@@ -196,25 +195,43 @@ FROM player_decks
 WHERE player_id = 'USER_ID' AND is_starter_deck = true;
 ```
 
+### **Verificar Landmarks Específicos**
+```sql
+-- Verificar se tem pelo menos 3 landmarks
+SELECT 
+  c.type,
+  c.name,
+  pc.quantity
+FROM player_cards pc
+JOIN cards c ON pc.card_id = c.id
+WHERE pc.player_id = 'USER_ID' AND c.type = 'landmark' AND c.is_starter = true
+ORDER BY c.name;
+```
+
 ---
 
 ## 📋 **Checklist Final**
 
 ### **✅ Banco de Dados**
-- [ ] 24 cartas starter únicas inseridas
+- [ ] 26 cartas starter únicas inseridas
+- [ ] 3 landmarks no deck inicial
+- [ ] 0 traps no deck inicial
 - [ ] Quantidades corretas por carta
-- [ ] Trigger atualizado com quantidades exatas
+- [ ] Trigger atualizado com 3 landmarks e sem traps
 - [ ] Função de correção atualizada
 
 ### **✅ Usuário Atual**
-- [ ] Tem 28 cartas starter com quantidades corretas
+- [ ] Tem 27 cartas starter com quantidades corretas
+- [ ] Tem 3 landmarks (mínimo necessário)
+- [ ] Não tem traps
 - [ ] Tem 10 cartas adicionais
-- [ ] Deck inicial tem 38 cartas
+- [ ] Deck inicial tem 37 cartas
 - [ ] Deck inicial está ativo
 
 ### **✅ Interface**
-- [ ] Deck Manager mostra 38 cartas
+- [ ] Deck Manager mostra 37 cartas
 - [ ] Quantidades corretas por tipo
+- [ ] 3 landmarks disponíveis
 - [ ] Não há erros no console
 - [ ] Funcionalidades funcionam
 
@@ -241,9 +258,33 @@ SELECT name, type FROM cards WHERE is_starter = true AND is_active = true ORDER 
 ### **Problema 3: Deck com número errado**
 ```sql
 -- Corrigir usuário específico
-SELECT public.fix_user_cards('SEU_EMAIL_AQUI');
+SELECT public.fix_user_cards_landmarks('SEU_EMAIL_AQUI');
+```
+
+### **Problema 4: Menos de 3 landmarks**
+```sql
+-- Verificar landmarks específicos
+SELECT 
+  c.name,
+  pc.quantity
+FROM player_cards pc
+JOIN cards c ON pc.card_id = c.id
+WHERE pc.player_id = 'USER_ID' AND c.type = 'landmark' AND c.is_starter = true;
 ```
 
 ---
 
-**🎉 Após aplicar as migrações, o deck inicial terá exatamente 38 cartas com as quantidades corretas especificadas!** 
+## 🎉 **Resumo das Mudanças**
+
+### **✅ Melhorias Implementadas:**
+1. **3 Landmarks** (mínimo necessário para jogar)
+2. **0 Traps** (removidas do deck inicial)
+3. **27 cartas starter** (otimizadas)
+4. **37 cartas totais** (27 + 10 adicionais)
+5. **Balanceamento melhorado** para iniciantes
+
+### **🏗️ Novas Cartas Landmark:**
+- **Torre de Vigia**: +2 população e +1 defesa
+- **Fonte da Prosperidade**: +1 comida e +1 moeda por turno
+
+**🎉 Após aplicar as migrações, o deck inicial terá exatamente 37 cartas com 3 landmarks e sem traps!** 

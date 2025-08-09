@@ -14,6 +14,33 @@ export interface UserSettings {
   sound_enabled: boolean | null;
   music_enabled: boolean | null;
   auto_save_enabled: boolean | null;
+  // Novos campos de perfil
+  bio: string | null;
+  location: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  website_url: string | null;
+  social_media: any | null;
+  timezone: string | null;
+  date_format: string | null;
+  time_format: string | null;
+  privacy_level: string | null;
+  email_notifications: any | null;
+  push_notifications: any | null;
+  game_preferences: any | null;
+  accessibility_settings: any | null;
+  last_login: string | null;
+  login_count: number | null;
+  account_status: string | null;
+  email_verified: boolean | null;
+  phone_number: string | null;
+  phone_verified: boolean | null;
+  two_factor_enabled: boolean | null;
+  preferred_language: string | null;
+  preferred_currency: string | null;
+  profile_completion_percentage: number | null;
+  last_password_change: string | null;
+  password_change_count: number | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -80,6 +107,47 @@ export const useUserSettings = () => {
           sound_enabled: true,
           music_enabled: true,
           auto_save_enabled: true,
+          // Novos campos com valores padrão
+          timezone: 'America/Sao_Paulo',
+          date_format: 'DD/MM/YYYY',
+          time_format: '24h',
+          privacy_level: 'public',
+          email_notifications: {
+            marketing: true,
+            updates: true,
+            security: true,
+            achievements: true,
+            missions: true,
+            events: true
+          },
+          push_notifications: {
+            game_alerts: true,
+            friend_requests: true,
+            achievements: true,
+            missions: true,
+            events: true
+          },
+          game_preferences: {
+            difficulty: 'normal',
+            auto_save_interval: 5,
+            show_tutorials: true,
+            show_hints: true,
+            confirm_actions: true
+          },
+          accessibility_settings: {
+            high_contrast: false,
+            large_text: false,
+            reduced_motion: false,
+            screen_reader: false
+          },
+          account_status: 'active',
+          email_verified: false,
+          phone_verified: false,
+          two_factor_enabled: false,
+          preferred_language: 'pt-BR',
+          preferred_currency: 'BRL',
+          profile_completion_percentage: 0,
+          social_media: {}
         };
 
         const { data: newSettings, error: insertError } = await supabase
@@ -283,6 +351,42 @@ export const useUserSettings = () => {
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      setError(null);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Usuário não autenticado');
+        return;
+      }
+
+      // Alterar senha usando Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      // Registrar a alteração no histórico
+      const { error: historyError } = await supabase.rpc('change_user_password', {
+        user_uuid: user.id,
+        current_password: currentPassword,
+        new_password: newPassword
+      });
+
+      if (historyError) {
+        console.warn('Erro ao registrar histórico de senha:', historyError);
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Erro ao alterar senha:', err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -318,6 +422,7 @@ export const useUserSettings = () => {
     fetchCustomizations,
     fetchUserCustomizations,
     purchaseCustomization,
-    equipCustomization
+    equipCustomization,
+    changePassword
   };
 }; 

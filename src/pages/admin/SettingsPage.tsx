@@ -47,10 +47,10 @@ export const SettingsPage: React.FC = () => {
     allowNewRegistrations: true,
     maxPlayersPerGame: 1,
     defaultStartingResources: {
-      coins: 5,
-      food: 3,
+      coins: 3,
+      food: 2,
       materials: 2,
-      population: 3
+      population: 2
     },
     gameRules: 'Regras padrão do jogo Famand...',
     contactEmail: 'support@famand.com',
@@ -87,10 +87,10 @@ export const SettingsPage: React.FC = () => {
           allowNewRegistrations: settingValue.allowNewRegistrations || true,
           maxPlayersPerGame: settingValue.maxPlayersPerGame || 1,
           defaultStartingResources: settingValue.defaultStartingResources || {
-            coins: 5,
-            food: 3,
+            coins: 3,
+            food: 2,
             materials: 2,
-            population: 3
+            population: 2
           },
           gameRules: settingValue.gameRules || 'Regras padrão do jogo Famand...',
           contactEmail: settingValue.contactEmail || 'support@famand.com',
@@ -141,10 +141,10 @@ export const SettingsPage: React.FC = () => {
         allowNewRegistrations: true,
         maxPlayersPerGame: 1,
         defaultStartingResources: {
-          coins: 5,
-          food: 3,
+          coins: 3,
+          food: 2,
           materials: 2,
-          population: 3
+          population: 2
         },
         gameRules: 'Regras padrão do jogo Famand...',
         contactEmail: 'support@famand.com',
@@ -381,6 +381,7 @@ export const SettingsPage: React.FC = () => {
               <option value="landmarks">Marcos</option>
               <option value="elimination">Eliminação</option>
               <option value="infinite">Infinito</option>
+              <option value="classic">Clássico (Múltiplas Vitórias)</option>
             </select>
           </div>
           <div>

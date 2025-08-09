@@ -5,11 +5,7 @@ import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
 import { getCardTypeIconPNG } from '../IconComponentsPNG';
 
-interface GridCell {
-  card?: any;
-  x: number;
-  y: number;
-}
+import { GridCell } from '../../types/gameState';
 
 interface FarmNodeData {
   grid: GridCell[][];

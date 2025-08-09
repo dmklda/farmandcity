@@ -17,13 +17,7 @@ import { useContainerCustomization } from '../hooks/useContainerCustomization';
 import { AnimatedBattlefieldBackground } from './AnimatedBattlefieldBackground';
 
 
-interface GridCell {
-  card?: Card | null;
-  x: number;
-  y: number;
-  level?: number; // Nível da carta (para cartas empilhadas)
-  stack?: Card[]; // Cartas empilhadas
-}
+import { GridCell } from '../types/gameState';
 
 interface EpicBattlefieldProps {
   farmGrid: GridCell[][];

@@ -10,6 +10,7 @@ import { usePlayerCards } from '../hooks/usePlayerCards';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
 import { Plus, Minus, Info, Crown, Shield, Sword, Zap, Star, X, Save, Trash2, Plus as PlusIcon, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
+import { MedievalAnimatedBackground } from '../components/MedievalAnimatedBackground';
 
 const DecksPage: React.FC = () => {
   const { playerCards, loading } = usePlayerCards();
@@ -252,28 +253,37 @@ const DecksPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black">
+    <div className="min-h-screen relative">
+      {/* Medieval Animated Background */}
+      <MedievalAnimatedBackground />
+      
       {/* Header Medieval */}
-      <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-b border-yellow-600/30 p-6">
+      <div className="bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 relative z-50 p-6">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-6">
               <Button
-              variant="outline"
                 onClick={() => setCurrentView('home')}
-              className="border-yellow-600/50 text-yellow-400 hover:bg-yellow-600/20"
+                className="group relative overflow-hidden bg-gradient-to-r from-slate-700/90 to-slate-800/90 hover:from-slate-600 hover:to-slate-700 text-white font-bold py-2 px-4 rounded-xl transition-all duration-300 shadow-lg border border-slate-600/30 hover:border-amber-400/50 hover:scale-105 backdrop-blur-sm"
               >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Menu Principal
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <span className="relative flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar ao Reino
+                </span>
               </Button>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <Shield className="w-8 h-8 text-yellow-400" />
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-                  Gerenciador de Decks
+                <Shield className="w-8 h-8 text-amber-400" />
+                <div className="relative inline-block">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+                    Arsenal Real
                 </h1>
-                <Shield className="w-8 h-8 text-yellow-400" />
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 blur-xl opacity-20 -z-10"></div>
+                </div>
+                <Shield className="w-8 h-8 text-amber-400" />
               </div>
-              <Badge variant="outline" className="border-yellow-600/50 text-yellow-400">
+                              <Badge variant="outline" className="border-amber-600/50 text-amber-400">
                 {decks.length} Decks
               </Badge>
             </div>
@@ -282,7 +292,7 @@ const DecksPage: React.FC = () => {
       </div>
       
       {/* Content */}
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Deck Selection */}
           <div className="lg:col-span-1 space-y-4">

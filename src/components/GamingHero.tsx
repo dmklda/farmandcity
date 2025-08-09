@@ -139,7 +139,7 @@ export const GamingHero: React.FC<GamingHeroProps> = ({
               variant="outline"
               className="bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 text-lg transition-all duration-300 backdrop-blur-sm border-white/20 hover:border-white/40"
             >
-              Jogo Rápido
+              Jogar Agora
             </Button>
           </div>
         </div>

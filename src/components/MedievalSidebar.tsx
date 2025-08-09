@@ -26,6 +26,9 @@ import {
   MaterialsIconPNG, 
   PopulationIconPNG 
 } from './IconComponentsPNG';
+import { ClassicVictoryDisplay } from './ClassicVictoryDisplay';
+import { ComplexVictoryDisplay } from './ComplexVictoryDisplay';
+import { ComplexVictorySystem } from '../types/gameState';
 
 interface MedievalSidebarProps {
   isVisible: boolean;
@@ -56,6 +59,11 @@ interface MedievalSidebarProps {
     materials: number;
     population: number;
   };
+  victorySystem?: ComplexVictorySystem;
+  // Props para modo infinito
+  isInfiniteMode?: boolean;
+  discardedCardsCount?: number;
+  deckReshuffled?: boolean;
 }
 
 const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
@@ -67,13 +75,20 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
   victoryPoints,
   history,
   resources,
-  productionPerTurn
+  productionPerTurn,
+  victorySystem,
+  isInfiniteMode,
+  discardedCardsCount,
+  deckReshuffled
 }) => {
   const getVictoryModeIcon = (mode: string) => {
     switch (mode) {
       case 'landmarks': return <Building2 className="w-4 h-4" />;
       case 'production': return <TrendingUp className="w-4 h-4" />;
       case 'reputation': return <Star className="w-4 h-4" />;
+      case 'elimination': return <Clock className="w-4 h-4" />;
+      case 'resources': return <Coins className="w-4 h-4" />;
+      case 'infinite': return <span className="text-lg font-bold">∞</span>;
       default: return <Trophy className="w-4 h-4" />;
     }
   };
@@ -83,6 +98,9 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
       case 'landmarks': return 'from-purple-600 to-purple-800';
       case 'production': return 'from-green-600 to-green-800';
       case 'reputation': return 'from-yellow-600 to-yellow-800';
+      case 'elimination': return 'from-red-600 to-red-800';
+      case 'resources': return 'from-emerald-600 to-emerald-800';
+      case 'infinite': return 'from-purple-600 to-purple-800';
       default: return 'from-amber-600 to-amber-800';
     }
   };
@@ -90,9 +108,37 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
   const getVictoryModeName = (mode: string) => {
     switch (mode) {
       case 'landmarks': return 'Marcos Históricos';
-      case 'production': return 'Produção Total';
+      case 'production': return 'Produção por Turno';
       case 'reputation': return 'Reputação';
+      case 'elimination': return 'Sobrevivência';
+      case 'resources': return 'Prosperidade';
+      case 'infinite': return 'Modo Infinito';
+      case 'complex': return 'Vitória Complexa';
+      case 'classic': return 'Modo Clássico';
       default: return 'Vitória Geral';
+    }
+  };
+
+  const getVictoryProgress = () => {
+    switch (victoryMode) {
+      case 'reputation':
+        return Math.min(100, (gameStats.reputation / victoryPoints) * 100);
+      case 'landmarks':
+        return Math.min(100, (gameStats.landmarks / victoryPoints) * 100);
+      case 'elimination':
+        return Math.min(100, (gameStats.turn / victoryPoints) * 100);
+      case 'infinite':
+        return Math.min(100, (gameStats.turn / 10) * 100); // Progresso baseado em turnos
+      case 'complex':
+        return 0; // Para vitória complexa, não mostrar progresso geral
+      case 'classic':
+        return 0; // Para modo clássico, não mostrar progresso geral
+      case 'resources':
+        return Math.min(100, (resources.coins / victoryPoints) * 100);
+      case 'production':
+        return Math.min(100, ((productionPerTurn.coins + productionPerTurn.foods + productionPerTurn.materials + productionPerTurn.population) / victoryPoints) * 100);
+      default:
+        return 0;
     }
   };
 
@@ -178,37 +224,152 @@ const MedievalSidebar: React.FC<MedievalSidebarProps> = ({
         </motion.div>
 
         {/* Victory Quest */}
-        <motion.div 
-          className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
-          whileHover={{ scale: 1.01 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
-        >
-          <div className="flex items-center space-x-2 mb-3">
-            <div className={`p-1.5 bg-gradient-to-br ${getVictoryModeColor(victoryMode)} rounded-lg`}>
-              {getVictoryModeIcon(victoryMode)}
-            </div>
-            <h3 className="text-amber-100 font-semibold text-sm">Missão de Vitória</h3>
+        {victorySystem && victorySystem.mode === 'classic' ? (
+          <div className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50">
+            <ClassicVictoryDisplay victorySystem={victorySystem} />
           </div>
-          
-          <div className="bg-gradient-to-br from-stone-700/50 to-stone-800/50 rounded-lg p-3 border border-stone-600/30">
-            <div className="text-center mb-2">
-              <div className="text-amber-100 text-xs mb-1">{getVictoryModeName(victoryMode)}</div>
-              <div className="text-2xl font-bold text-amber-400">{victoryPoints}</div>
-              <div className="text-stone-400 text-xs">pontos necessários</div>
+        ) : victorySystem && victorySystem.mode === 'complex' ? (
+          <div className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50">
+            <ComplexVictoryDisplay victorySystem={victorySystem} />
+          </div>
+        ) : victorySystem && victorySystem.mode === 'infinite' ? (
+          <motion.div 
+            className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-1.5 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg">
+                <span className="text-purple-100 text-lg font-bold">∞</span>
+              </div>
+              <h3 className="text-amber-100 font-semibold text-sm">Desafio Infinito</h3>
             </div>
             
-            <div className="w-full bg-stone-700 rounded-full h-2 mb-2">
-              <div 
-                className="bg-gradient-to-r from-amber-500 to-amber-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(100, (victoryPoints / 10) * 100)}%` }}
-              />
+            <div className="bg-gradient-to-br from-stone-700/50 to-stone-800/50 rounded-lg p-3 border border-stone-600/30">
+              <div className="text-center mb-2">
+                <div className="text-purple-100 text-xs mb-1">Sobrevivência Infinita</div>
+                <div className="text-2xl font-bold text-purple-400">{gameStats.turn}</div>
+                <div className="text-stone-400 text-xs">turnos sobrevividos</div>
+              </div>
+              
+              <div className="w-full bg-stone-700 rounded-full h-2 mb-2">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (gameStats.turn / 10) * 100)}%` }}
+                />
+              </div>
+              
+              <div className="text-xs text-stone-400 text-center">
+                Continue sobrevivendo! O desafio aumenta a cada 10 turnos.
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="bg-gradient-to-br from-stone-800/60 to-stone-900/60 rounded-xl p-4 border border-stone-700/50"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <div className="flex items-center space-x-2 mb-3">
+              <div className={`p-1.5 bg-gradient-to-br ${getVictoryModeColor(victoryMode)} rounded-lg`}>
+                {getVictoryModeIcon(victoryMode)}
+              </div>
+              <h3 className="text-amber-100 font-semibold text-sm">Missão de Vitória</h3>
             </div>
             
-            <div className="text-xs text-stone-400 text-center">
-              Complete esta missão para conquistar o reino!
+            <div className="bg-gradient-to-br from-stone-700/50 to-stone-800/50 rounded-lg p-3 border border-stone-600/30">
+              <div className="text-center mb-2">
+                <div className="text-amber-100 text-xs mb-1">{getVictoryModeName(victoryMode)}</div>
+                                 <div className="text-2xl font-bold text-amber-400">
+                   {victoryMode === 'resources' ? `${resources.coins}/${victoryPoints}` : 
+                    victoryMode === 'production' ? (() => {
+                      const currentProduction = productionPerTurn.coins + productionPerTurn.foods + productionPerTurn.materials + productionPerTurn.population;
+                      console.log('🔍 Debug produção:', {
+                        coins: productionPerTurn.coins,
+                        foods: productionPerTurn.foods,
+                        materials: productionPerTurn.materials,
+                        population: productionPerTurn.population,
+                        total: currentProduction,
+                        victoryPoints
+                      });
+                      return `${currentProduction}/${victoryPoints}`;
+                    })() :
+                    victoryMode === 'landmarks' ? `${gameStats.landmarks}/${victoryPoints}` :
+                    victoryMode === 'reputation' ? `${gameStats.reputation}/${victoryPoints}` :
+                    victoryMode === 'elimination' ? `${gameStats.turn}/${victoryPoints}` :
+                    victoryPoints}
+                 </div>
+                <div className="text-stone-400 text-xs">
+                  {victoryMode === 'resources' ? 'moedas acumuladas' :
+                   victoryMode === 'production' ? 'recursos por turno' :
+                   victoryMode === 'landmarks' ? 'marcos construídos' :
+                   victoryMode === 'reputation' ? 'pontos de reputação' :
+                   victoryMode === 'elimination' ? 'turnos sobrevividos' :
+                   'pontos necessários'}
+                </div>
+              </div>
+              
+              <div className="w-full bg-stone-700 rounded-full h-2 mb-2">
+                <div 
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, getVictoryProgress())}%` }}
+                />
+              </div>
+              
+              <div className="text-xs text-stone-400 text-center">
+                Complete esta missão para conquistar o reino!
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
+
+        {/* Infinite Mode Special Section */}
+        {isInfiniteMode && (
+          <motion.div 
+            className="bg-gradient-to-br from-purple-800/60 to-purple-900/60 rounded-xl p-4 border border-purple-700/50"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-1.5 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg">
+                <span className="text-purple-100 text-lg font-bold">∞</span>
+              </div>
+              <h3 className="text-purple-100 font-semibold text-sm">Mecânica Infinita</h3>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Cartas Descartadas */}
+              <div className="flex items-center justify-between p-2 bg-gradient-to-br from-purple-700/50 to-purple-800/50 rounded-lg border border-purple-600/30">
+                <div className="flex items-center space-x-2">
+                  <div className="p-1 bg-gradient-to-br from-purple-600 to-purple-800 rounded">
+                    <span className="text-purple-100 text-xs">🗑️</span>
+                  </div>
+                  <span className="text-purple-200 text-xs">Cartas Descartadas</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-purple-300 text-sm font-semibold">{discardedCardsCount || 0}</div>
+                </div>
+              </div>
+
+              {/* Status do Rebaralhamento */}
+              {deckReshuffled && (
+                <div className="flex items-center justify-center p-2 bg-gradient-to-br from-green-700/50 to-green-800/50 rounded-lg border border-green-600/30">
+                  <div className="flex items-center space-x-2">
+                    <div className="p-1 bg-gradient-to-br from-green-600 to-green-800 rounded">
+                      <span className="text-green-100 text-xs">🔄</span>
+                    </div>
+                    <span className="text-green-200 text-xs font-semibold">Deck Rebaralhado!</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Informação sobre a Mecânica */}
+              <div className="text-xs text-purple-300 text-center p-2 bg-gradient-to-br from-purple-700/30 to-purple-800/30 rounded-lg border border-purple-600/20">
+                Quando o deck ficar vazio, as cartas descartadas serão rebaralhadas automaticamente!
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Progress Overview */}
         <motion.div 

@@ -153,3 +153,5 @@ Adicionados os novos campos na interface da tabela `shop_items`:
 - Índices otimizados para consultas frequentes
 - Interface responsiva para desktop e mobile
 - Validação em tempo real dos campos
+
+

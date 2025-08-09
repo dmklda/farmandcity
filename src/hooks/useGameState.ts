@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GameState, GamePhase, GridCell } from '../types/gameState';
 import { Resources } from '../types/resources';
 import { Card, CardType } from '../types/card';
-import { createEmptyGrid, shuffle, getInitialState, createComplexVictorySystem, createSimpleVictorySystem, updateVictoryConditions } from '../utils/gameUtils';
+import { createEmptyGrid, shuffle, getInitialState, createComplexVictorySystem, createSimpleVictorySystem, createClassicVictorySystem, createInfiniteVictorySystem, updateVictoryConditions } from '../utils/gameUtils';
 import { usePlayerCards } from './usePlayerCards';
 import { usePlayerDecks } from './usePlayerDecks';
 import { useGameSettings } from './useGameSettings';
@@ -939,45 +939,51 @@ export function useGameState() {
   // Função para carregar estado do jogo
   const loadGameState = useCallback(() => {
     try {
-      //  console.log('🔍 loadGameState chamado');
-      //console.log('activeDeck?.id:', activeDeck?.id);
+      console.log('🔍 loadGameState chamado');
+      console.log('activeDeck?.id:', activeDeck?.id);
       
       const savedState = localStorage.getItem('famand_gameState');
-      //console.log('Estado salvo no localStorage:', savedState ? 'EXISTE' : 'NÃO EXISTE');
+      console.log('Estado salvo no localStorage:', savedState ? 'EXISTE' : 'NÃO EXISTE');
       
       if (savedState) {
         const parsedState = JSON.parse(savedState);
-        /*console.log('Estado parseado:', {
+        console.log('Estado parseado:', {
           timestamp: parsedState.timestamp,
           deckActiveId: parsedState.deckActiveId,
           turn: parsedState.turn,
           handLength: parsedState.hand?.length
-        });*/
+        });
         
         // Verificar se o estado é válido e não muito antigo (24 horas)
         const isRecent = Date.now() - parsedState.timestamp < 24 * 60 * 60 * 1000;
         const isSameDeck = parsedState.deckActiveId === activeDeck?.id;
         
-        /*console.log('Validações:', {
+        console.log('Validações:', {
           isRecent,
           isSameDeck,
           currentTime: Date.now(),
           savedTime: parsedState.timestamp,
           timeDiff: Date.now() - parsedState.timestamp
-        });*/
+        });
         
         if (isRecent && isSameDeck) {
-          /*console.log('🎮 Estado do jogo carregado:', {
+          console.log('🎮 Estado do jogo carregado:', {
             turn: parsedState.turn,
             phase: parsedState.phase,
             resources: parsedState.resources,
             deckLength: parsedState.deck?.length,
-            handLength: parsedState.hand?.length
-          });*/
-          return parsedState;
+            handLength: parsedState.hand?.length,
+            savedVictoryMode: parsedState.victorySystem?.mode
+          });
+          
+          // Retornar o estado sem o sistema de vitória para que seja aplicado o correto
+          const { victorySystem, ...stateWithoutVictory } = parsedState;
+          console.log('🎮 Removendo sistema de vitória salvo para aplicar o correto');
+          
+          return stateWithoutVictory;
         } else {
-          //console.log('🎮 Estado do jogo ignorado (antigo ou deck diferente)');
-          //console.log('Razão:', !isRecent ? 'Muito antigo' : 'Deck diferente');
+          console.log('🎮 Estado do jogo ignorado (antigo ou deck diferente)');
+          console.log('Razão:', !isRecent ? 'Muito antigo' : 'Deck diferente');
           localStorage.removeItem('famand_gameState');
         }
       }
@@ -985,14 +991,14 @@ export function useGameState() {
       console.error('Erro ao carregar estado do jogo:', error);
       localStorage.removeItem('famand_gameState');
     }
-    //console.log('🔍 loadGameState retornando null');
+    console.log('🔍 loadGameState retornando null');
     return null;
   }, [activeDeck?.id]);
 
   const [game, setGame] = useState<GameState>(() => {
     // Estado inicial com recursos padrão
     const initialState = getInitialState([]);
-    initialState.resources = { coins: 5, food: 5, materials: 5, population: 3 };
+    initialState.resources = { coins: 3, food: 2, materials: 2, population: 2 };
     // Sistema de vitória será definido baseado no modo selecionado
     /*console.log('🎮 Estado inicial do jogo criado:', {
       deckLength: initialState.deck.length,
@@ -1019,6 +1025,7 @@ export function useGameState() {
   const [actionThisTurn, setActionThisTurn] = useState(false);
   const [discardedCards, setDiscardedCards] = useState<Card[]>([]);
   const [history, setHistory] = useState<string[]>([]);
+  const [deckReshuffled, setDeckReshuffled] = useState(false); // Para rastrear se o deck foi rebaralhado no modo infinito
 
   // Função para adicionar entrada ao histórico removendo duplicatas
   const addToHistory = (entry: string) => {
@@ -1041,17 +1048,29 @@ export function useGameState() {
   // Atualizar recursos e sistema de vitória quando as configurações carregarem
   useEffect(() => {
     if (!settingsLoading && gameSettings) {
+      console.log('🎮 Configurando jogo com settings:', gameSettings);
       setGame(prev => {
         let victorySystem;
         
         // Configurar sistema de vitória baseado no modo
         if (gameSettings.victoryMode === 'complex') {
+          console.log('🎮 Usando modo complexo');
           victorySystem = createComplexVictorySystem();
+        } else if (gameSettings.victoryMode === 'classic') {
+          console.log('🎮 Usando modo clássico');
+          victorySystem = createClassicVictorySystem();
+        } else if (gameSettings.victoryMode === 'infinite') {
+          console.log('🎮 Usando modo infinito');
+          victorySystem = createInfiniteVictorySystem();
         } else {
+          console.log('🎮 Usando modo simples:', gameSettings.victoryMode);
           // Modo simples com uma condição
           victorySystem = createSimpleVictorySystem();
           // Ajustar a condição baseada no modo
           if (gameSettings.victoryMode === 'landmarks') {
+            victorySystem.conditions[0].category = 'landmarks';
+            victorySystem.conditions[0].name = 'Marcos Históricos';
+            victorySystem.conditions[0].description = `Construa ${gameSettings.victoryValue} marcos históricos`;
             victorySystem.conditions[0].target = gameSettings.victoryValue;
           } else if (gameSettings.victoryMode === 'reputation') {
             victorySystem.conditions[0].category = 'reputation';
@@ -1063,8 +1082,20 @@ export function useGameState() {
             victorySystem.conditions[0].name = 'Sobrevivência';
             victorySystem.conditions[0].description = `Sobreviva ${gameSettings.victoryValue} turnos`;
             victorySystem.conditions[0].target = gameSettings.victoryValue;
+          } else if (gameSettings.victoryMode === 'resources') {
+            victorySystem.conditions[0].category = 'coins';
+            victorySystem.conditions[0].name = 'Prosperidade';
+            victorySystem.conditions[0].description = `Acumule ${gameSettings.victoryValue} moedas`;
+            victorySystem.conditions[0].target = gameSettings.victoryValue;
+          } else if (gameSettings.victoryMode === 'production') {
+            victorySystem.conditions[0].category = 'production';
+            victorySystem.conditions[0].name = 'Produção';
+            victorySystem.conditions[0].description = `Produza ${gameSettings.victoryValue} recursos por turno`;
+            victorySystem.conditions[0].target = gameSettings.victoryValue;
           }
         }
+        
+        console.log('🎮 Victory system configurado:', victorySystem);
         
         return {
         ...prev,
@@ -1073,14 +1104,15 @@ export function useGameState() {
         };
       });
     } else if (!settingsLoading) {
+      console.log('🎮 Usando configurações padrão (sem settings)');
       // Se não há configurações, dar recursos básicos e sistema simples
       setGame(prev => ({
         ...prev,
         resources: {
-          coins: 5,
-          food: 5,
-          materials: 5,
-          population: 3
+          coins: 3,
+          food: 2,
+          materials: 2,
+          population: 2
         },
         victorySystem: createSimpleVictorySystem()
       }));
@@ -1108,9 +1140,25 @@ export function useGameState() {
         return;
       }
       
-      // TEMPORÁRIO: Remover verificação de estado salvo para debug
-      //console.log('🆕 Inicializando novo jogo (debug mode)...');
-      //console.log('✅ Deck ativo encontrado, chamando getActiveDeck...');
+      // Verificar se já há um estado salvo para este deck
+      const savedState = loadGameState();
+      console.log('🔍 Estado salvo verificado:', savedState ? 'ENCONTRADO' : 'NÃO ENCONTRADO');
+      
+      if (savedState) {
+        console.log('🎮 Estado salvo encontrado, restaurando jogo...');
+        console.log('Estado salvo:', {
+          turn: savedState.turn,
+          handLength: savedState.hand?.length,
+          deckLength: savedState.deck?.length,
+          resources: savedState.resources
+        });
+        setGame(savedState);
+        setGameLoading(false);
+        return;
+      }
+      
+      console.log('🆕 Nenhum estado salvo encontrado, inicializando novo jogo...');
+      console.log('✅ Deck ativo encontrado, chamando getActiveDeck...');
       const newDeck = getActiveDeck();
       //console.log('Novo deck obtido:', newDeck.length, 'cartas');
       //console.log('Cartas do deck:', newDeck.map(c => c.name));
@@ -1171,7 +1219,62 @@ export function useGameState() {
     if (!gameLoading && game && activeDeck) {
       // Debounce para evitar salvar muito frequentemente
       const timeoutId = setTimeout(() => {
-        saveGameState(game);
+        // Garantir que todos os dados estão atualizados antes de salvar
+        const currentGameState = {
+          ...game,
+          // Garantir que os recursos estão corretos
+          resources: {
+            coins: game.resources.coins || 0,
+            food: game.resources.food || 0,
+            materials: game.resources.materials || 0,
+            population: game.resources.population || 0,
+          },
+          // Garantir que as estatísticas estão corretas
+          playerStats: {
+            reputation: game.playerStats.reputation || 0,
+            totalProduction: game.playerStats.totalProduction || 0,
+            buildings: game.playerStats.buildings || 0,
+            landmarks: game.playerStats.landmarks || 0,
+          },
+          // Garantir que o turno e fase estão corretos
+          turn: game.turn || 0,
+          phase: game.phase || 'draw',
+          // Garantir que os grids estão corretos
+          farmGrid: game.farmGrid || [],
+          cityGrid: game.cityGrid || [],
+          landmarksGrid: game.landmarksGrid || [],
+          eventGrid: game.eventGrid || [],
+          // Garantir que as cartas estão corretas
+          hand: game.hand || [],
+          deck: game.deck || [],
+          // Garantir que outros estados estão corretos
+          activeEvents: game.activeEvents || [],
+          comboEffects: game.comboEffects || [],
+          magicUsedThisTurn: game.magicUsedThisTurn || false,
+          builtCountThisTurn: game.builtCountThisTurn || 0,
+          actionUsedThisTurn: game.actionUsedThisTurn || false,
+          // Garantir que o sistema de vitória está correto
+          victorySystem: game.victorySystem,
+          // Garantir que as catástrofes estão corretas
+          productionReduction: game.productionReduction,
+          catastropheDuration: game.catastropheDuration,
+          catastropheName: game.catastropheName,
+          lastCatastropheTurn: game.lastCatastropheTurn,
+        };
+        
+        saveGameState(currentGameState);
+        
+        console.log('🎮 Estado do jogo salvo com dados verdadeiros:', {
+          turn: currentGameState.turn,
+          phase: currentGameState.phase,
+          resources: currentGameState.resources,
+          playerStats: currentGameState.playerStats,
+          deckLength: currentGameState.deck.length,
+          handLength: currentGameState.hand.length,
+          farmGridCards: currentGameState.farmGrid.flat().filter(cell => cell.card).length,
+          cityGridCards: currentGameState.cityGrid.flat().filter(cell => cell.card).length,
+          landmarksGridCards: currentGameState.landmarksGrid.flat().filter(cell => cell.card).length,
+        });
       }, 1000); // Salvar após 1 segundo de inatividade
       
       return () => clearTimeout(timeoutId);
@@ -1205,7 +1308,7 @@ export function useGameState() {
     // Escalonar a cada 10 turnos
     if (game.turn % 10 === 0 && game.turn > 0) {
       const cycle = Math.floor(game.turn / 10);
-              addToHistory(`🌊 Ciclo ${cycle}: Eventos e custos aumentaram!`);
+      addToHistory(`🌊 Ciclo ${cycle}: Eventos e custos aumentaram!`);
       
       // Futuro: implementar escalonamento de eventos/crises e custos
       // Por exemplo:
@@ -1215,6 +1318,112 @@ export function useGameState() {
       //  console.log(`🔄 Modo infinito - Ciclo ${cycle}: Escalonamento ativado`);
     }
   }, [game.turn, gameLoading, gameSettings]);
+
+  // Efeito: processar desativação de cartas e duração de catástrofes
+  useEffect(() => {
+    if (gameLoading) return;
+    
+    // Processar duração de catástrofes
+    if (game.catastropheDuration !== undefined && game.catastropheDuration > 0) {
+      const newDuration = game.catastropheDuration - 1;
+      
+      if (newDuration <= 0) {
+        // Catástrofe expirou
+        setGame(prev => ({
+          ...prev,
+          productionReduction: undefined,
+          catastropheDuration: undefined,
+          catastropheName: undefined
+        }));
+        addToHistory(`🌤️ ${game.catastropheName || 'Catástrofe'} expirou! Produção normalizada.`);
+        return;
+      } else {
+        // Reduzir duração
+        setGame(prev => ({
+          ...prev,
+          catastropheDuration: newDuration
+        }));
+      }
+    }
+    
+    // Verificar se há cartas desativadas que precisam ser reativadas
+    let hasDeactivatedCards = false;
+    let newFarmGrid = [...game.farmGrid];
+    let newCityGrid = [...game.cityGrid];
+    
+    // Processar grid da fazenda
+    for (let row = 0; row < newFarmGrid.length; row++) {
+      for (let col = 0; col < newFarmGrid[row].length; col++) {
+        const cell = newFarmGrid[row][col];
+        if (cell.card?.deactivated && cell.card.deactivationTurns) {
+          hasDeactivatedCards = true;
+          if (cell.card.deactivationTurns <= 1) {
+            // Reativar carta
+            newFarmGrid[row][col] = {
+              ...cell,
+              card: {
+                ...cell.card,
+                deactivated: false,
+                deactivationTurns: undefined
+              },
+              isHighlighted: false // Remover highlight quando reativada
+            };
+            addToHistory(`✅ ${cell.card.name} foi reativada!`);
+          } else {
+            // Reduzir contador de turnos
+            newFarmGrid[row][col] = {
+              ...cell,
+              card: {
+                ...cell.card,
+                deactivationTurns: cell.card.deactivationTurns - 1
+              }
+            };
+          }
+        }
+      }
+    }
+    
+    // Processar grid da cidade
+    for (let row = 0; row < newCityGrid.length; row++) {
+      for (let col = 0; col < newCityGrid[row].length; col++) {
+        const cell = newCityGrid[row][col];
+        if (cell.card?.deactivated && cell.card.deactivationTurns) {
+          hasDeactivatedCards = true;
+          if (cell.card.deactivationTurns <= 1) {
+            // Reativar carta
+            newCityGrid[row][col] = {
+              ...cell,
+              card: {
+                ...cell.card,
+                deactivated: false,
+                deactivationTurns: undefined
+              },
+              isHighlighted: false // Remover highlight quando reativada
+            };
+            addToHistory(`✅ ${cell.card.name} foi reativada!`);
+          } else {
+            // Reduzir contador de turnos
+            newCityGrid[row][col] = {
+              ...cell,
+              card: {
+                ...cell.card,
+                deactivationTurns: cell.card.deactivationTurns - 1
+              }
+            };
+          }
+        }
+      }
+    }
+    
+    // Atualizar grids se necessário
+    if (hasDeactivatedCards) {
+      setGame(prev => ({
+        ...prev,
+        farmGrid: newFarmGrid,
+        cityGrid: newCityGrid
+      }));
+    }
+  }, [game.turn, gameLoading]);
 
   // Sistema complexo de vitória
   useEffect(() => {
@@ -1381,30 +1590,37 @@ export function useGameState() {
     if (game.phase === 'end' && remainingDeckCards === 0 && !defeat && !emptyDeckPenaltyProcessed.current) {
       emptyDeckPenaltyProcessed.current = true;
       
-      // Reduzir reputação
-      setGame((g) => ({
-        ...g,
-        playerStats: { ...g.playerStats, reputation: g.playerStats.reputation - 1 },
-      }));
-      
-      const newReputation = game.playerStats.reputation - 1;
-      
-      if (newReputation <= -1) {
-        // Derrota automática se reputação chegar a -1 ou menos
-        setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
-        addToHistory('💀 Derrota por reputação -1: baralho vazio');
-      } else {
-        // Apenas penalidade de reputação
-        setHighlight('⚠️ Baralho vazio! -1 reputação');
-        addToHistory(`⚠️ Baralho vazio! -1 reputação (${newReputation}/10)`);
+      // Mecânica especial para modo infinito: não aplicar penalidade se há cartas descartadas
+      if (gameSettings?.victoryMode === 'infinite' && discardedCards.length > 0) {
+        setHighlight('🔄 Baralho vazio! Cartas descartadas serão rebaralhadas no próximo turno.');
+        addToHistory('🔄 Baralho vazio! Cartas descartadas serão rebaralhadas no próximo turno.');
         setTimeout(() => setHighlight(null), 2000);
+      } else {
+        // Reduzir reputação
+        setGame((g) => ({
+          ...g,
+          playerStats: { ...g.playerStats, reputation: g.playerStats.reputation - 1 },
+        }));
+        
+        const newReputation = game.playerStats.reputation - 1;
+        
+        if (newReputation <= -1) {
+          // Derrota automática se reputação chegar a -1 ou menos
+          setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
+          addToHistory('💀 Derrota por reputação -1: baralho vazio');
+        } else {
+          // Apenas penalidade de reputação
+          setHighlight('⚠️ Baralho vazio! -1 reputação');
+          addToHistory(`⚠️ Baralho vazio! -1 reputação (${newReputation}/10)`);
+          setTimeout(() => setHighlight(null), 2000);
+        }
       }
     }
     
     if (game.phase !== 'end') {
       emptyDeckPenaltyProcessed.current = false;
     }
-  }, [game.phase, game.hand.length, activeDeck?.cards?.length, game.deck.length, defeat, gameLoading, game.playerStats.reputation]);
+  }, [game.phase, game.hand.length, activeDeck?.cards?.length, game.deck.length, defeat, gameLoading, game.playerStats.reputation, gameSettings?.victoryMode, discardedCards.length]);
 
   // Efeito: compra automática de carta no início da fase 'draw', penalidade se deck vazio
   const drawPhaseProcessed = useRef(false);
@@ -1445,15 +1661,39 @@ export function useGameState() {
           addToHistory(`🃏 Comprou carta: ${game.deck[0]?.name || '???'}`);
           setTimeout(() => setHighlight(null), 900);
         } else {
-          // Penalidade deck vazio - só se não estiver carregando
-          if (!gameLoading) {
+          // Mecânica especial para modo infinito: rebaralhar deck com cartas descartadas
+          if (gameSettings?.victoryMode === 'infinite' && discardedCards.length > 0) {
+            // Rebaralhar deck com cartas descartadas
+            const reshuffledDeck = shuffle([...discardedCards]);
+            const cartaComprada = reshuffledDeck[0];
+            
             setGame((g) => ({
               ...g,
-              playerStats: { ...g.playerStats, reputation: Math.max(0, g.playerStats.reputation - 1) },
+              hand: [...g.hand, cartaComprada],
+              deck: reshuffledDeck.slice(1),
             }));
-            setHighlight('⚠️ Deck vazio! -1 reputação');
-            addToHistory('⚠️ Deck vazio! -1 reputação');
+            
+            // Limpar cartas descartadas (agora estão no deck)
+            setDiscardedCards([]);
+            setDeckReshuffled(true);
+            
+            setHighlight('🔄 Deck rebaralhado!');
+            addToHistory(`🔄 Deck rebaralhado com ${reshuffledDeck.length} cartas descartadas!`);
             setTimeout(() => setHighlight(null), 1500);
+            
+            // Resetar flag após um turno
+            setTimeout(() => setDeckReshuffled(false), 2000);
+          } else {
+            // Penalidade deck vazio - só se não estiver carregando
+            if (!gameLoading) {
+              setGame((g) => ({
+                ...g,
+                playerStats: { ...g.playerStats, reputation: Math.max(0, g.playerStats.reputation - 1) },
+              }));
+              setHighlight('⚠️ Deck vazio! -1 reputação');
+              addToHistory('⚠️ Deck vazio! -1 reputação');
+              setTimeout(() => setHighlight(null), 1500);
+            }
           }
         }
       }
@@ -1552,13 +1792,206 @@ export function useGameState() {
         return;
       }
       
-      // Gerar catástrofe aleatória (10% de chance por turno)
-      const catastropheChance = 0.1;
+      // Verificar vitória por produção (modo simples)
+      if (gameSettings.victoryMode === 'production') {
+        const { prod: currentProduction } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
+        const totalProduction = currentProduction.coins + currentProduction.food + 
+                               currentProduction.materials + currentProduction.population;
+        const productionGoal = gameSettings.victoryValue || 100;
+        
+        console.log('🎯 Verificando vitória por produção:', {
+          totalProduction,
+          productionGoal,
+          currentProduction,
+          victoryMode: gameSettings.victoryMode
+        });
+        
+        if (totalProduction >= productionGoal) {
+          console.log('🏆 VITÓRIA DETECTADA!');
+          setVictory(`🏆 Vitória: Produção ${totalProduction}/${productionGoal} recursos por turno atingida!`);
+          addToHistory(`🏆 Vitória: Produção ${totalProduction}/${productionGoal} recursos por turno atingida!`);
+          return;
+        }
+      }
+      
+      // Verificar vitória por recursos (modo simples)
+      if (gameSettings.victoryMode === 'resources') {
+        const resourceGoal = gameSettings.victoryValue || 1000;
+        if (game.resources.coins >= resourceGoal) {
+          setVictory(`🏆 Vitória: ${resourceGoal} moedas acumuladas!`);
+          addToHistory(`🏆 Vitória: ${resourceGoal} moedas acumuladas!`);
+          return;
+        }
+      }
+      
+      // Verificar vitória por landmarks (modo simples)
+      if (gameSettings.victoryMode === 'landmarks') {
+        const landmarkGoal = gameSettings.victoryValue || 3;
+        if (game.playerStats.landmarks >= landmarkGoal) {
+          setVictory(`🏆 Vitória: ${landmarkGoal} marcos históricos construídos!`);
+          addToHistory(`🏆 Vitória: ${landmarkGoal} marcos históricos construídos!`);
+          return;
+        }
+      }
+      
+      // Verificar vitória por sobrevivência (modo simples)
+      if (gameSettings.victoryMode === 'elimination') {
+        const survivalGoal = gameSettings.victoryValue || 25;
+        if (newTurn >= survivalGoal) {
+          setVictory(`🏆 Vitória: Sobreviveu ${survivalGoal} turnos!`);
+          addToHistory(`🏆 Vitória: Sobreviveu ${survivalGoal} turnos!`);
+          return;
+        }
+      }
+      
+      // Sistema de catástrofes com intervalo controlado
+      const minTurnsBetweenCatastrophes = 3;
+      const maxTurnsBetweenCatastrophes = 7;
+      
+      // Verificar se já passou tempo suficiente desde a última catástrofe
+      const turnsSinceLastCatastrophe = newTurn - (game.lastCatastropheTurn || 0);
+      const canTriggerCatastrophe = turnsSinceLastCatastrophe >= minTurnsBetweenCatastrophes;
+      
+      // Calcular chance baseada no tempo decorrido
+      let catastropheChance = 0;
+      if (canTriggerCatastrophe) {
+        // Chance aumenta progressivamente após o mínimo de turnos
+        const progress = Math.min(1, (turnsSinceLastCatastrophe - minTurnsBetweenCatastrophes) / (maxTurnsBetweenCatastrophes - minTurnsBetweenCatastrophes));
+        catastropheChance = 0.1 + (progress * 0.4); // 10% a 50% base
+        
+        // Modos de sobrevivência têm chance maior
+        if (gameSettings.victoryMode === 'infinite') {
+          catastropheChance = Math.min(0.8, catastropheChance * 1.3); // Máximo 80%
+        } else if (gameSettings.victoryMode === 'elimination') {
+          catastropheChance = Math.min(0.9, catastropheChance * 1.5); // Máximo 90%
+        } else if (gameSettings.victoryMode === 'production') {
+          catastropheChance = Math.min(0.7, catastropheChance * 1.2); // Máximo 70%
+        }
+      }
+      
       if (Math.random() < catastropheChance) {
-        const catastrophe = generateRandomCatastrophe(newTurn);
+        const catastrophe = generateRandomCatastrophe(newTurn, gameSettings.victoryMode);
         if (catastrophe) {
           // Aplicar efeito da catástrofe
-          const modifiedState = applyCatastropheEffect(catastrophe, game);
+          const modifiedState = applyCatastropheEffect(catastrophe, game, gameSettings.victoryMode);
+          
+          // Processar destruição de cartas
+          let newFarmGrid = [...game.farmGrid];
+          let newCityGrid = [...game.cityGrid];
+          let destroyedCards: string[] = [];
+          let deactivatedCards: string[] = [];
+          
+          // Destruir cartas se necessário
+          if (modifiedState.cardDestructionCount) {
+            const targets = modifiedState.cardDestructionTargets || ['farm', 'city'];
+            const destroyCount = Math.min(modifiedState.cardDestructionCount, 3); // Máximo 3 cartas
+            
+            for (let i = 0; i < destroyCount; i++) {
+              if (targets.includes('farm')) {
+                const farmCards = newFarmGrid.flat().filter(cell => cell.card);
+                if (farmCards.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * farmCards.length);
+                  const randomCell = farmCards[randomIndex];
+                  if (randomCell.card) {
+                    destroyedCards.push(randomCell.card.name);
+                    // Encontrar e remover a carta do grid
+                    for (let row = 0; row < newFarmGrid.length; row++) {
+                      for (let col = 0; col < newFarmGrid[row].length; col++) {
+                        if (newFarmGrid[row][col].card?.id === randomCell.card?.id) {
+                          newFarmGrid[row][col] = { card: null, isHighlighted: false };
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              
+              if (targets.includes('city')) {
+                const cityCards = newCityGrid.flat().filter(cell => cell.card);
+                if (cityCards.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * cityCards.length);
+                  const randomCell = cityCards[randomIndex];
+                  if (randomCell.card) {
+                    destroyedCards.push(randomCell.card.name);
+                    // Encontrar e remover a carta do grid
+                    for (let row = 0; row < newCityGrid.length; row++) {
+                      for (let col = 0; col < newCityGrid[row].length; col++) {
+                        if (newCityGrid[row][col].card?.id === randomCell.card?.id) {
+                          newCityGrid[row][col] = { card: null, isHighlighted: false };
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          // Desativar cartas se necessário
+          if (modifiedState.cardDeactivationCount) {
+            const targets = modifiedState.cardDeactivationTargets || ['farm', 'city'];
+            const deactivateCount = Math.min(modifiedState.cardDeactivationCount, 2); // Máximo 2 cartas
+            
+            for (let i = 0; i < deactivateCount; i++) {
+              if (targets.includes('farm')) {
+                const farmCards = newFarmGrid.flat().filter(cell => cell.card && !cell.card.deactivated);
+                if (farmCards.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * farmCards.length);
+                  const randomCell = farmCards[randomIndex];
+                  if (randomCell.card) {
+                    deactivatedCards.push(randomCell.card.name);
+                    // Marcar carta como desativada
+                    for (let row = 0; row < newFarmGrid.length; row++) {
+                      for (let col = 0; col < newFarmGrid[row].length; col++) {
+                        if (newFarmGrid[row][col].card?.id === randomCell.card?.id) {
+                          newFarmGrid[row][col] = { 
+                            ...newFarmGrid[row][col], 
+                            card: { 
+                              ...newFarmGrid[row][col].card!, 
+                              deactivated: true,
+                              deactivationTurns: modifiedState.cardDeactivationDuration || 3
+                            },
+                            isHighlighted: true // Destacar visualmente a carta afetada
+                          };
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              
+              if (targets.includes('city')) {
+                const cityCards = newCityGrid.flat().filter(cell => cell.card && !cell.card.deactivated);
+                if (cityCards.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * cityCards.length);
+                  const randomCell = cityCards[randomIndex];
+                  if (randomCell.card) {
+                    deactivatedCards.push(randomCell.card.name);
+                    // Marcar carta como desativada
+                    for (let row = 0; row < newCityGrid.length; row++) {
+                      for (let col = 0; col < newCityGrid[row].length; col++) {
+                        if (newCityGrid[row][col].card?.id === randomCell.card?.id) {
+                          newCityGrid[row][col] = { 
+                            ...newCityGrid[row][col], 
+                            card: { 
+                              ...newCityGrid[row][col].card!, 
+                              deactivated: true,
+                              deactivationTurns: modifiedState.cardDeactivationDuration || 3
+                            },
+                            isHighlighted: true // Destacar visualmente a carta afetada
+                          };
+                          break;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
           
           // Atualizar estado do jogo com os efeitos da catástrofe
           setGame((g) => ({
@@ -1566,16 +1999,31 @@ export function useGameState() {
             turn: newTurn,
             phase: 'draw',
             resources: modifiedState.resources,
-            // Adicionar efeitos temporários se necessário
-            ...(modifiedState.productionReduction && { productionReduction: modifiedState.productionReduction }),
-            ...(modifiedState.cardDestructionCount && { cardDestructionCount: modifiedState.cardDestructionCount })
+            farmGrid: newFarmGrid,
+            cityGrid: newCityGrid,
+            lastCatastropheTurn: newTurn, // Registrar turno da catástrofe
+            // Limpar catástrofe anterior e aplicar nova
+            productionReduction: modifiedState.productionReduction || undefined,
+            catastropheDuration: modifiedState.productionReduction ? 3 : undefined, // Duração padrão de 3 turnos
+            catastropheName: modifiedState.productionReduction ? catastrophe.name : undefined
           }));
           
-          addToHistory(`🌪️ Catástrofe: ${catastrophe.name} - ${catastrophe.description}`);
-          setError(`🌪️ ${catastrophe.name}: ${catastrophe.description}`);
+          // Criar mensagem detalhada da catástrofe
+          let catastropheMessage = `🌪️ ${catastrophe.name}: ${catastrophe.description}`;
+          if (destroyedCards.length > 0) {
+            catastropheMessage += `\n💥 Cartas destruídas: ${destroyedCards.join(', ')}`;
+          }
+          if (deactivatedCards.length > 0) {
+            catastropheMessage += `\n⚠️ Cartas desativadas: ${deactivatedCards.join(', ')} (${modifiedState.cardDeactivationDuration || 3} turnos)`;
+          }
           
-          // Limpar erro após 3 segundos
-          setTimeout(() => setError(null), 3000);
+          addToHistory(`🌪️ Catástrofe: ${catastrophe.name} - ${catastrophe.description}`);
+          
+          // Usar highlight em vez de error para catástrofes
+          setHighlight(catastropheMessage);
+          
+          // Limpar highlight após 5 segundos
+          setTimeout(() => setHighlight(null), 5000);
           return;
         }
       }
@@ -2214,7 +2662,11 @@ export function useGameState() {
       ...game.farmGrid.flat().map((cell) => cell.card).filter(Boolean),
       ...game.cityGrid.flat().map((cell) => cell.card).filter(Boolean),
     ] as Card[];
-    allCards.forEach((card) => {
+    
+    // Filtrar apenas cartas não desativadas
+    const activeCards = allCards.filter(card => !card.deactivated);
+    
+    activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
       if (!parseDiceProduction(card)) {
         const p = parseProduction(card);
@@ -2237,6 +2689,22 @@ export function useGameState() {
         }
       }
     });
+    
+    // APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA
+    const catastropheReduction = game.productionReduction || 0;
+    if (catastropheReduction > 0) {
+      const originalProd = { ...prod };
+      prod.coins = Math.floor(prod.coins * (1 - catastropheReduction));
+      prod.food = Math.floor(prod.food * (1 - catastropheReduction));
+      prod.materials = Math.floor(prod.materials * (1 - catastropheReduction));
+      prod.population = Math.floor(prod.population * (1 - catastropheReduction));
+      
+      // Adicionar detalhes da redução
+      if (originalProd.coins > prod.coins) details.push(`🌪️ Catástrofe: -${originalProd.coins - prod.coins} coins`);
+      if (originalProd.food > prod.food) details.push(`🌪️ Catástrofe: -${originalProd.food - prod.food} food`);
+      if (originalProd.materials > prod.materials) details.push(`🌪️ Catástrofe: -${originalProd.materials - prod.materials} materials`);
+      if (originalProd.population > prod.population) details.push(`🌪️ Catástrofe: -${originalProd.population - prod.population} population`);
+    }
     
     // Atualiza produção total
     setGame((g) => ({
@@ -2264,10 +2732,34 @@ export function useGameState() {
       setGame((g) => ({ ...g, phase: 'end' }));
       setProductionSummary(null);
     }, 1800);
-  }, [game.farmGrid, game.cityGrid, game.eventGrid]);
+  }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction]);
 
   // --- PROPS PARA COMPONENTES ---
   const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
+  
+  // Aplicar redução de produção se houver catástrofe ativa
+  const catastropheReduction = game.productionReduction || 0;
+  const adjustedProdPerTurn = catastropheReduction > 0 ? {
+    coins: Math.floor(prodPerTurn.coins * (1 - catastropheReduction)),
+    food: Math.floor(prodPerTurn.food * (1 - catastropheReduction)),
+    materials: Math.floor(prodPerTurn.materials * (1 - catastropheReduction)),
+    population: Math.floor(prodPerTurn.population * (1 - catastropheReduction))
+  } : prodPerTurn;
+  
+  // Calcular perdas por turno devido à catástrofe
+  const catastropheLosses = catastropheReduction > 0 ? {
+    coins: prodPerTurn.coins - adjustedProdPerTurn.coins,
+    food: prodPerTurn.food - adjustedProdPerTurn.food,
+    materials: prodPerTurn.materials - adjustedProdPerTurn.materials,
+    population: prodPerTurn.population - adjustedProdPerTurn.population
+  } : { coins: 0, food: 0, materials: 0, population: 0 };
+
+  // Debug: verificar gameSettings
+  console.log('🔍 Debug gameSettings:', {
+    victoryMode: gameSettings?.victoryMode,
+    victoryValue: gameSettings?.victoryValue,
+    gameSettings: gameSettings
+  });
 
   const sidebarProps = {
     resources: {
@@ -2311,11 +2803,13 @@ export function useGameState() {
     discardMode,
     reputation: game.playerStats.reputation,
     reputationGoal: gameSettings.prestigeGoal || 30,
-    catastropheActive: false, // Será implementado quando houver catástrofe ativa
-    catastropheName: undefined,
+    catastropheActive: catastropheReduction > 0,
+    catastropheName: game.catastropheName || (catastropheReduction > 0 ? 'Redução de Produção' : undefined),
+    catastropheDuration: game.catastropheDuration,
     resources: game.resources,
-    productionPerTurn: prodPerTurn,
+    productionPerTurn: adjustedProdPerTurn,
     productionDetails: prodDetails,
+    catastropheLosses, // Perdas por turno devido à catástrofe
     // Props do sistema de dado
     onDiceRoll: handleDiceRoll,
     diceUsed,
@@ -2382,6 +2876,77 @@ export function useGameState() {
     }
   }, []);
 
+  // Função para atualizar o estado do jogo (usada para carregar jogos salvos)
+  const updateGameState = useCallback((newGameState: GameState) => {
+    console.log('🎮 Atualizando estado do jogo:', {
+      turn: newGameState.turn,
+      handLength: newGameState.hand?.length,
+      deckLength: newGameState.deck?.length,
+      resources: newGameState.resources
+    });
+
+    // Aplicar o sistema de vitória correto baseado nas configurações atuais
+    let correctVictorySystem;
+    
+    if (gameSettings) {
+      console.log('🎮 Aplicando sistema de vitória correto:', gameSettings.victoryMode);
+      
+      if (gameSettings.victoryMode === 'complex') {
+        correctVictorySystem = createComplexVictorySystem();
+      } else if (gameSettings.victoryMode === 'classic') {
+        correctVictorySystem = createClassicVictorySystem();
+      } else if (gameSettings.victoryMode === 'infinite') {
+        correctVictorySystem = createInfiniteVictorySystem();
+      } else {
+        // Modo simples com uma condição
+        correctVictorySystem = createSimpleVictorySystem();
+        // Ajustar a condição baseada no modo
+        if (gameSettings.victoryMode === 'landmarks') {
+          correctVictorySystem.conditions[0].category = 'landmarks';
+          correctVictorySystem.conditions[0].name = 'Marcos Históricos';
+          correctVictorySystem.conditions[0].description = `Construa ${gameSettings.victoryValue} marcos históricos`;
+          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'reputation') {
+          correctVictorySystem.conditions[0].category = 'reputation';
+          correctVictorySystem.conditions[0].name = 'Reputação';
+          correctVictorySystem.conditions[0].description = `Alcance ${gameSettings.victoryValue} pontos de reputação`;
+          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'elimination') {
+          correctVictorySystem.conditions[0].category = 'survival';
+          correctVictorySystem.conditions[0].name = 'Sobrevivência';
+          correctVictorySystem.conditions[0].description = `Sobreviva ${gameSettings.victoryValue} turnos`;
+          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'resources') {
+          correctVictorySystem.conditions[0].category = 'coins';
+          correctVictorySystem.conditions[0].name = 'Prosperidade';
+          correctVictorySystem.conditions[0].description = `Acumule ${gameSettings.victoryValue} moedas`;
+          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'production') {
+          correctVictorySystem.conditions[0].category = 'production';
+          correctVictorySystem.conditions[0].name = 'Produção';
+          correctVictorySystem.conditions[0].description = `Produza ${gameSettings.victoryValue} recursos por turno`;
+          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
+        }
+      }
+    } else {
+      console.log('🎮 Usando sistema de vitória padrão (sem settings)');
+      correctVictorySystem = createSimpleVictorySystem();
+    }
+
+    // Atualizar o estado com o sistema de vitória correto
+    const updatedGameState = {
+      ...newGameState,
+      victorySystem: correctVictorySystem
+    };
+
+    console.log('🎮 Estado atualizado com sistema de vitória correto:', {
+      mode: correctVictorySystem.mode,
+      conditions: correctVictorySystem.conditions.length
+    });
+
+    setGame(updatedGameState);
+  }, [gameSettings]);
+
       return {
       sidebarProps,
       topBarProps,
@@ -2407,6 +2972,9 @@ export function useGameState() {
       activatedCards, // Cartas ativadas por dado
       // Estado de loading
       loading: gameLoading,
+      // Props para modo infinito
+      discardedCards,
+      deckReshuffled,
       // Handlers
       handleNextPhase,
       handleSelectCard,
@@ -2422,5 +2990,6 @@ export function useGameState() {
       // Funções de persistência
       saveGameState,
       clearSavedGame,
+      updateGameState,
     };
 }

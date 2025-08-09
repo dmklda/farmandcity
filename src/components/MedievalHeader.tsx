@@ -16,7 +16,7 @@ export const MedievalHeader: React.FC<MedievalHeaderProps> = ({
   onLogout
 }) => {
   return (
-    <div className="relative z-20">
+    <div className="fixed top-0 left-0 right-0 z-50">
       {/* Header Background with Medieval Texture */}
       <div className="relative bg-gradient-to-b from-slate-900/95 via-purple-900/90 to-slate-900/95 backdrop-blur-md border-b border-purple-500/30 shadow-2xl">
         {/* Decorative Top Border */}

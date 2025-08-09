@@ -15,29 +15,39 @@ export interface SavedGame {
 
 export class GameStorageService {
   // Salvar jogo atual
-  static async saveGame(gameState: GameState): Promise<{ success: boolean; gameId?: string; error?: string }> {
+  static async saveGame(gameState: GameState, gameMode?: string): Promise<{ success: boolean; gameId?: string; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         return { success: false, error: 'Usuário não autenticado' };
       }
 
+      // Verificar se o estado do jogo é válido
+      if (!gameState || !gameState.resources) {
+        return { success: false, error: 'Estado do jogo inválido' };
+      }
+
       const score = this.calculateScore(gameState);
+      
+      const gameData = {
+        player_id: user.id,
+        game_state: gameState as any,
+        turn: gameState.turn || 0,
+        phase: gameState.phase || 'draw',
+        is_finished: false,
+        score: score,
+        game_mode: gameMode || 'classic',
+      };
       
       const { data, error } = await supabase
         .from('games')
-        .upsert({
-          player_id: user.id,
-          game_state: gameState as any,
-          turn: gameState.turn,
-          phase: gameState.phase,
-          is_finished: false,
-          score: score,
-        })
+        .upsert(gameData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return { success: true, gameId: data.id };
     } catch (error: any) {
@@ -47,7 +57,7 @@ export class GameStorageService {
   }
 
   // Carregar jogos salvos do usuário
-  static async loadUserGames(): Promise<{ success: boolean; games?: SavedGame[]; error?: string }> {
+  static async loadUserGames(): Promise<{ success: boolean; games?: (SavedGame & { game_mode?: string })[]; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -61,9 +71,48 @@ export class GameStorageService {
         .eq('is_finished', false)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      return { success: true, games: (data as unknown as SavedGame[]) || [] };
+      // Filtrar jogos com estado válido e garantir que todos os campos existem
+      const validGames = (data as unknown as SavedGame[]).filter(game => 
+        game.game_state && game.game_state.resources
+      ).map(game => ({
+        ...game,
+        turn: game.turn || 0,
+        phase: game.phase || 'draw',
+        score: game.score || 0,
+        game_state: {
+          ...game.game_state,
+          turn: game.game_state.turn || 0,
+          phase: game.game_state.phase || 'draw',
+          resources: {
+            coins: game.game_state.resources.coins || 0,
+            food: game.game_state.resources.food || 0,
+            materials: game.game_state.resources.materials || 0,
+            population: game.game_state.resources.population || 0,
+          },
+          playerStats: {
+            reputation: game.game_state.playerStats?.reputation || 0,
+            totalProduction: game.game_state.playerStats?.totalProduction || 0,
+            buildings: game.game_state.playerStats?.buildings || 0,
+            landmarks: game.game_state.playerStats?.landmarks || 0,
+          },
+          farmGrid: game.game_state.farmGrid || [],
+          cityGrid: game.game_state.cityGrid || [],
+          landmarksGrid: game.game_state.landmarksGrid || [],
+          eventGrid: game.game_state.eventGrid || [],
+          hand: game.game_state.hand || [],
+          deck: game.game_state.deck || [],
+          activeEvents: game.game_state.activeEvents || [],
+          comboEffects: game.game_state.comboEffects || [],
+          magicUsedThisTurn: game.game_state.magicUsedThisTurn || false,
+          builtCountThisTurn: game.game_state.builtCountThisTurn || 0,
+        }
+      }));
+
+      return { success: true, games: validGames || [] };
     } catch (error: any) {
       console.error('Erro ao carregar jogos:', error);
       return { success: false, error: error.message };
@@ -71,7 +120,7 @@ export class GameStorageService {
   }
 
   // Carregar jogo específico
-  static async loadGame(gameId: string): Promise<{ success: boolean; gameState?: GameState; error?: string }> {
+  static async loadGame(gameId: string): Promise<{ success: boolean; gameState?: GameState; gameMode?: string; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -85,9 +134,45 @@ export class GameStorageService {
         .eq('player_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      return { success: true, gameState: data.game_state as unknown as GameState };
+      // Verificar se o estado do jogo é válido
+      if (!data.game_state || !data.game_state.resources) {
+        return { success: false, error: 'Estado do jogo corrompido' };
+      }
+
+      // Garantir que todos os campos obrigatórios existem
+      const gameState = {
+        ...data.game_state,
+        turn: data.game_state.turn || 0,
+        phase: data.game_state.phase || 'draw',
+        resources: {
+          coins: data.game_state.resources.coins || 0,
+          food: data.game_state.resources.food || 0,
+          materials: data.game_state.resources.materials || 0,
+          population: data.game_state.resources.population || 0,
+        },
+        playerStats: {
+          reputation: data.game_state.playerStats?.reputation || 0,
+          totalProduction: data.game_state.playerStats?.totalProduction || 0,
+          buildings: data.game_state.playerStats?.buildings || 0,
+          landmarks: data.game_state.playerStats?.landmarks || 0,
+        },
+        farmGrid: data.game_state.farmGrid || [],
+        cityGrid: data.game_state.cityGrid || [],
+        landmarksGrid: data.game_state.landmarksGrid || [],
+        eventGrid: data.game_state.eventGrid || [],
+        hand: data.game_state.hand || [],
+        deck: data.game_state.deck || [],
+        activeEvents: data.game_state.activeEvents || [],
+        comboEffects: data.game_state.comboEffects || [],
+        magicUsedThisTurn: data.game_state.magicUsedThisTurn || false,
+        builtCountThisTurn: data.game_state.builtCountThisTurn || 0,
+      };
+
+      return { success: true, gameState: gameState as GameState, gameMode: data.game_mode };
     } catch (error: any) {
       console.error('Erro ao carregar jogo:', error);
       return { success: false, error: error.message };
@@ -102,13 +187,32 @@ export class GameStorageService {
         return { success: false, error: 'Usuário não autenticado' };
       }
 
+      // Primeiro verificar se o jogo existe
+      const { data: existingGame, error: checkError } = await supabase
+        .from('games')
+        .select('id')
+        .eq('id', gameId)
+        .eq('player_id', user.id)
+        .single();
+
+      if (checkError) {
+        if (checkError.code === 'PGRST116') {
+          // Jogo não encontrado - considerar como sucesso (já foi deletado)
+          return { success: true };
+        }
+        throw checkError;
+      }
+
+      // Se chegou aqui, o jogo existe, então deletar
       const { error } = await supabase
         .from('games')
         .delete()
         .eq('id', gameId)
         .eq('player_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       return { success: true };
     } catch (error: any) {
@@ -133,10 +237,10 @@ export class GameStorageService {
         .insert({
           player_id: user.id,
           final_score: score,
-          turns_played: gameState.turn,
+          turns_played: gameState.turn || 0,
           resources_final: gameState.resources as any,
-          buildings_built: gameState.playerStats.buildings,
-          landmarks_built: gameState.playerStats.landmarks,
+          buildings_built: gameState.playerStats?.buildings || 0,
+          landmarks_built: gameState.playerStats?.landmarks || 0,
           game_duration_minutes: gameDurationMinutes,
         });
 
@@ -158,22 +262,51 @@ export class GameStorageService {
 
   // Calcular pontuação do jogo
   private static calculateScore(gameState: GameState): number {
-    const { resources, playerStats, turn } = gameState;
+    const { resources, playerStats, turn, farmGrid, cityGrid, landmarksGrid, eventGrid } = gameState;
     
     let score = 0;
     
-    // Pontos por recursos (1 ponto cada)
-    score += resources.coins + resources.food + resources.materials + resources.population;
+    // Pontos base dos recursos
+    if (resources) {
+      score += (resources.coins || 0) * 2; // 2 pontos por moeda
+      score += (resources.food || 0) * 1; // 1 ponto por comida
+      score += (resources.materials || 0) * 1; // 1 ponto por material
+      score += (resources.population || 0) * 3; // 3 pontos por população
+    }
     
-    // Pontos por estatísticas do jogador
-    score += playerStats.reputation * 10; // 10 pontos por reputação
-    score += playerStats.buildings * 5; // 5 pontos por construção
-    score += playerStats.landmarks * 50; // 50 pontos por marco
+    // Pontos das estatísticas do jogador
+    if (playerStats) {
+      score += (playerStats.reputation || 0) * 10; // 10 pontos por reputação
+      score += (playerStats.totalProduction || 0) * 0.5; // 0.5 pontos por produção total
+      score += (playerStats.buildings || 0) * 5; // 5 pontos por construção
+      score += (playerStats.landmarks || 0) * 50; // 50 pontos por marco
+    }
     
-    // Bônus por eficiência (menos turnos = mais pontos)
-    score += Math.max(0, (50 - turn) * 2);
+    // Pontos das cartas nos grids
+    const farmCards = farmGrid?.flat().filter(cell => cell.card).length || 0;
+    const cityCards = cityGrid?.flat().filter(cell => cell.card).length || 0;
+    const landmarkCards = landmarksGrid?.flat().filter(cell => cell.card).length || 0;
+    const eventCards = eventGrid?.flat().filter(cell => cell.card).length || 0;
     
-    return Math.max(0, score);
+    score += farmCards * 3; // 3 pontos por carta de fazenda
+    score += cityCards * 5; // 5 pontos por carta de cidade
+    score += landmarkCards * 25; // 25 pontos por marco
+    score += eventCards * 10; // 10 pontos por evento
+    
+    // Bônus por progresso (turno atual)
+    score += (turn || 0) * 2; // 2 pontos por turno jogado
+    
+    // Bônus por eficiência (baseado no modo de vitória)
+    if (gameState.victorySystem?.mode === 'simple') {
+      // Bônus extra para modo simples (produção)
+      const currentProduction = (resources?.coins || 0) + (resources?.food || 0) + 
+                               (resources?.materials || 0) + (resources?.population || 0);
+      if (currentProduction >= 50) {
+        score += 100; // Bônus por atingir meta de produção
+      }
+    }
+    
+    return Math.max(0, Math.round(score));
   }
 
   // Carregar cartas do jogador

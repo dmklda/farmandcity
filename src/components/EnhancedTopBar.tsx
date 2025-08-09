@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { BarChart3, Save, LogOut, User, Home } from 'lucide-react';
+import { Save, LogOut, User, Home } from 'lucide-react';
 
 interface EnhancedTopBarProps {
   turn: number;
@@ -35,6 +35,7 @@ interface EnhancedTopBarProps {
   onLogout?: () => void;
   onGoHome?: () => void;
   userEmail?: string;
+  userName?: string;
   activeDeck?: {
     id: string;
     name: string;
@@ -119,6 +120,7 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
   onLogout,
   onGoHome,
   userEmail,
+  userName,
   activeDeck,
   onDiceRoll,
   diceUsed,
@@ -274,16 +276,7 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
             <span className="text-sm mr-0.5">🎲</span>
             {diceResult ? `D${diceResult}` : 'Dado'}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onShowStats}
-            className="h-6 px-1.5 text-xs"
-          >
-            
-            <BarChart3 className="w-3 h-3 mr-0.5" />
-            Stats
-          </Button>
+
           
 
           
@@ -319,11 +312,15 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
         
         {/* User Section */}
         <div className="flex items-center gap-0.5 pl-1 border-l border-border flex-shrink-0">
-          {userEmail && (
-            <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
+          {(userName || userEmail) && (
+            <button
+              onClick={onShowStats}
+              className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 cursor-pointer px-1 py-0.5 rounded hover:bg-muted"
+              title="Ver perfil e estatísticas"
+            >
               <User className="w-3 h-3 flex-shrink-0" />
-              <span className="max-w-[60px] truncate">{userEmail}</span>
-            </div>
+              <span className="max-w-[60px] truncate">{userName || userEmail?.split('@')[0] || 'Guerreiro'}</span>
+            </button>
           )}
           
           <Button

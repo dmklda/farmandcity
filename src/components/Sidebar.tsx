@@ -4,6 +4,7 @@ import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Button } from './ui/button';
 import { ChevronDown, ChevronUp, Target, Trophy, BarChart3 } from 'lucide-react';
+import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from './IconComponentsPNG';
 
 interface SidebarProps {
   resources: { 
@@ -85,14 +86,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     }));
   };
 
-import { CoinsIconPNG, FoodsIconPNG, MaterialsIconPNG, PopulationIconPNG } from './IconComponentsPNG';
-
   const getResourceIcon = (type: string) => {
     switch (type) {
-      case 'coins': return <CoinsIconPNG size={20} />;
-      case 'food': return <FoodsIconPNG size={20} />;
-      case 'materials': return <MaterialsIconPNG size={20} />;
-      case 'population': return <PopulationIconPNG size={20} />;
+      case 'coins': return <CoinsIconPNG size={24} />;
+      case 'food': return <FoodsIconPNG size={24} />;
+      case 'materials': return <MaterialsIconPNG size={24} />;
+      case 'population': return <PopulationIconPNG size={24} />;
       default: return <span className="text-lg">📊</span>;
     }
   };

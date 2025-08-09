@@ -14,56 +14,62 @@ export const MedievalNotifications: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Simulated notifications for demo purposes
+  // Demo notifications - only show once on first load
   useEffect(() => {
-    const demoNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'achievement',
-        title: 'Nova Conquista!',
-        message: 'Você desbloqueou "Primeiro Império"',
-        icon: <Crown className="w-4 h-4 text-yellow-400" />,
-        duration: 5000
-      },
-      {
-        id: '2',
-        type: 'success',
-        title: 'Missão Completa',
-        message: 'Missão diária concluída com sucesso!',
-        icon: <CheckCircle className="w-4 h-4 text-green-400" />,
-        duration: 4000
-      },
-      {
-        id: '3',
-        type: 'info',
-        title: 'Novo Evento',
-        message: 'Evento "Festival Medieval" começará em 2 horas',
-        icon: <Scroll className="w-4 h-4 text-blue-400" />,
-        duration: 6000
-      }
-    ];
+    const hasShownDemo = localStorage.getItem('medieval-notifications-demo');
+    
+    if (!hasShownDemo) {
+      const demoNotifications: Notification[] = [
+        {
+          id: 'demo-1',
+          type: 'achievement',
+          title: 'Bem-vindo ao Reino!',
+          message: 'Você desbloqueou "Primeiro Império"',
+          icon: <Crown className="w-4 h-4 text-yellow-400" />,
+          duration: 4000
+        },
+        {
+          id: 'demo-2',
+          type: 'success',
+          title: 'Tutorial Completo',
+          message: 'Você completou o tutorial básico!',
+          icon: <CheckCircle className="w-4 h-4 text-green-400" />,
+          duration: 4000
+        }
+      ];
 
-    // Add notifications with delay
-    demoNotifications.forEach((notification, index) => {
-      setTimeout(() => {
-        addNotification(notification);
-      }, index * 2000);
-    });
+      // Add demo notifications with delay
+      demoNotifications.forEach((notification, index) => {
+        setTimeout(() => {
+          addNotification(notification);
+        }, index * 1500);
+      });
+
+      // Mark demo as shown
+      localStorage.setItem('medieval-notifications-demo', 'true');
+    }
   }, []);
 
   const addNotification = (notification: Notification) => {
     setNotifications(prev => [...prev, notification]);
     
-    // Auto remove after duration
-    if (notification.duration) {
-      setTimeout(() => {
-        removeNotification(notification.id);
-      }, notification.duration);
-    }
+    // Auto remove after duration (default 5 seconds if not specified)
+    const duration = notification.duration || 5000;
+    setTimeout(() => {
+      removeNotification(notification.id);
+    }, duration);
   };
 
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  const clearDemoNotifications = () => {
+    localStorage.removeItem('medieval-notifications-demo');
   };
 
   const getNotificationStyles = (type: string) => {
@@ -100,7 +106,7 @@ export const MedievalNotifications: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3">
+    <div className="fixed top-24 right-4 z-50 space-y-3">
       {/* Notification Bell */}
       <div className="relative">
         <button
@@ -186,12 +192,18 @@ export const MedievalNotifications: React.FC = () => {
             </div>
             
             {notifications.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-purple-500/20">
+              <div className="mt-4 pt-3 border-t border-purple-500/20 space-y-2">
                 <button
-                  onClick={() => setNotifications([])}
+                  onClick={clearAllNotifications}
                   className="w-full text-center text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
                 >
                   Limpar todas
+                </button>
+                <button
+                  onClick={clearDemoNotifications}
+                  className="w-full text-center text-purple-400/60 hover:text-purple-400 text-xs transition-colors"
+                >
+                  Resetar demo
                 </button>
               </div>
             )}

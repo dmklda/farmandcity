@@ -10,6 +10,7 @@ import { useGameSettings } from '../hooks/useGameSettings';
 import { useStarterDeck } from '../hooks/useStarterDeck';
 import { useUnlockedCards } from '../hooks/useUnlockedCards';
 import { Card } from '../types/card';
+import { GameState } from '../types/gameState';
 import { MedievalNotificationSystem, useMedievalNotifications } from '../components/MedievalNotificationSystem';
 import { useDialog } from '../components/ui/dialog';
 import { Button } from '../components/ui/button';
@@ -20,12 +21,14 @@ import AuthPage from '../components/AuthPage';
 import MedievalSidebar from '../components/MedievalSidebar';
 import MedievalTopBar from '../components/MedievalTopBar';
 import EpicBattlefield from '../components/EpicBattlefield';
-import EnhancedHand from '../components/EnhancedHand';
+import EnhancedHand, { CardDetailModal } from '../components/EnhancedHand';
 import MedievalDiceButton from '../components/MedievalDiceButton';
 import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
+import { CardMiniature } from '../components/CardMiniature';
 
 import { useAppContext } from '../contexts/AppContext';
+import { useUserSettings } from '../hooks/useUserSettings';
 import { GlobalAnnouncements } from '../components/GlobalAnnouncements';
 
 const GamePage: React.FC = () => {
@@ -38,11 +41,13 @@ const GamePage: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [showSavedGames, setShowSavedGames] = useState(false);
   const [handVisible, setHandVisible] = useState(true);
+  const [selectedCardForDetail, setSelectedCardForDetail] = useState<Card | null>(null);
 
   // Hook principal do jogo que integra com Supabase
   const gameState = useGameState();
   const { activeDeck, decks, loading: decksLoading } = usePlayerDecks();
   const { setCurrentView } = useAppContext();
+  const { settings } = useUserSettings();
   const { notify } = useMedievalNotifications();
   const { showConfirm, showAlert } = useDialog();
 
@@ -65,6 +70,8 @@ const GamePage: React.FC = () => {
   };
 
   const handleGoHome = () => {
+    // Limpar estado salvo quando sair do jogo
+    gameState.clearSavedGame();
     setCurrentView('home');
   };
 
@@ -74,6 +81,8 @@ const GamePage: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // Limpar estado salvo quando fazer logout
+      gameState.clearSavedGame();
       await supabase.auth.signOut();
       setCurrentView('home');
     } catch (error) {
@@ -106,9 +115,38 @@ const GamePage: React.FC = () => {
     gameState.handleSelectCard(card);
   };
 
-  const handleLoadGame = () => {
-    // TODO: Implementar carregamento de jogo
-    // // console.log('Carregar jogo');
+  const handleLoadGame = (loadedGameState: GameState) => {
+    // Atualizar o estado do jogo com o jogo carregado
+    try {
+      // Verificar se o estado carregado é válido
+      if (!loadedGameState || !loadedGameState.resources) {
+        throw new Error('Estado do jogo inválido');
+      }
+
+      console.log('🎮 Carregando jogo salvo:', {
+        turn: loadedGameState.turn,
+        victoryMode: loadedGameState.victorySystem?.mode,
+        currentSettings: settings?.game_preferences?.victoryMode
+      });
+
+      // Salvar o estado carregado no localStorage (sem o sistema de vitória)
+      const stateToSave = {
+        ...loadedGameState,
+        // Remover o sistema de vitória do save para que seja aplicado o correto
+        victorySystem: undefined,
+        timestamp: Date.now(),
+        deckActiveId: activeDeck?.id
+      };
+      localStorage.setItem('famand_gameState', JSON.stringify(stateToSave));
+      
+      // Atualizar o estado do jogo diretamente (o sistema de vitória será aplicado pela updateGameState)
+      gameState.updateGameState(loadedGameState);
+      
+      notify('info', 'Jogo Carregado', 'Seu jogo foi carregado com sucesso!', undefined, 4000);
+    } catch (error) {
+      console.error('Erro ao carregar jogo:', error);
+      notify('error', 'Erro', 'Erro ao carregar o jogo. Tente novamente.', undefined, 4000);
+    }
   };
 
   // Setup de autenticação
@@ -145,6 +183,15 @@ const GamePage: React.FC = () => {
     //   activeDeckCards: activeDeck?.cards?.length
     // });
   }, [loading, user, gameState.loading, decksLoading, activeDeck]);
+
+  // Limpar estado salvo quando sair da página do jogo
+  useEffect(() => {
+    return () => {
+      // Este código executa quando o componente é desmontado
+      console.log('🎮 Saindo da página do jogo, limpando estado salvo...');
+      gameState.clearSavedGame();
+    };
+  }, [gameState.clearSavedGame]);
 
   // Sistema de Notificações Medievais - usando refs para evitar loops infinitos
   const notificationRefs = useRef({
@@ -299,6 +346,10 @@ const GamePage: React.FC = () => {
           materials: gameState.topBarProps.productionPerTurn.materials,
           population: gameState.topBarProps.productionPerTurn.population
         }}
+        victorySystem={gameState.game.victorySystem}
+        isInfiniteMode={gameState.sidebarProps.victory.mode === 'infinite'}
+        discardedCardsCount={gameState.discardedCards.length}
+        deckReshuffled={gameState.deckReshuffled}
       />
 
       {/* Medieval TopBar */}
@@ -313,6 +364,8 @@ const GamePage: React.FC = () => {
         resources={gameState.topBarProps.resources}
         productionPerTurn={gameState.topBarProps.productionPerTurn}
         productionDetails={gameState.topBarProps.productionDetails}
+        catastropheLosses={gameState.topBarProps.catastropheLosses}
+        catastropheDuration={gameState.topBarProps.catastropheDuration}
         onToggleSidebar={() => {}}
         onShowStats={handleShowStats}
         onShowSavedGames={handleShowSavedGames}
@@ -320,6 +373,7 @@ const GamePage: React.FC = () => {
         onLogout={handleLogout}
         onSettingsClick={handleSettingsClick}
         userEmail={user?.email}
+        userName={settings?.display_name || settings?.username || user?.email?.split('@')[0] || 'Guerreiro'}
         activeDeck={activeDeck}
       />
 
@@ -393,149 +447,94 @@ const GamePage: React.FC = () => {
 
       {/* Modal de descarte manual */}
       {gameState.discardModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-amber-500 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-2xl max-w-4xl w-full mx-4 border-2 border-amber-500/50 shadow-2xl">
+            {/* Header */}
             <div className="text-center mb-8">
-              <h3 className="text-3xl font-bold text-white mb-3">Descarte obrigatório</h3>
-              <p className="text-gray-300 text-lg">Escolha uma carta para descartar:</p>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="p-3 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full">
+                  <span className="text-2xl">🗑️</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white">Descarte Obrigatório</h3>
+              </div>
+              <p className="text-gray-300 text-lg">Escolha uma carta para descartar da sua mão:</p>
             </div>
-            <div className="flex gap-6 justify-center flex-wrap">
+
+            {/* Cards Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center mb-8">
               {gameState.game.hand.map((card, index) => (
                 <div
                   key={index}
-                  className="cursor-pointer transition-all duration-200 hover:scale-110 hover:shadow-lg"
+                  className="relative group cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl"
                   onClick={() => gameState.handleDiscardCard(card)}
                 >
-                  <div className="bg-gradient-to-br from-green-600 to-green-700 border-2 border-green-400 rounded-lg p-4 min-w-[140px] text-center shadow-lg">
-                    <div className="text-white font-semibold text-sm mb-2 leading-tight">{card.name}</div>
-                    <div className="text-green-200 text-xs font-medium">
-                      {card.type} | {card.rarity}
-                    </div>
-                    <div className="mt-2 text-green-100 text-xs opacity-75">
-                      {card.cost.coins ? `💰 ${card.cost.coins}` : ''}
-                      {card.cost.food ? ` 🍎 ${card.cost.food}` : ''}
-                      {card.cost.materials ? ` 🧱 ${card.cost.materials}` : ''}
-                      {card.cost.population ? ` 👥 ${card.cost.population}` : ''}
-                    </div>
+                  {/* Card Miniature */}
+                  <CardMiniature
+                    card={card}
+                    size="medium"
+                    showInfo={true}
+                    isPlayable={true}
+                    onSelect={() => gameState.handleDiscardCard(card)}
+                    onShowDetail={() => setSelectedCardForDetail(card)}
+                    className="transition-all duration-300 group-hover:ring-2 group-hover:ring-amber-400 group-hover:ring-offset-2"
+                  />
+                  
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  
+                  {/* Discard Icon */}
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-red-600/80 hover:bg-red-600 border border-red-400/60 rounded-full flex items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    🗑️
                   </div>
                 </div>
               ))}
             </div>
-            <div className="text-center mt-6">
-              <p className="text-gray-400 text-sm">
-                Clique em uma carta para descartá-la
+
+            {/* Instructions */}
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                  <span>Clique para descartar</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span>Clique direito para detalhes</span>
+                </div>
+              </div>
+              <p className="text-gray-500 text-xs">
+                Você deve descartar uma carta para continuar o jogo
               </p>
             </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => gameState.handleDiscardCard(gameState.game.hand[0])}
+              className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
+              title="Cancelar descarte (descartar primeira carta)"
+            >
+              <span className="text-xl">✕</span>
+            </button>
           </div>
         </div>
+      )}
+
+      {/* Card Detail Modal */}
+      {selectedCardForDetail && (
+        <CardDetailModal
+          card={selectedCardForDetail}
+          isOpen={!!selectedCardForDetail}
+          onClose={() => setSelectedCardForDetail(null)}
+        />
       )}
 
       {/* Modal de jogos salvos */}
-      {showSavedGames && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-green-500 shadow-2xl">
-            <div className="text-center mb-6">
-              <h3 className="text-3xl font-bold text-white mb-3">💾 Jogos Salvos</h3>
-              <p className="text-gray-300">Gerencie suas partidas salvas</p>
-            </div>
-            
-            <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
-              {/* Jogo atual */}
-              <div className="bg-slate-700 p-4 rounded-lg border-2 border-blue-500">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-semibold text-white">🎮 Jogo Atual</h4>
-                    <p className="text-gray-300 text-sm">Turno {gameState.game.turn} - {gameState.game.phase}</p>
-                    <p className="text-gray-400 text-xs">Última atualização: {new Date().toLocaleString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-300">
-                      <div>💰 {gameState.game.resources.coins}</div>
-                      <div>🌾 {gameState.game.resources.food}</div>
-                      <div>🏗️ {gameState.game.resources.materials}</div>
-                      <div>👥 {gameState.game.resources.population}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Jogos salvos (exemplo) */}
-              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-semibold text-white">🏛️ Vitória por Marcos</h4>
-                    <p className="text-gray-300 text-sm">Turno 15 - 2/3 landmarks</p>
-                    <p className="text-gray-400 text-xs">Salvo em 25/01/2025 às 14:30</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-300">
-                      <div>💰 250</div>
-                      <div>🌾 45</div>
-                      <div>🏗️ 18</div>
-                      <div>👥 12</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-semibold text-white">⭐ Desafio Reputação</h4>
-                    <p className="text-gray-300 text-sm">Turno 8 - 12/15 reputação</p>
-                    <p className="text-gray-400 text-xs">Salvo em 24/01/2025 às 16:45</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-300">
-                      <div>💰 180</div>
-                      <div>🌾 30</div>
-                      <div>🏗️ 8</div>
-                      <div>👥 6</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-700 p-4 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="text-lg font-semibold text-white">⏰ Modo Sobrevivência</h4>
-                    <p className="text-gray-300 text-sm">Turno 22 - Sobrevivendo</p>
-                    <p className="text-gray-400 text-xs">Salvo em 23/01/2025 às 10:15</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-300">
-                      <div>💰 320</div>
-                      <div>🌾 60</div>
-                      <div>🏗️ 25</div>
-                      <div>👥 15</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setShowSavedGames(false)}
-                className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                Fechar
-              </button>
-              <button
-                onClick={async () => {
-                  // TODO: Implementar salvamento automático
-                  await showAlert('Jogo salvo automaticamente!', 'Jogo Salvo', 'success');
-                  setShowSavedGames(false);
-                }}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                💾 Salvar Agora
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SavedGamesModal
+        isOpen={showSavedGames}
+        onClose={() => setShowSavedGames(false)}
+        onLoadGame={handleLoadGame}
+        currentGameState={gameState.game}
+      />
 
       {/* Modal de estatísticas do jogador */}
       <PlayerStatsModal
@@ -543,120 +542,7 @@ const GamePage: React.FC = () => {
         onClose={() => setShowStats(false)}
       />
 
-      {/* Modal de estatísticas do jogo */}
-      {showStats && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-8 rounded-lg max-w-2xl w-full mx-4 border-2 border-blue-500 shadow-2xl">
-            <div className="text-center mb-6">
-              <h3 className="text-3xl font-bold text-white mb-3">📊 Estatísticas do Jogo</h3>
-              <p className="text-gray-300">Informações detalhadas sobre sua partida</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              {/* Recursos Atuais */}
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-white mb-3">💰 Recursos Atuais</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Moedas:</span>
-                    <span className="text-yellow-400 font-bold">{gameState.game.resources.coins}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Comida:</span>
-                    <span className="text-green-400 font-bold">{gameState.game.resources.food}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Materiais:</span>
-                    <span className="text-orange-400 font-bold">{gameState.game.resources.materials}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">População:</span>
-                    <span className="text-blue-400 font-bold">{gameState.game.resources.population}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Produção por Turno */}
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-white mb-3">⚙️ Produção por Turno</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Moedas:</span>
-                    <span className="text-yellow-400 font-bold">+{gameState.topBarProps.productionPerTurn.coins}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Comida:</span>
-                    <span className="text-green-400 font-bold">+{gameState.topBarProps.productionPerTurn.food}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Materiais:</span>
-                    <span className="text-orange-400 font-bold">+{gameState.topBarProps.productionPerTurn.materials}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">População:</span>
-                    <span className="text-blue-400 font-bold">+{gameState.topBarProps.productionPerTurn.population}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progresso */}
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-white mb-3">📈 Progresso</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Reputação:</span>
-                    <span className="text-purple-400 font-bold">{gameState.game.playerStats.reputation}/{gameState.sidebarProps.progress.reputationMax}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Produção Total:</span>
-                    <span className="text-cyan-400 font-bold">{gameState.game.playerStats.totalProduction}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Marcos:</span>
-                    <span className="text-indigo-400 font-bold">{gameState.game.playerStats.landmarks}/{gameState.sidebarProps.progress.landmarksMax}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Turno:</span>
-                    <span className="text-white font-bold">{gameState.game.turn}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informações do Deck */}
-              <div className="bg-slate-700 p-4 rounded-lg">
-                <h4 className="text-lg font-semibold text-white mb-3">🃏 Deck Ativo</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Nome:</span>
-                    <span className="text-white font-bold">{activeDeck?.name || 'Nenhum'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Cartas no Deck:</span>
-                    <span className="text-white font-bold">{gameState.game.deck.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Cartas na Mão:</span>
-                    <span className="text-white font-bold">{gameState.game.hand.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Fase Atual:</span>
-                    <span className="text-white font-bold capitalize">{gameState.game.phase}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <button
-                onClick={() => setShowStats(false)}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Sistema de Notificações Medievais */}
       <MedievalNotificationSystem position="top-right" maxNotifications={8} defaultDuration={4000} />
@@ -664,16 +550,33 @@ const GamePage: React.FC = () => {
       {/* Sistema de vitória */}
       {gameState.victory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-green-600 text-white p-8 rounded-lg shadow-lg border max-w-md text-center">
-            <div className="text-4xl mb-4">🏆</div>
-            <h2 className="text-2xl font-bold mb-4">Vitória!</h2>
-            <p className="text-lg mb-6">{gameState.victory}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-white text-green-600 rounded hover:bg-gray-100 font-medium"
-            >
-              Jogar Novamente
-            </button>
+          <div className="bg-gradient-to-br from-green-600 to-green-700 text-white p-8 rounded-xl shadow-2xl border-2 border-green-500 max-w-md text-center">
+            <div className="text-6xl mb-4 animate-bounce">🏆</div>
+            <h2 className="text-3xl font-bold mb-4 text-green-100">Vitória!</h2>
+            <p className="text-lg mb-8 text-green-50">{gameState.victory}</p>
+            
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-white text-green-600 rounded-lg hover:bg-gray-100 font-medium transition-all duration-200 hover:scale-105"
+              >
+                🎮 Jogar Novamente
+              </button>
+              
+              <button
+                onClick={handleNewGame}
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-400 font-medium transition-all duration-200 hover:scale-105"
+              >
+                🆕 Novo Jogo
+              </button>
+              
+              <button
+                onClick={handleGoHome}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 font-medium transition-all duration-200 hover:scale-105"
+              >
+                🏠 Voltar ao Menu
+              </button>
+            </div>
           </div>
         </div>
       )}

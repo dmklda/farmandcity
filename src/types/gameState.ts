@@ -17,7 +17,7 @@ export interface VictoryCondition {
   name: string;
   description: string;
   type: 'major' | 'minor';
-  category: 'reputation' | 'landmarks' | 'resources' | 'production' | 'diversity' | 'survival';
+  category: 'reputation' | 'landmarks' | 'resources' | 'production' | 'diversity' | 'survival' | 'combat' | 'cards' | 'turns' | 'events' | 'magic' | 'efficiency' | 'population' | 'coins';
   target: number;
   current: number;
   completed: boolean;
@@ -25,7 +25,7 @@ export interface VictoryCondition {
 }
 
 export interface ComplexVictorySystem {
-  mode: 'simple' | 'complex' | 'infinite';
+  mode: 'simple' | 'complex' | 'infinite' | 'classic';
   requiredMajor: number; // quantas vitórias grandes são necessárias
   requiredMinor: number; // quantas vitórias pequenas são necessárias
   conditions: VictoryCondition[];
@@ -47,10 +47,11 @@ export interface GameEvent {
 
 export interface GridCell {
   card: Card | null;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   stack?: Card[]; // Cartas empilhadas (upgrades)
   level?: number; // Nível da carta (1 = base, 2+ = upgraded)
+  isHighlighted?: boolean; // Se a célula está destacada
 }
 
 export interface GameState {
@@ -70,4 +71,8 @@ export interface GameState {
   builtCountThisTurn: number;
   actionUsedThisTurn?: boolean;
   victorySystem?: ComplexVictorySystem; // Novo sistema de vitória
+  productionReduction?: number; // Redução de produção devido a catástrofes (0-1)
+  catastropheDuration?: number; // Duração restante da catástrofe em turnos
+  catastropheName?: string; // Nome da catástrofe ativa
+  lastCatastropheTurn?: number; // Último turno em que uma catástrofe foi ativada
 }

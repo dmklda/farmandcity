@@ -8,11 +8,7 @@ import CityNode from './flow-nodes/CityNode';
 import LandmarkNode from './flow-nodes/LandmarkNode';
 import EventNode from './flow-nodes/EventNode';
 
-interface GridCell {
-  card?: any;
-  x: number;
-  y: number;
-}
+import { GridCell } from '../types/gameState';
 
 interface EnhancedGridBoardProps {
   farmGrid: GridCell[][];

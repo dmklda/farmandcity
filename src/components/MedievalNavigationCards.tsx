@@ -12,7 +12,8 @@ import {
   Shield,
   Sword,
   ScrollText,
-  Map
+  Map,
+  Gem
 } from 'lucide-react';
 
 interface MedievalNavigationCardsProps {
@@ -22,6 +23,7 @@ interface MedievalNavigationCardsProps {
   onGoToMissions: () => void;
   onGoToDecks: () => void;
   onGoToSettings: () => void;
+  decks: any[];
 }
 
 export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = ({
@@ -30,92 +32,103 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
   onGoToCollection,
   onGoToMissions,
   onGoToDecks,
-  onGoToSettings
+  onGoToSettings,
+  decks
 }) => {
+  const hasActiveDeck = decks && decks.length > 0;
   const navigationCards = [
     {
-      title: "Jogar",
-      description: "Inicie uma nova partida e construa seu império",
-      icon: Play,
-      action: onStartGame,
-      gradient: "from-green-600 to-emerald-700",
-      hoverGradient: "from-green-500 to-emerald-600",
-      buttonGradient: "from-green-700 to-emerald-700",
-      buttonHover: "from-green-600 to-emerald-600",
-      borderColor: "border-green-500/30",
-      hoverBorderColor: "border-green-400/50",
-      iconBg: "bg-green-600/20",
-      iconColor: "text-green-400"
+      title: "Modos de Jogo",
+      description: hasActiveDeck 
+        ? "Escolha entre diferentes modos de partida" 
+        : "Crie um deck primeiro para acessar os modos de jogo",
+      icon: Sword,
+      action: hasActiveDeck ? onStartGame : onGoToDecks,
+      gradient: hasActiveDeck ? "from-amber-600 via-orange-600 to-red-600" : "from-slate-600 via-gray-600 to-zinc-600",
+      hoverGradient: hasActiveDeck ? "from-amber-500 via-orange-500 to-red-500" : "from-slate-500 via-gray-500 to-zinc-500",
+      buttonGradient: hasActiveDeck ? "from-amber-700 to-red-700" : "from-slate-700 to-zinc-700",
+      buttonHover: hasActiveDeck ? "from-amber-600 to-red-600" : "from-slate-600 to-zinc-600",
+      borderColor: hasActiveDeck ? "border-amber-500/30" : "border-slate-500/30",
+      hoverBorderColor: hasActiveDeck ? "border-amber-400/50" : "border-slate-400/50",
+      iconBg: hasActiveDeck ? "bg-amber-600/20" : "bg-slate-600/20",
+      iconColor: hasActiveDeck ? "text-amber-400" : "text-slate-400",
+      theme: "battle",
+      disabled: !hasActiveDeck
     },
     {
-      title: "Loja",
-      description: "Compre packs, boosters e cartas especiais",
-      icon: Trophy,
+      title: "Taverna do Comerciante",
+      description: "Compre packs, boosters e cartas especiais do reino",
+      icon: Crown,
       action: onGoToShop,
-      gradient: "from-blue-600 to-cyan-700",
-      hoverGradient: "from-blue-500 to-cyan-600",
-      buttonGradient: "from-blue-700 to-cyan-700",
-      buttonHover: "from-blue-600 to-cyan-600",
+      gradient: "from-amber-600 via-orange-600 to-red-600",
+      hoverGradient: "from-amber-500 via-orange-500 to-red-500",
+      buttonGradient: "from-amber-700 to-red-700",
+      buttonHover: "from-amber-600 to-red-600",
+      borderColor: "border-amber-500/30",
+      hoverBorderColor: "border-amber-400/50",
+      iconBg: "bg-amber-600/20",
+      iconColor: "text-amber-400",
+      theme: "tavern"
+    },
+    {
+      title: "Tesouro Real",
+      description: "Visualize e organize sua coleção de cartas",
+      icon: Gem,
+      action: onGoToCollection,
+      gradient: "from-emerald-600 via-teal-600 to-cyan-600",
+      hoverGradient: "from-emerald-500 via-teal-500 to-cyan-500",
+      buttonGradient: "from-emerald-700 to-cyan-700",
+      buttonHover: "from-emerald-600 to-cyan-600",
+      borderColor: "border-emerald-500/30",
+      hoverBorderColor: "border-emerald-400/50",
+      iconBg: "bg-emerald-600/20",
+      iconColor: "text-emerald-400",
+      theme: "treasure"
+    },
+    {
+      title: "Quests Reais",
+      description: "Complete desafios épicos e ganhe recompensas",
+      icon: ScrollText,
+      action: onGoToMissions,
+      gradient: "from-blue-600 via-indigo-600 to-purple-600",
+      hoverGradient: "from-blue-500 via-indigo-500 to-purple-500",
+      buttonGradient: "from-blue-700 to-purple-700",
+      buttonHover: "from-blue-600 to-purple-600",
       borderColor: "border-blue-500/30",
       hoverBorderColor: "border-blue-400/50",
       iconBg: "bg-blue-600/20",
-      iconColor: "text-blue-400"
+      iconColor: "text-blue-400",
+      theme: "quest"
     },
     {
-      title: "Coleção",
-      description: "Visualize e organize suas cartas",
-      icon: Target,
-      action: onGoToCollection,
-      gradient: "from-purple-600 to-pink-700",
-      hoverGradient: "from-purple-500 to-pink-600",
-      buttonGradient: "from-purple-700 to-pink-700",
-      buttonHover: "from-purple-600 to-pink-600",
-      borderColor: "border-purple-500/30",
-      hoverBorderColor: "border-purple-400/50",
-      iconBg: "bg-purple-600/20",
-      iconColor: "text-purple-400"
-    },
-    {
-      title: "Missões",
-      description: "Complete desafios e ganhe recompensas",
-      icon: TrendingUp,
-      action: onGoToMissions,
-      gradient: "from-orange-600 to-red-700",
-      hoverGradient: "from-orange-500 to-red-600",
-      buttonGradient: "from-orange-700 to-red-700",
-      buttonHover: "from-orange-600 to-red-600",
-      borderColor: "border-orange-500/30",
-      hoverBorderColor: "border-orange-400/50",
-      iconBg: "bg-orange-600/20",
-      iconColor: "text-orange-400"
-    },
-    {
-      title: "Decks",
-      description: "Crie e gerencie seus baralhos",
+      title: "Arsenal Real",
+      description: "Crie e gerencie seus baralhos de batalha",
       icon: Shield,
       action: onGoToDecks,
-      gradient: "from-indigo-600 to-blue-700",
-      hoverGradient: "from-indigo-500 to-blue-600",
-      buttonGradient: "from-indigo-700 to-blue-700",
-      buttonHover: "from-indigo-600 to-blue-600",
-      borderColor: "border-indigo-500/30",
-      hoverBorderColor: "border-indigo-400/50",
-      iconBg: "bg-indigo-600/20",
-      iconColor: "text-indigo-400"
-    },
-    {
-      title: "Configurações",
-      description: "Personalize sua experiência de jogo",
-      icon: Settings,
-      action: onGoToSettings,
-      gradient: "from-slate-600 to-gray-700",
-      hoverGradient: "from-slate-500 to-gray-600",
-      buttonGradient: "from-slate-700 to-gray-700",
-      buttonHover: "from-slate-600 to-gray-600",
+      gradient: "from-slate-600 via-gray-600 to-zinc-600",
+      hoverGradient: "from-slate-500 via-gray-500 to-zinc-500",
+      buttonGradient: "from-slate-700 to-zinc-700",
+      buttonHover: "from-slate-600 to-zinc-600",
       borderColor: "border-slate-500/30",
       hoverBorderColor: "border-slate-400/50",
       iconBg: "bg-slate-600/20",
-      iconColor: "text-slate-400"
+      iconColor: "text-slate-400",
+      theme: "arsenal"
+    },
+    {
+      title: "Conselho Real",
+      description: "Personalize sua experiência de jogo",
+      icon: Map,
+      action: onGoToSettings,
+      gradient: "from-rose-600 via-pink-600 to-purple-600",
+      hoverGradient: "from-rose-500 via-pink-500 to-purple-500",
+      buttonGradient: "from-rose-700 to-purple-700",
+      buttonHover: "from-rose-600 to-purple-600",
+      borderColor: "border-rose-500/30",
+      hoverBorderColor: "border-rose-400/50",
+      iconBg: "bg-rose-600/20",
+      iconColor: "text-rose-400",
+      theme: "council"
     }
   ];
 
@@ -123,63 +136,83 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
     <div className="space-y-8">
       {/* Section Title */}
       <div className="text-center">
-        <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
-          Navegue pelo Reino
+        <h3 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent mb-6">
+          Portais do Reino
         </h3>
-        <div className="flex items-center justify-center space-x-4">
-          <div className="w-12 h-0.5 bg-gradient-to-r from-transparent to-purple-400"></div>
-          <Crown className="w-5 h-5 text-purple-400" />
-          <div className="w-12 h-0.5 bg-gradient-to-l from-transparent to-purple-400"></div>
+        <p className="text-gray-300/80 text-lg mb-8 max-w-2xl mx-auto">
+          Escolha seu destino e embarque em uma jornada épica através dos domínios do Farmand
+        </p>
+        <div className="flex items-center justify-center space-x-6">
+          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent to-amber-400"></div>
+          <div className="relative">
+            <Crown className="w-6 h-6 text-amber-400 animate-pulse" />
+            <div className="absolute inset-0 w-6 h-6 bg-amber-400/20 rounded-full animate-ping"></div>
+          </div>
+          <div className="w-16 h-0.5 bg-gradient-to-l from-transparent to-amber-400"></div>
         </div>
       </div>
 
       {/* Navigation Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {navigationCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={index} className="group relative">
-              {/* Glow Effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-blue-500/30 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
+                         <div key={index} className="group relative">
+              {/* Enhanced Glow Effect */}
+              <div className={`absolute -inset-2 bg-gradient-to-r ${card.gradient} rounded-3xl blur-xl opacity-60 group-hover:opacity-100 transition duration-500`}></div>
               
               {/* Card Container */}
-              <div className={`relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border ${card.borderColor} hover:${card.hoverBorderColor} rounded-2xl overflow-hidden transition-all duration-300 shadow-xl hover:shadow-2xl`}>
+              <div className={`relative bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-md border ${card.borderColor} hover:${card.hoverBorderColor} rounded-3xl overflow-hidden transition-all duration-500 shadow-2xl hover:shadow-3xl hover:scale-105`}>
+                
+                {/* Animated Background Pattern */}
+                <div className="absolute inset-0 opacity-5" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M20 20c0-5.523-4.477-10-10-10s-10 4.477-10 10 4.477 10 10 10 10-4.477 10-10zm0 0c0 5.523 4.477 10 10 10s10-4.477 10-10-4.477-10-10-10-10 4.477-10 10z'/%3E%3C/g%3E%3C/svg%3E")`
+                }}></div>
+                
                 {/* Header with Icon */}
-                <div className={`bg-gradient-to-r ${card.gradient} p-6 relative overflow-hidden`}>
-                  <div className={`absolute inset-0 bg-gradient-to-r ${card.hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                <div className={`bg-gradient-to-r ${card.gradient} p-8 relative overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-r ${card.hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
                   
-                  {/* Icon Container */}
-                  <div className={`relative z-10 ${card.iconBg} p-3 rounded-xl border border-white/20 backdrop-blur-sm`}>
-                    <Icon className={`h-8 w-8 ${card.iconColor} group-hover:scale-110 transition-transform duration-300`} />
+                  {/* Floating Particles */}
+                  <div className="absolute top-4 right-4 w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4 w-1 h-1 bg-white/30 rounded-full animate-pulse animation-delay-1000"></div>
+                  
+                  {/* Icon and Title Container */}
+                  <div className={`relative z-10 ${card.iconBg} p-4 rounded-2xl border border-white/30 backdrop-blur-sm shadow-lg group-hover:shadow-xl transition-all duration-300`}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    {/* Icon and Title in Horizontal Layout */}
+                    <div className="relative flex items-center gap-4">
+                      {/* Icon */}
+                      <Icon className={`relative h-8 w-8 ${card.iconColor} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`} />
+                      
+                      {/* Title */}
+                      <h3 className="relative text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent group-hover:from-purple-300 group-hover:to-pink-300 transition-all duration-300">
+                        {card.title}
+                      </h3>
+                    </div>
                   </div>
-                  
-                  {/* Decorative Elements */}
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-white/30 rounded-full"></div>
-                  <div className="absolute bottom-2 left-2 w-1 h-1 bg-white/20 rounded-full"></div>
                 </div>
                 
                 {/* Content */}
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">
-                    {card.title}
-                  </h3>
-                  
-                  <p className="text-purple-200/70 mb-6 text-sm leading-relaxed">
+                <div className="p-8 relative">
+                  <p className="text-gray-300/80 mb-8 text-sm leading-relaxed group-hover:text-gray-200/90 transition-colors duration-300">
                     {card.description}
                   </p>
                   
-                  {/* Action Button */}
+                  {/* Enhanced Action Button */}
                   <Button 
                     onClick={card.action}
-                    className={`w-full bg-gradient-to-r ${card.buttonGradient} hover:${card.buttonHover} text-white font-semibold transition-all duration-300 group-hover:scale-105 shadow-lg border border-white/20`}
+                    className={`w-full bg-gradient-to-r ${card.buttonGradient} hover:${card.buttonHover} text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 group-hover:scale-105 shadow-lg border border-white/20 hover:shadow-xl hover:border-white/40`}
                   >
-                    <ChevronRight className="h-4 w-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                    Acessar
+                    <ChevronRight className="h-5 w-5 mr-3 group-hover:translate-x-2 transition-transform duration-300" />
+                                         {card.disabled ? "Criar Deck Primeiro" : "Acessar"}
                   </Button>
                 </div>
                 
-                {/* Corner Decoration */}
-                <div className="absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] border-t-white/10"></div>
+                {/* Enhanced Corner Decorations */}
+                <div className="absolute top-0 right-0 w-0 h-0 border-l-[30px] border-l-transparent border-t-[30px] border-t-white/10 group-hover:border-t-white/20 transition-colors duration-300"></div>
+                <div className="absolute bottom-0 left-0 w-0 h-0 border-r-[20px] border-r-transparent border-b-[20px] border-b-white/5 group-hover:border-b-white/10 transition-colors duration-300"></div>
               </div>
             </div>
           );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { MedievalAnimatedBackground } from './MedievalAnimatedBackground';
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
@@ -64,27 +65,34 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary via-primary-dark to-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-card border border-border rounded-lg shadow-xl p-8">
+    <div className="min-h-screen relative flex items-center justify-center p-4">
+      {/* Medieval Animated Background */}
+      <MedievalAnimatedBackground />
+      
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 backdrop-blur-md border border-slate-600/30 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              🃏 Card Game
-            </h1>
-            <p className="text-muted-foreground">
-              {isLogin ? 'Entre na sua conta' : 'Crie sua conta'}
+            <div className="relative inline-block mb-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+                ⚔️ Farmand
+              </h1>
+              {/* Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 blur-xl opacity-20 -z-10"></div>
+            </div>
+            <p className="text-purple-200/90">
+              {isLogin ? 'Entre no reino' : 'Junte-se ao reino'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-300 text-sm">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-purple-200 mb-2">
                 Email
               </label>
               <input
@@ -93,14 +101,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
                 placeholder="seu@email.com"
               />
             </div>
 
             {!isLogin && (
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-foreground mb-2">
+                <label htmlFor="username" className="block text-sm font-medium text-purple-200 mb-2">
                   Nome de usuário
                 </label>
                 <input
@@ -109,14 +117,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
                   placeholder="seunome"
                 />
               </div>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-purple-200 mb-2">
                 Senha
               </label>
               <div className="relative">
@@ -127,13 +135,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 pr-10 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full px-3 py-2 pr-10 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -143,14 +151,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
-                  {isLogin ? 'Entrar' : 'Criar conta'}
+                  {isLogin ? 'Entrar no Reino' : 'Juntar-se ao Reino'}
                 </>
               )}
             </button>
@@ -159,7 +167,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-purple-200/80 hover:text-purple-200 transition-colors"
               >
                 {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
               </button>

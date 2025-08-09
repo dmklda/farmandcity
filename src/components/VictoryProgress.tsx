@@ -26,6 +26,14 @@ export const VictoryProgress: React.FC<VictoryProgressProps> = ({ victorySystem 
       case 'production': return '⚙️';
       case 'diversity': return '🌈';
       case 'survival': return '⏰';
+      case 'combat': return '⚔️';
+      case 'cards': return '🃏';
+      case 'turns': return '🎲';
+      case 'events': return '📜';
+      case 'magic': return '🔮';
+      case 'efficiency': return '⚡';
+      case 'population': return '👥';
+      case 'coins': return '🪙';
       default: return '🎯';
     }
   };
@@ -38,6 +46,14 @@ export const VictoryProgress: React.FC<VictoryProgressProps> = ({ victorySystem 
       case 'production': return 'bg-blue-500';
       case 'diversity': return 'bg-pink-500';
       case 'survival': return 'bg-orange-500';
+      case 'combat': return 'bg-red-500';
+      case 'cards': return 'bg-indigo-500';
+      case 'turns': return 'bg-teal-500';
+      case 'events': return 'bg-amber-500';
+      case 'magic': return 'bg-purple-500';
+      case 'efficiency': return 'bg-cyan-500';
+      case 'population': return 'bg-blue-500';
+      case 'coins': return 'bg-yellow-500';
       default: return 'bg-gray-500';
     }
   };

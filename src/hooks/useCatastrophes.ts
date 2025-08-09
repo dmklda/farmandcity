@@ -5,7 +5,7 @@ export interface Catastrophe {
   id: string;
   name: string;
   description: string;
-  effect_type: 'resource_loss' | 'production_reduction' | 'population_loss' | 'card_destruction' | 'mixed';
+  effect_type: 'resource_loss' | 'production_reduction' | 'population_loss' | 'card_destruction' | 'card_deactivation' | 'mixed';
   effect_data: any;
   rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
   trigger_conditions?: any;
@@ -28,6 +28,7 @@ export const useCatastrophes = () => {
   const [gameCatastrophes, setGameCatastrophes] = useState<GameCatastrophe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentCatastrophes, setRecentCatastrophes] = useState<string[]>([]); // IDs das últimas catástrofes
 
   // Buscar catástrofes disponíveis
   const fetchCatastrophes = useCallback(async () => {
@@ -144,8 +145,17 @@ export const useCatastrophes = () => {
   }, []);
 
   // Gerar catástrofe aleatória baseada na raridade
-  const generateRandomCatastrophe = useCallback((currentTurn: number): Catastrophe | null => {
+  const generateRandomCatastrophe = useCallback((currentTurn: number, victoryMode?: string): Catastrophe | null => {
     if (catastrophes.length === 0) return null;
+
+    // Filtrar catástrofes que não foram usadas recentemente (últimas 3)
+    const availableCatastrophes = catastrophes.filter(cat => !recentCatastrophes.includes(cat.id));
+    
+    // Se todas foram usadas recentemente, resetar a lista
+    if (availableCatastrophes.length === 0) {
+      setRecentCatastrophes([]);
+      return catastrophes[Math.floor(Math.random() * catastrophes.length)];
+    }
 
     // Probabilidades baseadas na raridade e turno
     const rarityWeights = {
@@ -156,7 +166,14 @@ export const useCatastrophes = () => {
     };
 
     // Aumentar chance de catástrofes raras conforme o jogo progride
-    const turnMultiplier = Math.min(currentTurn / 20, 2); // Máximo 2x no turno 40+
+    let turnMultiplier = Math.min(currentTurn / 20, 2); // Máximo 2x no turno 40+
+    
+    // Modos de sobrevivência têm catástrofes mais agressivas
+    if (victoryMode === 'elimination') {
+      turnMultiplier = Math.min(currentTurn / 10, 3); // Máximo 3x no turno 30+
+    } else if (victoryMode === 'infinite') {
+      turnMultiplier = Math.min(currentTurn / 15, 2.5); // Máximo 2.5x no turno 37+
+    }
     
     const adjustedWeights = {
       common: rarityWeights.common / turnMultiplier,
@@ -188,46 +205,78 @@ export const useCatastrophes = () => {
       selectedRarity = 'common'; // Fallback
     }
 
-    // Filtrar catástrofes da raridade selecionada
-    const availableCatastrophes = catastrophes.filter(cat => cat.rarity === selectedRarity);
+    // Filtrar catástrofes da raridade selecionada (que não foram usadas recentemente)
+    const rarityCatastrophes = availableCatastrophes.filter(cat => cat.rarity === selectedRarity);
     
-    if (availableCatastrophes.length === 0) {
-      // Se não há catástrofes da raridade selecionada, usar qualquer uma
-      return catastrophes[Math.floor(Math.random() * catastrophes.length)];
+    if (rarityCatastrophes.length === 0) {
+      // Se não há catástrofes da raridade selecionada, usar qualquer uma disponível
+      const selectedCatastrophe = availableCatastrophes[Math.floor(Math.random() * availableCatastrophes.length)];
+      
+      // Adicionar à lista de recentes
+      if (selectedCatastrophe) {
+        setRecentCatastrophes(prev => [...prev.slice(-2), selectedCatastrophe.id]); // Manter apenas as últimas 3
+      }
+      
+      return selectedCatastrophe;
     }
 
-    return availableCatastrophes[Math.floor(Math.random() * availableCatastrophes.length)];
-  }, [catastrophes]);
+    const selectedCatastrophe = rarityCatastrophes[Math.floor(Math.random() * rarityCatastrophes.length)];
+    
+    // Adicionar à lista de recentes
+    if (selectedCatastrophe) {
+      setRecentCatastrophes(prev => [...prev.slice(-2), selectedCatastrophe.id]); // Manter apenas as últimas 3
+    }
+    
+    return selectedCatastrophe;
+  }, [catastrophes, recentCatastrophes]);
 
   // Aplicar efeito de catástrofe
-  const applyCatastropheEffect = useCallback((catastrophe: Catastrophe, gameState: any) => {
+  const applyCatastropheEffect = useCallback((catastrophe: Catastrophe, gameState: any, victoryMode?: string) => {
     const effect = catastrophe.effect_data;
     const modifiedState = { ...gameState };
+    
+    // Multiplicador de intensidade para modos de sobrevivência
+    let intensityMultiplier = 1;
+    if (victoryMode === 'elimination') {
+      intensityMultiplier = 1.5; // 50% mais intenso
+    } else if (victoryMode === 'infinite') {
+      intensityMultiplier = 1.3; // 30% mais intenso
+    }
 
     switch (catastrophe.effect_type) {
       case 'resource_loss':
-        if (effect.coins) modifiedState.resources.coins = Math.max(0, modifiedState.resources.coins - effect.coins);
-        if (effect.food) modifiedState.resources.food = Math.max(0, modifiedState.resources.food - effect.food);
-        if (effect.materials) modifiedState.resources.materials = Math.max(0, modifiedState.resources.materials - effect.materials);
-        if (effect.population) modifiedState.resources.population = Math.max(0, modifiedState.resources.population - effect.population);
+        if (effect.coins) modifiedState.resources.coins = Math.max(0, modifiedState.resources.coins - Math.floor(effect.coins * intensityMultiplier));
+        if (effect.food) modifiedState.resources.food = Math.max(0, modifiedState.resources.food - Math.floor(effect.food * intensityMultiplier));
+        if (effect.materials) modifiedState.resources.materials = Math.max(0, modifiedState.resources.materials - Math.floor(effect.materials * intensityMultiplier));
+        if (effect.population) modifiedState.resources.population = Math.max(0, modifiedState.resources.population - Math.floor(effect.population * intensityMultiplier));
         break;
 
       case 'production_reduction':
-        // Reduzir produção temporariamente
-        modifiedState.productionReduction = effect.reduction || 0.5;
+        // Reduzir produção temporariamente (mais intenso nos modos de sobrevivência)
+        const baseReduction = effect.reduction || 0.5;
+        modifiedState.productionReduction = Math.min(0.9, baseReduction * intensityMultiplier);
         break;
 
       case 'population_loss':
         if (effect.population) {
-          modifiedState.resources.population = Math.max(0, modifiedState.resources.population - effect.population);
+          modifiedState.resources.population = Math.max(0, modifiedState.resources.population - Math.floor(effect.population * intensityMultiplier));
         }
         break;
 
       case 'card_destruction':
         // Destruir cartas aleatórias do grid
         if (effect.destroy_count) {
-          // Implementar lógica de destruição de cartas
           modifiedState.cardDestructionCount = effect.destroy_count;
+          modifiedState.cardDestructionTargets = effect.targets || ['farm', 'city']; // Quais grids afetar
+        }
+        break;
+
+      case 'card_deactivation':
+        // Desativar cartas temporariamente
+        if (effect.deactivate_count) {
+          modifiedState.cardDeactivationCount = effect.deactivate_count;
+          modifiedState.cardDeactivationDuration = effect.duration || 3; // Turnos de duração
+          modifiedState.cardDeactivationTargets = effect.targets || ['farm', 'city'];
         }
         break;
 
@@ -240,6 +289,17 @@ export const useCatastrophes = () => {
                 Math.max(0, modifiedState.resources[resource as keyof typeof modifiedState.resources] - amount);
             }
           });
+        }
+        if (effect.card_effects) {
+          if (effect.card_effects.destroy_count) {
+            modifiedState.cardDestructionCount = effect.card_effects.destroy_count;
+            modifiedState.cardDestructionTargets = effect.card_effects.targets || ['farm', 'city'];
+          }
+          if (effect.card_effects.deactivate_count) {
+            modifiedState.cardDeactivationCount = effect.card_effects.deactivate_count;
+            modifiedState.cardDeactivationDuration = effect.card_effects.duration || 3;
+            modifiedState.cardDeactivationTargets = effect.card_effects.targets || ['farm', 'city'];
+          }
         }
         break;
     }

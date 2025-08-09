@@ -16,7 +16,7 @@ interface GameSettings {
   gameRules: string;
   contactEmail: string;
   supportDiscord: string;
-  victoryMode: 'reputation' | 'landmarks' | 'elimination' | 'infinite' | 'complex';
+  victoryMode: 'reputation' | 'landmarks' | 'elimination' | 'infinite' | 'complex' | 'classic' | 'resources' | 'production';
   victoryValue: number;
   // Novas configurações de jogabilidade
   deckMinCards: number;
@@ -38,10 +38,10 @@ export const useGameSettings = () => {
     allowNewRegistrations: true,
     maxPlayersPerGame: 1,
     defaultStartingResources: {
-      coins: 5,
-      food: 3,
+      coins: 3,
+      food: 2,
       materials: 2,
-      population: 3
+      population: 2
     },
     gameRules: 'Regras padrão do jogo Famand...',
     contactEmail: 'support@famand.com',
@@ -72,7 +72,28 @@ export const useGameSettings = () => {
       setLoading(true);
       setError(null);
 
-      // Buscar configurações globais
+      // Obter usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let userGamePreferences = null;
+      
+      if (user) {
+        // Buscar preferências de jogo do usuário
+        const { data: userSettings, error: userError } = await supabase
+          .from('user_settings')
+          .select('game_preferences')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!userError && userSettings?.game_preferences) {
+          userGamePreferences = userSettings.game_preferences;
+          console.log('🎮 Preferências do usuário carregadas:', userGamePreferences);
+        } else if (userError) {
+          console.log('⚠️ Usuário não tem configurações salvas ainda, usando padrão');
+        }
+      }
+
+      // Buscar configurações globais (para configurações que não são específicas do usuário)
       const { data: globalData, error: globalError } = await supabase
         .from('game_settings')
         .select('*')
@@ -95,10 +116,10 @@ export const useGameSettings = () => {
           allowNewRegistrations: true,
           maxPlayersPerGame: 1,
           defaultStartingResources: {
-            coins: 5,
-            food: 3,
+            coins: 3,
+            food: 2,
             materials: 2,
-            population: 3
+            population: 2
           },
           gameRules: 'Regras padrão do jogo Famand...',
           contactEmail: 'support@famand.com',
@@ -130,9 +151,20 @@ export const useGameSettings = () => {
           gameRules: globalValue.gameRules || defaultSettings.gameRules,
           contactEmail: globalValue.contactEmail || defaultSettings.contactEmail,
           supportDiscord: globalValue.supportDiscord || defaultSettings.supportDiscord,
-          victoryMode: globalValue.victoryMode || defaultSettings.victoryMode,
-          victoryValue: globalValue.victoryValue || defaultSettings.victoryValue,
         };
+      }
+
+      // Processar preferências do usuário (prioridade sobre configurações globais)
+      if (userGamePreferences) {
+        defaultSettings = {
+          ...defaultSettings,
+          victoryMode: userGamePreferences.victoryMode || defaultSettings.victoryMode,
+          victoryValue: userGamePreferences.victoryValue || defaultSettings.victoryValue,
+        };
+        console.log('🎮 Aplicando preferências do usuário:', {
+          victoryMode: userGamePreferences.victoryMode,
+          victoryValue: userGamePreferences.victoryValue
+        });
       }
 
       // Processar configurações específicas de jogabilidade

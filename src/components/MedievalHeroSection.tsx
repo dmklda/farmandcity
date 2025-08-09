@@ -1,14 +1,12 @@
 import React from 'react';
 import { Button } from './ui/button';
-import { Play, Crown, Shield, Sword, Zap, Star } from 'lucide-react';
-import { MedievalLevelProgress } from './MedievalLevelProgress';
+import { Play, Sword, Crown, Zap, Shield, AlertTriangle } from 'lucide-react';
 
 interface MedievalHeroSectionProps {
   userName: string;
   onStartGame: () => void;
   onSelectGameMode: () => void;
-  currency: { coins: number; gems: number } | null;
-  playerCards: any[];
+  onGoToDecks: () => void;
   decks: any[];
 }
 
@@ -16,41 +14,10 @@ export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
   userName,
   onStartGame,
   onSelectGameMode,
-  currency,
-  playerCards,
+  onGoToDecks,
   decks
 }) => {
-  const quickStats = [
-    { 
-      label: "Cartas", 
-      value: playerCards.length, 
-      icon: Star, 
-      color: "text-yellow-400",
-      gradient: "from-yellow-500/20 to-orange-500/20"
-    },
-    { 
-      label: "Decks", 
-      value: decks.length, 
-      icon: Shield, 
-      color: "text-blue-400",
-      gradient: "from-blue-500/20 to-cyan-500/20"
-    },
-    { 
-      label: "Moedas", 
-      value: currency?.coins || 0, 
-      icon: Crown, 
-      color: "text-yellow-500",
-      gradient: "from-yellow-500/20 to-amber-500/20"
-    },
-    { 
-      label: "Gemas", 
-      value: currency?.gems || 0, 
-      icon: Zap, 
-      color: "text-purple-400",
-      gradient: "from-purple-500/20 to-pink-500/20"
-    },
-  ];
-
+  const hasActiveDeck = decks && decks.length > 0;
   return (
     <div className="space-y-8">
       {/* Main Hero Section */}
@@ -91,75 +58,68 @@ export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
-            <Button 
-              onClick={onSelectGameMode}
-              className="relative group bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold px-10 py-4 text-lg transition-all duration-300 hover:scale-105 shadow-2xl shadow-green-500/25 border border-green-400/30"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Play className="h-6 w-6 mr-3 relative z-10" />
-              <span className="relative z-10">Escolher Modo de Jogo</span>
-            </Button>
-            
-            <Button 
-              onClick={onStartGame}
-              variant="outline"
-              className="relative group bg-white/10 hover:bg-white/20 text-white font-bold px-10 py-4 text-lg transition-all duration-300 backdrop-blur-sm border-purple-400/30 hover:border-purple-300/50"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <Sword className="h-6 w-6 mr-3 relative z-10" />
-              <span className="relative z-10">Jogo Rápido</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {quickStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="group relative">
-              {/* Glow Effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-blue-500/30 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
-              
-              {/* Card Content */}
-              <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-purple-500/30 rounded-2xl p-6 hover:border-purple-400/50 transition-all duration-300 shadow-xl">
-                {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            {hasActiveDeck ? (
+              <>
+                {/* Game Mode Button - Enabled */}
+                <Button 
+                  onClick={onSelectGameMode}
+                  className="relative group bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold px-10 py-4 text-lg transition-all duration-300 hover:scale-105 shadow-2xl shadow-green-500/25 border border-green-400/30"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-400/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Play className="h-6 w-6 mr-3 relative z-10" />
+                  <span className="relative z-10">Escolher Modo de Jogo</span>
+                </Button>
                 
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-2 bg-slate-700/50 rounded-lg border border-slate-600/50`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
-                    <div className="relative">
-                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                      <div className="absolute inset-0 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-3xl font-bold text-white mb-2 group-hover:scale-110 transition-transform duration-300">
-                    {stat.value.toLocaleString()}
-                  </div>
-                  
-                  <div className="text-purple-200/80 text-sm font-medium tracking-wide uppercase">
-                    {stat.label}
-                  </div>
-                </div>
+                {/* Quick Game Button - Enabled */}
+                <Button 
+                  onClick={onStartGame}
+                  variant="outline"
+                  className="relative group bg-white/10 hover:bg-white/20 text-white font-bold px-10 py-4 text-lg transition-all duration-300 backdrop-blur-sm border-purple-400/30 hover:border-purple-300/50"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Sword className="h-6 w-6 mr-3 relative z-10" />
+                  <span className="relative z-10">Jogar Agora</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Create Deck Button - When no deck exists */}
+                <Button 
+                  onClick={onGoToDecks}
+                  className="relative group bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold px-10 py-4 text-lg transition-all duration-300 hover:scale-105 shadow-2xl shadow-amber-500/25 border border-amber-400/30"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-orange-400/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <Shield className="h-6 w-6 mr-3 relative z-10" />
+                  <span className="relative z-10">Criar Primeiro Deck</span>
+                </Button>
+                
+                {/* Disabled Game Mode Button */}
+                <Button 
+                  disabled
+                  className="relative group bg-slate-700/50 text-slate-400 font-bold px-10 py-4 text-lg transition-all duration-300 border border-slate-600/50 cursor-not-allowed"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-slate-600/20 to-slate-700/20 rounded-lg"></div>
+                  <Play className="h-6 w-6 mr-3 relative z-10" />
+                  <span className="relative z-10">Escolher Modo de Jogo</span>
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Warning Message for New Players */}
+          {!hasActiveDeck && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-400/30 rounded-xl backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-400" />
+                <p className="text-amber-200/90 text-sm font-medium">
+                  <strong>Novo jogador?</strong> Primeiro resgate o Pacote Iniciante e crie seu primeiro deck para começar a jogar!
+                </p>
               </div>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
-
-      {/* Level Progress Section */}
-      <MedievalLevelProgress
-        currentLevel={42}
-        currentXP={1250}
-        xpToNextLevel={1500}
-        totalXP={15680}
-      />
     </div>
   );
 };

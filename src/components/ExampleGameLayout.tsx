@@ -4,11 +4,13 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { TestDeckDisplay } from './TestDeckDisplay';
+import { useUserSettings } from '../hooks/useUserSettings';
 
 export const ExampleGameLayout: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [showSavedGames, setShowSavedGames] = useState(false);
   const [currentView, setCurrentView] = useState('game');
+  const { settings } = useUserSettings();
 
   // Dados de exemplo para o jogo
   const gameData = {
@@ -89,6 +91,7 @@ export const ExampleGameLayout: React.FC = () => {
       setCurrentView('home');
     },
     userEmail: 'marcior631@gmail.com',
+    userName: settings?.display_name || settings?.username || 'marcior631@gmail.com'.split('@')[0] || 'Guerreiro',
     activeDeck: {
       id: 'deck-1',
       name: 'Meu Deck',
