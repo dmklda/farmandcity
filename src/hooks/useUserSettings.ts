@@ -84,6 +84,8 @@ export const useUserSettings = () => {
         return;
       }
 
+      console.log('fetchUserSettings: User authenticated:', user.id);
+
       // Primeiro, verificar se existem configurações para o usuário
       const { data: existingSettings, error: selectError } = await supabase
         .from('user_settings')
@@ -94,8 +96,11 @@ export const useUserSettings = () => {
         throw selectError;
       }
 
+      console.log('fetchUserSettings: Existing settings:', existingSettings);
+
       if (existingSettings && existingSettings.length > 0) {
         // Se existem configurações, usar a primeira (deve ser única devido à constraint)
+        console.log('fetchUserSettings: Using existing settings, is_admin:', existingSettings[0].game_preferences?.is_admin);
         setSettings(existingSettings[0]);
       } else {
         // Criar configurações padrão se não existirem
@@ -132,7 +137,9 @@ export const useUserSettings = () => {
             auto_save_interval: 5,
             show_tutorials: true,
             show_hints: true,
-            confirm_actions: true
+            confirm_actions: true,
+            victoryMode: 'landmarks',
+            victoryValue: 3
           },
           accessibility_settings: {
             high_contrast: false,
@@ -393,16 +400,22 @@ export const useUserSettings = () => {
         setLoading(true);
         setError(null);
         
-        // Executar todas as funções de busca em paralelo
-        await Promise.all([
-          fetchUserSettings(),
-          fetchCustomizations(),
-          fetchUserCustomizations()
-        ]);
+        // Carregar dados com delays escalonados para não bloquear a UI
+        setTimeout(async () => {
+          await fetchUserSettings();
+        }, 10);
+        
+        setTimeout(async () => {
+          await fetchCustomizations();
+        }, 30);
+        
+        setTimeout(async () => {
+          await fetchUserCustomizations();
+          setLoading(false);
+        }, 50);
       } catch (err: any) {
         console.error('Erro ao inicializar dados:', err);
         setError(err.message);
-      } finally {
         setLoading(false);
       }
     };

@@ -8,7 +8,7 @@ interface MedievalStarterPackDisplayProps {
   onGoToDecks?: () => void;
 }
 
-export const MedievalStarterPackDisplay: React.FC<MedievalStarterPackDisplayProps> = ({ onGoToDecks }) => {
+export const MedievalStarterPackDisplay: React.FC<MedievalStarterPackDisplayProps> = React.memo(({ onGoToDecks }) => {
   const { packInfo, loading, error, purchaseStarterPack } = useStarterPack();
   const { showAlert, showConfirm } = useDialog();
   const { refresh } = usePlayerCards();
@@ -42,11 +42,13 @@ export const MedievalStarterPackDisplay: React.FC<MedievalStarterPackDisplayProp
 
   if (loading) {
     return (
-      <div className="relative bg-gradient-to-r from-amber-600/20 via-orange-600/20 to-yellow-600/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 animate-pulse">
+      <div className="relative bg-gradient-to-r from-amber-600/20 via-orange-600/20 to-yellow-600/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-2xl"></div>
-        <div className="relative z-10">
-          <div className="h-6 bg-white/20 rounded-lg w-1/3 mb-4"></div>
-          <div className="h-4 bg-white/10 rounded w-1/2"></div>
+        <div className="relative z-10 flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-amber-200 text-sm">Verificando pacote iniciante...</span>
+          </div>
         </div>
       </div>
     );
@@ -174,5 +176,5 @@ export const MedievalStarterPackDisplay: React.FC<MedievalStarterPackDisplayProp
         </div>
       </div>
     </div>
-  );
-};
+     );
+ });

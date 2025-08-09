@@ -12,8 +12,10 @@ export const usePlayerCurrency = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    //console.log('usePlayerCurrency useEffect executado, refreshTrigger:', refreshTrigger);
-    fetchPlayerCurrency();
+    // Pequeno delay para não bloquear a UI inicial
+    setTimeout(() => {
+      fetchPlayerCurrency();
+    }, 25);
   }, [refreshTrigger]);
 
   const fetchPlayerCurrency = async () => {

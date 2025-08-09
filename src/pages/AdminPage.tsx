@@ -23,6 +23,7 @@ import { NewsManager } from '../components/admin/NewsManager';
 import { AchievementsManager } from '../components/admin/AchievementsManager';
 import { MissionsManager } from '../components/admin/MissionsManager';
 import { ShopManager } from '../components/admin/ShopManager';
+import { GameModesPage } from './admin/GameModesPage';
 
 export const AdminPage: React.FC = () => {
   // Persistir a aba ativa no localStorage
@@ -83,6 +84,8 @@ export const AdminPage: React.FC = () => {
         return <SettingsPage />;
       case 'security':
         return <SecurityPage />;
+      case 'game-modes':
+        return <GameModesPage />;
       default:
         return <AdminDashboard />;
     }

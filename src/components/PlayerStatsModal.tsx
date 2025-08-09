@@ -248,7 +248,7 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9998] p-4">
       <div className="relative bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95 backdrop-blur-md border border-purple-500/30 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-purple-900/80 via-slate-800/80 to-purple-900/80 border-b border-purple-500/30 p-6">

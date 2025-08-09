@@ -22,7 +22,8 @@ import {
   Newspaper,
   Trophy,
   Target,
-  ShoppingCart
+  ShoppingCart,
+  Gamepad2
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -55,6 +56,7 @@ const menuItems = [
   { id: 'customizations', label: 'Customizações', description: 'Campos de batalha e containers', icon: Palette },
   { id: 'settings', label: 'Configurações', description: 'Configurações gerenciais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
+  { id: 'game-modes', label: 'Modos de Jogo', description: 'Gerenciar modos de jogo', icon: Gamepad2 },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab, onTabChange }) => {

@@ -87,9 +87,12 @@ export const useGameSettings = () => {
 
         if (!userError && userSettings?.game_preferences) {
           userGamePreferences = userSettings.game_preferences;
-          console.log('🎮 Preferências do usuário carregadas:', userGamePreferences);
+          console.log('🎮 Preferências do usuário carregadas:', {
+            victoryMode: userGamePreferences.victoryMode,
+            victoryValue: userGamePreferences.victoryValue
+          });
         } else if (userError) {
-          console.log('⚠️ Usuário não tem configurações salvas ainda, usando padrão');
+          console.log('⚠️ Usando configurações padrão');
         }
       }
 
@@ -161,10 +164,9 @@ export const useGameSettings = () => {
           victoryMode: userGamePreferences.victoryMode || defaultSettings.victoryMode,
           victoryValue: userGamePreferences.victoryValue || defaultSettings.victoryValue,
         };
-        console.log('🎮 Aplicando preferências do usuário:', {
-          victoryMode: userGamePreferences.victoryMode,
-          victoryValue: userGamePreferences.victoryValue
-        });
+        console.log('🎮 Aplicando modo:', userGamePreferences.victoryMode, 'valor:', userGamePreferences.victoryValue);
+      } else {
+        console.log('🎮 Usando modo padrão:', defaultSettings.victoryMode);
       }
 
       // Processar configurações específicas de jogabilidade
@@ -188,7 +190,7 @@ export const useGameSettings = () => {
       }
 
       setSettings(defaultSettings);
-      console.log('🔧 Configurações carregadas:', defaultSettings);
+      console.log('🔧 Configurações carregadas');
     } catch (err: any) {
       console.error('Error fetching settings:', err);
       // Em caso de erro, usar configurações padrão

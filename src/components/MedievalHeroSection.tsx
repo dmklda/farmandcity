@@ -10,7 +10,7 @@ interface MedievalHeroSectionProps {
   decks: any[];
 }
 
-export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
+export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = React.memo(({
   userName,
   onStartGame,
   onSelectGameMode,
@@ -18,6 +18,7 @@ export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
   decks
 }) => {
   const hasActiveDeck = decks && decks.length > 0;
+  const isDecksLoading = !decks; // Se decks é null/undefined, ainda está carregando
   return (
     <div className="space-y-8">
       {/* Main Hero Section */}
@@ -59,7 +60,18 @@ export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            {hasActiveDeck ? (
+            {isDecksLoading ? (
+              <>
+                {/* Loading State */}
+                <Button 
+                  disabled
+                  className="relative group bg-slate-700/50 text-slate-400 font-bold px-10 py-4 text-lg transition-all duration-300 border border-slate-600/50 cursor-not-allowed"
+                >
+                  <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-3"></div>
+                  <span>Carregando...</span>
+                </Button>
+              </>
+            ) : hasActiveDeck ? (
               <>
                 {/* Game Mode Button - Enabled */}
                 <Button 
@@ -121,5 +133,5 @@ export const MedievalHeroSection: React.FC<MedievalHeroSectionProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+     );
+ });

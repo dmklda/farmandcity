@@ -38,6 +38,7 @@ export const useStarterPack = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🎁 Verificando pacote iniciante...');
       const { data, error } = await supabase.rpc('get_starter_pack_info');
 
       if (error) {
@@ -46,6 +47,7 @@ export const useStarterPack = () => {
         return;
       }
 
+      console.log('🎁 Pacote iniciante verificado:', data?.can_purchase ? 'disponível' : 'já adquirido');
       setPackInfo(data);
     } catch (err) {
       console.error('Erro inesperado ao buscar pacote iniciante:', err);
@@ -103,9 +105,13 @@ export const useStarterPack = () => {
     }
   };
 
-  // Carregar informações na inicialização
+  // Carregar informações na inicialização com delay para não bloquear a UI
   useEffect(() => {
-    fetchStarterPackInfo();
+    const timer = setTimeout(() => {
+      fetchStarterPackInfo();
+    }, 100); // Pequeno delay para não bloquear o carregamento inicial
+    
+    return () => clearTimeout(timer);
   }, []);
 
   return {

@@ -939,51 +939,23 @@ export function useGameState() {
   // Função para carregar estado do jogo
   const loadGameState = useCallback(() => {
     try {
-      console.log('🔍 loadGameState chamado');
-      console.log('activeDeck?.id:', activeDeck?.id);
-      
       const savedState = localStorage.getItem('famand_gameState');
-      console.log('Estado salvo no localStorage:', savedState ? 'EXISTE' : 'NÃO EXISTE');
       
       if (savedState) {
         const parsedState = JSON.parse(savedState);
-        console.log('Estado parseado:', {
-          timestamp: parsedState.timestamp,
-          deckActiveId: parsedState.deckActiveId,
-          turn: parsedState.turn,
-          handLength: parsedState.hand?.length
-        });
         
         // Verificar se o estado é válido e não muito antigo (24 horas)
         const isRecent = Date.now() - parsedState.timestamp < 24 * 60 * 60 * 1000;
         const isSameDeck = parsedState.deckActiveId === activeDeck?.id;
         
-        console.log('Validações:', {
-          isRecent,
-          isSameDeck,
-          currentTime: Date.now(),
-          savedTime: parsedState.timestamp,
-          timeDiff: Date.now() - parsedState.timestamp
-        });
-        
         if (isRecent && isSameDeck) {
-          console.log('🎮 Estado do jogo carregado:', {
-            turn: parsedState.turn,
-            phase: parsedState.phase,
-            resources: parsedState.resources,
-            deckLength: parsedState.deck?.length,
-            handLength: parsedState.hand?.length,
-            savedVictoryMode: parsedState.victorySystem?.mode
-          });
+          console.log('🎮 Estado salvo encontrado, turno:', parsedState.turn);
           
           // Retornar o estado sem o sistema de vitória para que seja aplicado o correto
           const { victorySystem, ...stateWithoutVictory } = parsedState;
-          console.log('🎮 Removendo sistema de vitória salvo para aplicar o correto');
-          
           return stateWithoutVictory;
         } else {
-          console.log('🎮 Estado do jogo ignorado (antigo ou deck diferente)');
-          console.log('Razão:', !isRecent ? 'Muito antigo' : 'Deck diferente');
+          console.log('🎮 Estado ignorado:', !isRecent ? 'antigo' : 'deck diferente');
           localStorage.removeItem('famand_gameState');
         }
       }
@@ -991,7 +963,6 @@ export function useGameState() {
       console.error('Erro ao carregar estado do jogo:', error);
       localStorage.removeItem('famand_gameState');
     }
-    console.log('🔍 loadGameState retornando null');
     return null;
   }, [activeDeck?.id]);
 
@@ -1047,8 +1018,9 @@ export function useGameState() {
 
   // Atualizar recursos e sistema de vitória quando as configurações carregarem
   useEffect(() => {
+    // Aguardar configurações carregarem completamente
     if (!settingsLoading && gameSettings) {
-      console.log('🎮 Configurando jogo com settings:', gameSettings);
+      console.log('🎮 Configurando jogo com modo:', gameSettings.victoryMode, 'valor:', gameSettings.victoryValue);
       setGame(prev => {
         let victorySystem;
         
@@ -1062,40 +1034,47 @@ export function useGameState() {
         } else if (gameSettings.victoryMode === 'infinite') {
           console.log('🎮 Usando modo infinito');
           victorySystem = createInfiniteVictorySystem();
-        } else {
-          console.log('🎮 Usando modo simples:', gameSettings.victoryMode);
-          // Modo simples com uma condição
+        } else if (gameSettings.victoryMode === 'landmarks') {
+          console.log('🎮 Usando modo landmarks');
           victorySystem = createSimpleVictorySystem();
-          // Ajustar a condição baseada no modo
-          if (gameSettings.victoryMode === 'landmarks') {
-            victorySystem.conditions[0].category = 'landmarks';
-            victorySystem.conditions[0].name = 'Marcos Históricos';
-            victorySystem.conditions[0].description = `Construa ${gameSettings.victoryValue} marcos históricos`;
-            victorySystem.conditions[0].target = gameSettings.victoryValue;
-          } else if (gameSettings.victoryMode === 'reputation') {
-            victorySystem.conditions[0].category = 'reputation';
-            victorySystem.conditions[0].name = 'Reputação';
-            victorySystem.conditions[0].description = `Alcance ${gameSettings.victoryValue} pontos de reputação`;
-            victorySystem.conditions[0].target = gameSettings.victoryValue;
-          } else if (gameSettings.victoryMode === 'elimination') {
-            victorySystem.conditions[0].category = 'survival';
-            victorySystem.conditions[0].name = 'Sobrevivência';
-            victorySystem.conditions[0].description = `Sobreviva ${gameSettings.victoryValue} turnos`;
-            victorySystem.conditions[0].target = gameSettings.victoryValue;
-          } else if (gameSettings.victoryMode === 'resources') {
-            victorySystem.conditions[0].category = 'coins';
-            victorySystem.conditions[0].name = 'Prosperidade';
-            victorySystem.conditions[0].description = `Acumule ${gameSettings.victoryValue} moedas`;
-            victorySystem.conditions[0].target = gameSettings.victoryValue;
-          } else if (gameSettings.victoryMode === 'production') {
-            victorySystem.conditions[0].category = 'production';
-            victorySystem.conditions[0].name = 'Produção';
-            victorySystem.conditions[0].description = `Produza ${gameSettings.victoryValue} recursos por turno`;
-            victorySystem.conditions[0].target = gameSettings.victoryValue;
-          }
+          victorySystem.conditions[0].category = 'landmarks';
+          victorySystem.conditions[0].name = 'Marcos Históricos';
+          victorySystem.conditions[0].description = `Construa ${gameSettings.victoryValue} marcos históricos`;
+          victorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'reputation') {
+          console.log('🎮 Usando modo reputação');
+          victorySystem = createSimpleVictorySystem();
+          victorySystem.conditions[0].category = 'reputation';
+          victorySystem.conditions[0].name = 'Reputação';
+          victorySystem.conditions[0].description = `Alcance ${gameSettings.victoryValue} pontos de reputação`;
+          victorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'elimination') {
+          console.log('🎮 Usando modo eliminação');
+          victorySystem = createSimpleVictorySystem();
+          victorySystem.conditions[0].category = 'survival';
+          victorySystem.conditions[0].name = 'Sobrevivência';
+          victorySystem.conditions[0].description = `Sobreviva ${gameSettings.victoryValue} turnos`;
+          victorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'resources') {
+          console.log('🎮 Usando modo recursos');
+          victorySystem = createSimpleVictorySystem();
+          victorySystem.conditions[0].category = 'coins';
+          victorySystem.conditions[0].name = 'Prosperidade';
+          victorySystem.conditions[0].description = `Acumule ${gameSettings.victoryValue} moedas`;
+          victorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else if (gameSettings.victoryMode === 'production') {
+          console.log('🎮 Usando modo produção');
+          victorySystem = createSimpleVictorySystem();
+          victorySystem.conditions[0].category = 'production';
+          victorySystem.conditions[0].name = 'Produção';
+          victorySystem.conditions[0].description = `Produza ${gameSettings.victoryValue} recursos por turno`;
+          victorySystem.conditions[0].target = gameSettings.victoryValue;
+        } else {
+          console.log('🎮 Usando modo simples padrão:', gameSettings.victoryMode);
+          victorySystem = createSimpleVictorySystem();
         }
         
-        console.log('🎮 Victory system configurado:', victorySystem);
+        console.log('🎮 Victory system configurado:', victorySystem.mode, 'condições:', victorySystem.conditions.length);
         
         return {
         ...prev,
@@ -1142,23 +1121,15 @@ export function useGameState() {
       
       // Verificar se já há um estado salvo para este deck
       const savedState = loadGameState();
-      console.log('🔍 Estado salvo verificado:', savedState ? 'ENCONTRADO' : 'NÃO ENCONTRADO');
       
       if (savedState) {
         console.log('🎮 Estado salvo encontrado, restaurando jogo...');
-        console.log('Estado salvo:', {
-          turn: savedState.turn,
-          handLength: savedState.hand?.length,
-          deckLength: savedState.deck?.length,
-          resources: savedState.resources
-        });
         setGame(savedState);
         setGameLoading(false);
         return;
       }
       
-      console.log('🆕 Nenhum estado salvo encontrado, inicializando novo jogo...');
-      console.log('✅ Deck ativo encontrado, chamando getActiveDeck...');
+      console.log('🆕 Inicializando novo jogo...');
       const newDeck = getActiveDeck();
       //console.log('Novo deck obtido:', newDeck.length, 'cartas');
       //console.log('Cartas do deck:', newDeck.map(c => c.name));
@@ -1465,15 +1436,49 @@ export function useGameState() {
     }
   }, [game.turn, game.resources, game.farmGrid, game.cityGrid, game.eventGrid, game.landmarksGrid, victory, gameLoading]);
 
+  // Função para obter mensagem de derrota rotativa
+  const getRandomDefeatMessage = (type: 'population' | 'reputation' | 'turns' | 'deck') => {
+    const messages = {
+      population: [
+        '💀 Derrota: Sua população chegou a 0! O reino foi abandonado por falta de habitantes.',
+        '🏰 Derrota: Vossa população sumiu! Parece que todos foram para o pub do reino vizinho.',
+        '👥 Derrota: População zero! Até os ratos do castelo foram embora procurar emprego.',
+        '🦗 Derrota: Reino vazio! Só restaram os grilos cantando "tudo bem, tudo bem".'
+      ],
+      reputation: [
+        '💀 Derrota: Sua reputação chegou a -1! O povo perdeu a confiança em vossa liderança.',
+        '👑 Derrota: Reputação no chão! Até o bobo da corte está rindo de vós.',
+        '🤡 Derrota: Reputação -1! Agora vós sois o novo bobo da corte.',
+        '🎭 Derrota: Reputação zerada! O povo prefere um dragão como rei.'
+      ],
+      turns: [
+        '💀 Derrota: Limite de turnos atingido! O tempo se esgotou para vossa missão.',
+        '⏰ Derrota: Tempo esgotado! O relógio do castelo parou de funcionar.',
+        '🕰️ Derrota: Turnos acabaram! O tempo voou como uma flecha mágica.',
+        '⌛ Derrota: Tempo esgotado! A ampulheta virou e não voltou mais.'
+      ],
+      deck: [
+        '💀 Derrota: Seu baralho ficou vazio! O baralho mágico fugiu para outro reino.',
+        '🃏 Derrota: Baralho vazio! As cartas foram jogar pôquer com os elfos.',
+        '🎴 Derrota: Sem cartas! O baralho decidiu tirar férias no reino das fadas.',
+        '🃏 Derrota: Baralho zerado! As cartas foram fazer turismo em outros castelos.'
+      ]
+    };
+    
+    const typeMessages = messages[type];
+    const randomIndex = Math.floor(Math.random() * typeMessages.length);
+    return typeMessages[randomIndex];
+  };
+
   // Efeito: derrota se população chegar a 0 ou reputação chegar a -1
   useEffect(() => {
     if (gameLoading) return;
     if (game.resources.population <= 0 && !defeat) {
-      setDefeat('Derrota: Sua população chegou a 0!');
+      setDefeat(getRandomDefeatMessage('population'));
       addToHistory('❌ Derrota: população chegou a 0!');
     }
     if (game.playerStats.reputation <= -1 && !defeat) {
-      setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
+      setDefeat(getRandomDefeatMessage('reputation'));
       addToHistory('💀 Derrota por reputação -1: baralho vazio');
     }
   }, [game.resources.population, game.playerStats.reputation, defeat, gameLoading]);
@@ -1542,11 +1547,12 @@ export function useGameState() {
   }, [game.phase, gameLoading]);
 
   // Efeito: derrota se população chegar a 0 (banner)
-  useEffect(() => {
-    if (defeat) {
-      setTimeout(() => setDefeat(null), 6000);
-    }
-  }, [defeat]);
+  // Removido auto-limpeza para permitir derrotas permanentes
+  // useEffect(() => {
+  //   if (defeat) {
+  //     setTimeout(() => setDefeat(null), 6000);
+  //   }
+  // }, [defeat]);
 
   // Efeito: descarte automático se mão exceder limite na fase 'end'
   const autoDiscardProcessed = useRef(false);
@@ -1606,7 +1612,7 @@ export function useGameState() {
         
         if (newReputation <= -1) {
           // Derrota automática se reputação chegar a -1 ou menos
-          setDefeat('💀 Derrota! Sua reputação chegou a -1. O baralho vazio consumiu toda sua credibilidade.');
+          setDefeat(getRandomDefeatMessage('deck'));
           addToHistory('💀 Derrota por reputação -1: baralho vazio');
         } else {
           // Apenas penalidade de reputação
@@ -1779,7 +1785,7 @@ export function useGameState() {
       // Verificar limite de turnos
       const turnLimit = gameSettings.gameTurnLimit || 50;
       if (turnLimit > 0 && newTurn > turnLimit) {
-        setDefeat(`❌ Derrota: Limite de ${turnLimit} turnos atingido`);
+        setDefeat(getRandomDefeatMessage('turns'));
         addToHistory(`❌ Derrota: Limite de ${turnLimit} turnos atingido`);
         return;
       }
@@ -2877,7 +2883,7 @@ export function useGameState() {
   }, []);
 
   // Função para atualizar o estado do jogo (usada para carregar jogos salvos)
-  const updateGameState = useCallback((newGameState: GameState) => {
+  const updateGameState = useCallback((newGameState: GameState, gameMode?: string) => {
     console.log('🎮 Atualizando estado do jogo:', {
       turn: newGameState.turn,
       handLength: newGameState.hand?.length,
@@ -2885,51 +2891,59 @@ export function useGameState() {
       resources: newGameState.resources
     });
 
-    // Aplicar o sistema de vitória correto baseado nas configurações atuais
+    // Aplicar o sistema de vitória correto baseado no modo de jogo carregado ou atual
     let correctVictorySystem;
+    let targetMode = gameMode || gameSettings?.victoryMode;
     
-    if (gameSettings) {
-      console.log('🎮 Aplicando sistema de vitória correto:', gameSettings.victoryMode);
-      
-      if (gameSettings.victoryMode === 'complex') {
-        correctVictorySystem = createComplexVictorySystem();
-      } else if (gameSettings.victoryMode === 'classic') {
-        correctVictorySystem = createClassicVictorySystem();
-      } else if (gameSettings.victoryMode === 'infinite') {
-        correctVictorySystem = createInfiniteVictorySystem();
-      } else {
-        // Modo simples com uma condição
-        correctVictorySystem = createSimpleVictorySystem();
-        // Ajustar a condição baseada no modo
-        if (gameSettings.victoryMode === 'landmarks') {
-          correctVictorySystem.conditions[0].category = 'landmarks';
-          correctVictorySystem.conditions[0].name = 'Marcos Históricos';
-          correctVictorySystem.conditions[0].description = `Construa ${gameSettings.victoryValue} marcos históricos`;
-          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
-        } else if (gameSettings.victoryMode === 'reputation') {
-          correctVictorySystem.conditions[0].category = 'reputation';
-          correctVictorySystem.conditions[0].name = 'Reputação';
-          correctVictorySystem.conditions[0].description = `Alcance ${gameSettings.victoryValue} pontos de reputação`;
-          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
-        } else if (gameSettings.victoryMode === 'elimination') {
-          correctVictorySystem.conditions[0].category = 'survival';
-          correctVictorySystem.conditions[0].name = 'Sobrevivência';
-          correctVictorySystem.conditions[0].description = `Sobreviva ${gameSettings.victoryValue} turnos`;
-          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
-        } else if (gameSettings.victoryMode === 'resources') {
-          correctVictorySystem.conditions[0].category = 'coins';
-          correctVictorySystem.conditions[0].name = 'Prosperidade';
-          correctVictorySystem.conditions[0].description = `Acumule ${gameSettings.victoryValue} moedas`;
-          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
-        } else if (gameSettings.victoryMode === 'production') {
-          correctVictorySystem.conditions[0].category = 'production';
-          correctVictorySystem.conditions[0].name = 'Produção';
-          correctVictorySystem.conditions[0].description = `Produza ${gameSettings.victoryValue} recursos por turno`;
-          correctVictorySystem.conditions[0].target = gameSettings.victoryValue;
-        }
-      }
+    console.log('🎮 Aplicando sistema de vitória:', {
+      savedMode: gameMode,
+      currentMode: gameSettings?.victoryMode,
+      targetMode
+    });
+    
+    if (targetMode === 'complex') {
+      correctVictorySystem = createComplexVictorySystem();
+    } else if (targetMode === 'classic') {
+      correctVictorySystem = createClassicVictorySystem();
+    } else if (targetMode === 'infinite') {
+      correctVictorySystem = createInfiniteVictorySystem();
+    } else if (targetMode === 'landmarks') {
+      // Modo simples - landmarks
+      correctVictorySystem = createSimpleVictorySystem();
+      correctVictorySystem.conditions[0].category = 'landmarks';
+      correctVictorySystem.conditions[0].name = 'Marcos Históricos';
+      correctVictorySystem.conditions[0].description = `Construa ${gameSettings?.victoryValue || 3} marcos históricos`;
+      correctVictorySystem.conditions[0].target = gameSettings?.victoryValue || 3;
+    } else if (targetMode === 'reputation') {
+      // Modo simples - reputação
+      correctVictorySystem = createSimpleVictorySystem();
+      correctVictorySystem.conditions[0].category = 'reputation';
+      correctVictorySystem.conditions[0].name = 'Reputação';
+      correctVictorySystem.conditions[0].description = `Alcance ${gameSettings?.victoryValue || 10} pontos de reputação`;
+      correctVictorySystem.conditions[0].target = gameSettings?.victoryValue || 10;
+    } else if (targetMode === 'elimination') {
+      // Modo simples - sobrevivência
+      correctVictorySystem = createSimpleVictorySystem();
+      correctVictorySystem.conditions[0].category = 'survival';
+      correctVictorySystem.conditions[0].name = 'Sobrevivência';
+      correctVictorySystem.conditions[0].description = `Sobreviva ${gameSettings?.victoryValue || 20} turnos`;
+      correctVictorySystem.conditions[0].target = gameSettings?.victoryValue || 20;
+    } else if (targetMode === 'resources') {
+      // Modo simples - recursos
+      correctVictorySystem = createSimpleVictorySystem();
+      correctVictorySystem.conditions[0].category = 'coins';
+      correctVictorySystem.conditions[0].name = 'Prosperidade';
+      correctVictorySystem.conditions[0].description = `Acumule ${gameSettings?.victoryValue || 50} moedas`;
+      correctVictorySystem.conditions[0].target = gameSettings?.victoryValue || 50;
+    } else if (targetMode === 'production') {
+      // Modo simples - produção
+      correctVictorySystem = createSimpleVictorySystem();
+      correctVictorySystem.conditions[0].category = 'production';
+      correctVictorySystem.conditions[0].name = 'Produção';
+      correctVictorySystem.conditions[0].description = `Produza ${gameSettings?.victoryValue || 10} recursos por turno`;
+      correctVictorySystem.conditions[0].target = gameSettings?.victoryValue || 10;
     } else {
-      console.log('🎮 Usando sistema de vitória padrão (sem settings)');
+      // Fallback para modo simples padrão
       correctVictorySystem = createSimpleVictorySystem();
     }
 
@@ -2960,7 +2974,9 @@ export function useGameState() {
       error,
       setError,
       victory,
+      setVictory,
       defeat,
+      setDefeat,
       history,
       highlight,
       productionSummary,

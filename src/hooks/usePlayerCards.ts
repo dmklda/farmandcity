@@ -17,12 +17,14 @@ export const usePlayerCards = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-      //console.log('usePlayerCards useEffect executado, refreshTrigger:', refreshTrigger);
     // Só buscar cartas se o usuário estiver autenticado
     const checkAuthAndFetch = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        fetchPlayerCards();
+        // Pequeno delay para não bloquear a UI inicial
+        setTimeout(() => {
+          fetchPlayerCards();
+        }, 75);
       } else {
         setLoading(false);
         setPlayerCards([]);
@@ -34,7 +36,6 @@ export const usePlayerCards = () => {
 
   const fetchPlayerCards = async () => {
     try {
-      console.log('fetchPlayerCards iniciado...');
       setLoading(true);
       setError(null);
 
@@ -42,19 +43,14 @@ export const usePlayerCards = () => {
       const user = await supabase.auth.getUser();
       if (!user.data.user?.id) throw new Error('Usuário não autenticado');
       
-      //console.log('Buscando cartas para usuário:', user.data.user.id);
-      
       const { data: playerCardsData, error: playerCardsError } = await supabase
         .from('player_cards')
         .select('*')
         .eq('player_id', user.data.user.id);
 
       if (playerCardsError) throw playerCardsError;
-
-      //console.log('Dados de player_cards encontrados:', playerCardsData);
       
       if (!playerCardsData || playerCardsData.length === 0) {
-        //console.log('Usuário não possui cartas ainda - tentando criar cartas starter...');
         await createStarterCardsForUser(user.data.user.id);
         // Tentar buscar novamente após criar as cartas
         await fetchPlayerCardsAfterCreation(user.data.user.id);
