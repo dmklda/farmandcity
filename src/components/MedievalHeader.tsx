@@ -33,24 +33,11 @@ export const MedievalHeader: React.FC<MedievalHeaderProps> = ({
             <div className="flex items-center space-x-6">
               {/* Medieval Logo */}
               <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
-                <div className="relative p-3 bg-gradient-to-br from-purple-600 via-pink-600 to-blue-600 rounded-xl border border-purple-400/50 shadow-lg">
-                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center shadow-inner">
-                    <Crown className="w-6 h-6 text-slate-900" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Title Section */}
-              <div className="relative">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent tracking-wide">
-                  Farmand
-                </h1>
-                <p className="text-xs text-purple-300/80 font-medium tracking-wider uppercase">
-                  Império Medieval
-                </p>
-                {/* Decorative line */}
-                <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-purple-400 to-transparent opacity-60"></div>
+                <img 
+                  src="/src/assets/icons/logo_600x120.png"
+                  alt="Farmand Logo"
+                  className="w-64 h-64 object-contain"
+                />
               </div>
             </div>
 

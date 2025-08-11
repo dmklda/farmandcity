@@ -60,14 +60,14 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
       description: "Compre packs, boosters e cartas especiais do reino",
       icon: Crown,
       action: onGoToShop,
-      gradient: "from-amber-600 via-orange-600 to-red-600",
-      hoverGradient: "from-amber-500 via-orange-500 to-red-500",
-      buttonGradient: "from-amber-700 to-red-700",
-      buttonHover: "from-amber-600 to-red-600",
-      borderColor: "border-amber-500/30",
-      hoverBorderColor: "border-amber-400/50",
-      iconBg: "bg-amber-600/20",
-      iconColor: "text-amber-400",
+      gradient: "from-yellow-600 via-amber-600 to-orange-600",
+      hoverGradient: "from-yellow-500 via-amber-500 to-orange-500",
+      buttonGradient: "from-yellow-700 to-orange-700",
+      buttonHover: "from-yellow-600 to-orange-600",
+      borderColor: "border-yellow-500/30",
+      hoverBorderColor: "border-yellow-400/50",
+      iconBg: "bg-yellow-600/20",
+      iconColor: "text-yellow-400",
       theme: "tavern"
     },
     {
@@ -105,10 +105,10 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
       description: "Crie e gerencie seus baralhos de batalha",
       icon: Shield,
       action: onGoToDecks,
-      gradient: "from-red-600 via-orange-600 to-amber-600",
-      hoverGradient: "from-red-500 via-orange-500 to-amber-500",
-      buttonGradient: "from-red-700 to-amber-700",
-      buttonHover: "from-red-600 to-amber-600",
+      gradient: "from-red-600 via-pink-600 to-rose-600",
+      hoverGradient: "from-red-500 via-pink-500 to-rose-500",
+      buttonGradient: "from-red-700 to-rose-700",
+      buttonHover: "from-red-600 to-rose-600",
       borderColor: "border-red-500/30",
       hoverBorderColor: "border-red-400/50",
       iconBg: "bg-red-600/20",
@@ -120,14 +120,14 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
       description: "Personalize sua experiência de jogo",
       icon: Map,
       action: onGoToSettings,
-      gradient: "from-rose-600 via-pink-600 to-purple-600",
-      hoverGradient: "from-rose-500 via-pink-500 to-purple-500",
-      buttonGradient: "from-rose-700 to-purple-700",
-      buttonHover: "from-rose-600 to-purple-600",
-      borderColor: "border-rose-500/30",
-      hoverBorderColor: "border-rose-400/50",
-      iconBg: "bg-rose-600/20",
-      iconColor: "text-rose-400",
+      gradient: "from-violet-600 via-purple-600 to-fuchsia-600",
+      hoverGradient: "from-violet-500 via-purple-500 to-fuchsia-500",
+      buttonGradient: "from-violet-700 to-fuchsia-700",
+      buttonHover: "from-violet-600 to-fuchsia-600",
+      borderColor: "border-violet-500/30",
+      hoverBorderColor: "border-violet-400/50",
+      iconBg: "bg-violet-600/20",
+      iconColor: "text-violet-400",
       theme: "council"
     }
   ];
@@ -136,9 +136,6 @@ export const MedievalNavigationCards: React.FC<MedievalNavigationCardsProps> = (
     <div className="space-y-8">
       {/* Section Title */}
       <div className="text-center">
-        <h3 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent mb-6">
-          Portais do Reino
-        </h3>
         <p className="text-gray-300/80 text-lg mb-8 max-w-2xl mx-auto">
           Escolha seu destino e embarque em uma jornada épica através dos domínios do Farmand
         </p>

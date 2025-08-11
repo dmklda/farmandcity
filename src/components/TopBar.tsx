@@ -43,7 +43,11 @@ const TopBar: React.FC<TopBarProps> = ({
     {/* Logo section */}
     <div className="flex items-center gap-3 relative z-10">
       <div className="relative">
-        <span className="text-2xl animate-bounce" role="img" aria-label="coroa">👑</span>
+        <img 
+          src="/src/assets/icons/farmand_logosotexto_32x32.png"
+          alt="Farmand Logo"
+          className="w-8 h-8 object-contain animate-bounce"
+        />
         <div className="absolute inset-0 bg-yellow-400 rounded-full blur-sm opacity-30 animate-ping"></div>
       </div>
       <h1 className="font-black text-2xl tracking-tight bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">

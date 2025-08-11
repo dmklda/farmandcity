@@ -165,7 +165,11 @@ const EnhancedTopBar: React.FC<EnhancedTopBarProps> = ({
         
         {/* Logo */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="text-sm">👑</span>
+          <img 
+            src="/src/assets/icons/farmand_logosotexto_24x24.png"
+            alt="Farmand Logo"
+            className="w-6 h-6 object-contain"
+          />
           <h1 className="text-sm font-bold text-text-primary">Famand</h1>
         </div>
       </div>

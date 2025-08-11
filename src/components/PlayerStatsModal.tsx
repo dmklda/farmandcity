@@ -22,7 +22,12 @@ import {
   Activity,
   Medal,
   Bell,
-  Eye
+  Eye,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Settings,
+  ShoppingBag
 } from 'lucide-react';
 import { MedievalLevelProgress } from './MedievalLevelProgress';
 import { usePlayerCurrency } from '../hooks/usePlayerCurrency';
@@ -115,6 +120,11 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
     { label: "Nível Atual", value: "42", change: "+2", icon: Crown, color: "text-yellow-400" }
   ];
 
+  // Dados reais das atividades do usuário
+  const [userActivities, setUserActivities] = useState<any[]>([]);
+  const [userNotifications, setUserNotifications] = useState<any[]>([]);
+  const [achievementProgress, setAchievementProgress] = useState<any[]>([]);
+
   const recentActivities = [
     { action: "Venceu uma partida", time: "2h atrás", icon: Trophy, color: "text-yellow-400" },
     { action: "Comprou um pack", time: "4h atrás", icon: Star, color: "text-blue-400" },
@@ -198,6 +208,48 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
         };
         setPlayerStats(stats);
       }
+
+      // Carregar atividades do usuário
+      const { data: activities, error: activitiesError } = await supabase
+        .from('user_activity_log')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (activitiesError) throw activitiesError;
+      setUserActivities(activities || []);
+
+      // Carregar notificações do usuário
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('user_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (notificationsError) throw notificationsError;
+      setUserNotifications(notifications || []);
+
+      // Carregar progresso das conquistas
+      const { data: achievements, error: achievementsError } = await supabase
+        .from('user_achievement_progress_detailed')
+        .select(`
+          *,
+          achievements (
+            title,
+            description,
+            reward_coins,
+            reward_gems,
+            rarity,
+            icon
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (achievementsError) throw achievementsError;
+      setAchievementProgress(achievements || []);
     } catch (error: any) {
       console.error('Erro ao carregar dados do jogador:', error);
       setError(error.message);
@@ -393,6 +445,71 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                       </div>
                     </div>
                   </div>
+
+                  {/* Quick Info */}
+                  <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6">
+                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                      <Bell className="h-5 w-5 text-purple-400" />
+                      Status do Reino
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                        {
+                          label: "Notificações",
+                          value: userNotifications.filter(n => !n.is_read).length,
+                          icon: Bell,
+                          color: "text-blue-400",
+                          bgColor: "bg-blue-500/10"
+                        },
+                        {
+                          label: "Missões Ativas",
+                          value: 2, // TODO: Implementar busca real de missões
+                          icon: Target,
+                          color: "text-green-400",
+                          bgColor: "bg-green-500/10"
+                        },
+                        {
+                          label: "Conquistas",
+                          value: achievementProgress.filter(a => a.is_completed).length,
+                          icon: Trophy,
+                          color: "text-yellow-400",
+                          bgColor: "bg-yellow-500/10"
+                        },
+                        {
+                          label: "Atividades",
+                          value: userActivities.length,
+                          icon: Activity,
+                          color: "text-purple-400",
+                          bgColor: "bg-purple-500/10"
+                        }
+                      ].map((stat, index) => {
+                        const Icon = stat.icon;
+                        return (
+                          <div key={index} className="group relative">
+                            <div className="relative bg-gradient-to-br from-slate-700/90 to-slate-800/90 backdrop-blur-sm border border-slate-600/50 rounded-xl p-4 hover:border-purple-400/50 transition-all duration-300">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className={`p-2 ${stat.bgColor} rounded-lg border border-slate-600/50`}>
+                                  <Icon className={`w-5 h-5 ${stat.color}`} />
+                                </div>
+                                {stat.value > 0 && (
+                                  <div className="relative">
+                                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                    <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-2xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">
+                                {stat.value.toLocaleString()}
+                              </div>
+                              <div className="text-purple-200/80 text-sm font-medium">
+                                {stat.label}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
             </div>
               )}
 
@@ -424,7 +541,36 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {performanceMetrics.map((metric, index) => {
+                          {[
+                            { 
+                              label: "Taxa de Vitória", 
+                              value: playerStats ? `${Math.round((playerStats.totalGames > 0 ? playerStats.totalGames / Math.max(playerStats.totalGames, 1) : 0) * 100)}%` : "0%", 
+                              change: "+5.2%", 
+                              icon: TrendingUp, 
+                              color: "text-green-400" 
+                            },
+                            { 
+                              label: "Partidas Jogadas", 
+                              value: playerStats?.totalGames || 0, 
+                              change: "+12", 
+                              icon: Activity, 
+                              color: "text-blue-400" 
+                            },
+                            { 
+                              label: "Tempo de Jogo", 
+                              value: playerStats ? `${Math.round((playerStats.totalGames * (playerStats.averageGameTime || 0)) / 60)}h` : "0h", 
+                              change: "+8h", 
+                              icon: Clock, 
+                              color: "text-purple-400" 
+                            },
+                            { 
+                              label: "Nível Atual", 
+                              value: currency?.level || 1, 
+                              change: "+2", 
+                              icon: Crown, 
+                              color: "text-yellow-400" 
+                            }
+                          ].map((metric, index) => {
                             const Icon = metric.icon;
                             return (
                               <div key={index} className="group relative">
@@ -448,7 +594,7 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                               </div>
                             );
                           })}
-                    </div>
+                        </div>
                   </div>
 
                   {/* Grid de estatísticas */}
@@ -582,93 +728,130 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {recentAchievements.map((achievement, index) => {
-                        const Icon = achievement.icon;
-                        return (
-                          <div key={index} className="group relative">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-yellow-600/30 via-orange-500/30 to-red-500/30 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
-                            <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all duration-300 shadow-xl">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 bg-slate-700/50 rounded-lg border border-slate-600/50">
-                                  <Icon className="w-5 h-5 text-yellow-400" />
+                    {achievementProgress.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="text-4xl mb-2">🏆</div>
+                        <div className="text-white mb-1">Nenhuma conquista disponível</div>
+                        <div className="text-purple-200/80 text-sm">Complete desafios para desbloquear conquistas</div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {achievementProgress.slice(0, 6).map((achievement, index) => {
+                          const Icon = Trophy; // Usar ícone padrão por enquanto
+                          const progress = Math.round(achievement.progress_percentage || 0);
+                          const isCompleted = achievement.is_completed;
+                          
+                          return (
+                            <div key={index} className={`group relative ${
+                              isCompleted ? 'ring-2 ring-green-400/50' : ''
+                            }`}>
+                              <div className={`absolute -inset-1 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300 ${
+                                isCompleted 
+                                  ? 'bg-gradient-to-r from-green-600/30 via-emerald-500/30 to-teal-500/30' 
+                                  : 'bg-gradient-to-r from-yellow-600/30 via-orange-500/30 to-red-500/30'
+                              }`}></div>
+                              <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all duration-300 shadow-xl">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className={`p-2 rounded-lg border ${
+                                    isCompleted 
+                                      ? 'bg-green-500/20 border-green-500/30' 
+                                      : 'bg-slate-700/50 border-slate-600/50'
+                                  }`}>
+                                    <Icon className={`w-5 h-5 ${
+                                      isCompleted ? 'text-green-400' : 'text-yellow-400'
+                                    }`} />
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-bold text-white text-sm">
+                                      {achievement.achievements?.title || 'Conquista'}
+                                    </h4>
+                                    <p className="text-purple-200/80 text-xs">
+                                      {achievement.achievements?.description || 'Descrição não disponível'}
+                                    </p>
+                                  </div>
+                                  <div className={`text-xs font-medium ${
+                                    isCompleted ? 'text-green-400' : 'text-yellow-400'
+                                  }`}>
+                                    {isCompleted ? 'Completa' : 'Em Progresso'}
+                                  </div>
                                 </div>
-                                <div className="flex-1">
-                                  <h4 className="font-bold text-white text-sm">
-                                    {achievement.title}
-                                  </h4>
-                                  <p className="text-purple-200/80 text-xs">
-                                    {achievement.description}
-                                  </p>
-                                </div>
-                                <div className={`text-xs font-medium ${getRarityColor(achievement.rarity)}`}>
-                                  {achievement.rarity}
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-purple-200/80">Progresso</span>
-                                  <span className="text-white font-medium">{achievement.progress}%</span>
-                                </div>
-                                <div className="relative bg-slate-700/50 rounded-full h-2 border border-slate-600/50 overflow-hidden">
-                                  <div 
-                                    className="bg-gradient-to-r from-yellow-400 to-orange-400 h-full rounded-full transition-all duration-300"
-                                    style={{ width: `${achievement.progress}%` }}
-                                  ></div>
-                                </div>
-                                <div className="text-xs text-green-400 font-medium">
-                                  Recompensa: {achievement.reward}
+                                
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-purple-200/80">Progresso</span>
+                                    <span className="text-white font-medium">{progress}%</span>
+                                  </div>
+                                  <div className="relative bg-slate-700/50 rounded-full h-2 border border-slate-600/50 overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full transition-all duration-300 ${
+                                        isCompleted 
+                                          ? 'bg-gradient-to-r from-green-400 to-emerald-400' 
+                                          : 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                                      }`}
+                                      style={{ width: `${progress}%` }}
+                                    ></div>
+                                  </div>
+                                  {isCompleted && (
+                                    <div className="text-xs text-green-400 font-medium">
+                                      Recompensa: {achievement.achievements?.reward_coins || 0} moedas
+                                      {achievement.achievements?.reward_gems > 0 && `, ${achievement.achievements?.reward_gems} gemas`}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* All Achievements */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {achievements.map((achievement) => {
-                      const Icon = achievement.icon;
+                    {achievementProgress.map((achievement) => {
+                      const Icon = Trophy; // Usar ícone padrão por enquanto
+                      const isCompleted = achievement.is_completed;
+                      
                       return (
                         <div
                           key={achievement.id}
                           className={`group relative ${
-                            achievement.unlocked 
+                            isCompleted 
                               ? 'bg-gradient-to-br from-green-900/20 to-emerald-900/20 border-green-500/30' 
                               : 'bg-gradient-to-br from-slate-800/50 to-slate-900/50 border-slate-600/30'
                           } backdrop-blur-sm border rounded-xl p-4 transition-all duration-300`}
                         >
                           <div className="flex items-center gap-3">
                             <div className={`p-3 rounded-lg ${
-                              achievement.unlocked 
+                              isCompleted 
                                 ? 'bg-green-500/20 border-green-500/30' 
                                 : 'bg-slate-700/50 border-slate-600/50'
                               } border`}
                             >
                               <Icon className={`h-6 w-6 ${
-                                achievement.unlocked ? 'text-green-400' : 'text-slate-400'
+                                isCompleted ? 'text-green-400' : 'text-slate-400'
                               }`} />
                             </div>
                             <div className="flex-1">
                               <h4 className={`font-bold ${
-                                achievement.unlocked ? 'text-green-300' : 'text-slate-300'
+                                isCompleted ? 'text-green-300' : 'text-slate-300'
                               }`}>
-                                {achievement.title}
+                                {achievement.achievements?.title || 'Conquista'}
                               </h4>
                               <p className={`text-sm ${
-                                achievement.unlocked ? 'text-green-200/80' : 'text-slate-400'
+                                isCompleted ? 'text-green-200/80' : 'text-slate-400'
                               }`}>
-                                {achievement.description}
+                                {achievement.achievements?.description || 'Descrição não disponível'}
                               </p>
+                              <div className="mt-2 text-xs text-purple-200/80">
+                                Progresso: {achievement.current_progress || 0} / {achievement.max_progress || 1}
+                              </div>
                             </div>
-                            {achievement.unlocked && (
+                            {isCompleted && (
                               <div className="text-green-400">
                                 <Medal className="h-5 w-5" />
-                </div>
-              )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -689,25 +872,63 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
 
                   <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6">
                     <div className="space-y-3">
-                      {recentActivities.map((activity, index) => {
-                        const Icon = activity.icon;
-                        return (
-                          <div key={index} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:border-purple-400/50 transition-all duration-300">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-slate-600/50 rounded-lg border border-slate-500/50">
-                                <Icon className={`w-4 h-4 ${activity.color}`} />
+                      {userActivities.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-2">📝</div>
+                          <div className="text-white mb-1">Nenhuma atividade registrada</div>
+                          <div className="text-purple-200/80 text-sm">Suas ações no jogo aparecerão aqui</div>
+                        </div>
+                      ) : (
+                        userActivities.map((activity, index) => {
+                          const getActivityIcon = (type: string) => {
+                            switch (type) {
+                              case 'game_completed': return Trophy;
+                              case 'card_purchased': return Star;
+                              case 'deck_created': return Shield;
+                              case 'achievement_earned': return Award;
+                              case 'mission_completed': return Target;
+                              case 'level_up': return Crown;
+                              case 'pack_opened': return Gem;
+                              case 'item_purchased': return ShoppingBag;
+                              default: return Activity;
+                            }
+                          };
+
+                          const getActivityColor = (type: string) => {
+                            switch (type) {
+                              case 'game_completed': return 'text-yellow-400';
+                              case 'card_purchased': return 'text-blue-400';
+                              case 'deck_created': return 'text-green-400';
+                              case 'achievement_earned': return 'text-purple-400';
+                              case 'mission_completed': return 'text-cyan-400';
+                              case 'level_up': return 'text-orange-400';
+                              case 'pack_opened': return 'text-pink-400';
+                              case 'item_purchased': return 'text-indigo-400';
+                              default: return 'text-gray-400';
+                            }
+                          };
+
+                          const Icon = getActivityIcon(activity.activity_type);
+                          const color = getActivityColor(activity.activity_type);
+                          
+                          return (
+                            <div key={index} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:border-purple-400/50 transition-all duration-300">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-600/50 rounded-lg border border-slate-500/50">
+                                  <Icon className={`w-4 h-4 ${color}`} />
+                                </div>
+                                <span className="text-white font-medium text-sm">
+                                  {activity.description}
+                                </span>
                               </div>
-                              <span className="text-white font-medium text-sm">
-                                {activity.action}
+                              <span className="text-purple-200/60 text-xs">
+                                {formatDate(activity.created_at)}
                               </span>
                             </div>
-                            <span className="text-purple-200/60 text-xs">
-                              {activity.time}
-                            </span>
-                          </div>
-                        );
-                      })}
-        </div>
+                          );
+                        })
+                      )}
+                    </div>
 
                     <div className="mt-6 text-center">
                       <button className="text-purple-300 hover:text-purple-200 text-sm font-medium transition-colors duration-300">
@@ -728,40 +949,90 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
                     <p className="text-purple-200/80">Fique por dentro das novidades do reino</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {quickInfoItems.map((item, index) => {
-                      const Icon = item.icon;
-                      return (
-                        <div key={index} className="group relative">
-                          <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/30 via-pink-500/30 to-blue-500/30 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition duration-300"></div>
-                          
-                          <div className="relative bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all duration-300 shadow-xl">
-                            <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                            
-                            <div className="relative z-10">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className={`p-2 ${item.bgColor} rounded-lg border border-slate-600/50`}>
-                                  <Icon className={`w-5 h-5 ${item.color}`} />
-                                </div>
-                                <div className="relative">
-                                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                                  <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
-                                </div>
+                  {userNotifications.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-6xl mb-4">🔔</div>
+                      <div className="text-xl text-white mb-2">Nenhuma notificação</div>
+                      <div className="text-purple-200/80">Você está em dia com todas as novidades!</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {userNotifications.map((notification, index) => {
+                        const getNotificationIcon = (type: string) => {
+                          switch (type) {
+                            case 'info': return Bell;
+                            case 'success': return CheckCircle;
+                            case 'warning': return AlertTriangle;
+                            case 'error': return XCircle;
+                            case 'achievement': return Trophy;
+                            case 'mission': return Target;
+                            case 'event': return Calendar;
+                            case 'system': return Settings;
+                            default: return Bell;
+                          }
+                        };
+
+                        const getNotificationColor = (type: string) => {
+                          switch (type) {
+                            case 'info': return 'text-blue-400';
+                            case 'success': return 'text-green-400';
+                            case 'warning': return 'text-yellow-400';
+                            case 'error': return 'text-red-400';
+                            case 'achievement': return 'text-purple-400';
+                            case 'mission': return 'text-cyan-400';
+                            case 'event': return 'text-pink-400';
+                            case 'system': return 'text-gray-400';
+                            default: return 'text-blue-400';
+                          }
+                        };
+
+                        const Icon = getNotificationIcon(notification.notification_type);
+                        const color = getNotificationColor(notification.notification_type);
+                        
+                        return (
+                          <div key={index} className={`group relative bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4 hover:border-purple-400/50 transition-all duration-300 ${
+                            !notification.is_read ? 'ring-2 ring-purple-400/50' : ''
+                          }`}>
+                            <div className="flex items-start gap-4">
+                              <div className={`p-3 ${color.replace('text-', 'bg-').replace('-400', '-500/20')} rounded-lg border border-slate-600/50`}>
+                                <Icon className={`w-5 h-5 ${color}`} />
                               </div>
-                              
-                              <div className="text-lg font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300">
-                                {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
-                              </div>
-                              
-                              <div className="text-purple-200/80 text-xs font-medium tracking-wide uppercase">
-                                {item.label}
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-bold text-white text-lg">
+                                    {notification.title}
+                                  </h4>
+                                  <div className="flex items-center gap-2">
+                                    {!notification.is_read && (
+                                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                                    )}
+                                    <span className="text-purple-200/60 text-xs">
+                                      {formatDate(notification.created_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-purple-200/80 text-sm mb-3">
+                                  {notification.message}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                                    color.replace('text-', 'bg-').replace('-400', '-500/20')
+                                  } ${color}`}>
+                                    {notification.notification_type}
+                                  </span>
+                                  {notification.priority > 3 && (
+                                    <span className="text-xs text-red-400 font-medium px-2 py-1 rounded-full bg-red-500/20 border border-red-500/30">
+                                      Alta Prioridade
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </>

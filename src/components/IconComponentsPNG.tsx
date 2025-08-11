@@ -517,15 +517,15 @@ export const getRarityIconPNG = (rarity: string, size: 8 | 16 | 24 | 32 | 48 | 6
 export const GameLogoPNG: React.FC<IconPNGProps> = ({ size = 64, className = "" }) => {
   const getImageSrc = () => {
     switch (size) {
-      case 16: return "/src/assets/icons/Seu Império aguarda_16x16.png";
-      case 24: return "/src/assets/icons/Seu Império aguarda_24x24.png";
-      case 32: return "/src/assets/icons/Seu Império aguarda_32x32.png";
-      case 48: return "/src/assets/icons/Seu Império aguarda_48x48.png";
-      case 64: return "/src/assets/icons/Seu Império aguarda_64x64.png";
-      case 128: return "/src/assets/icons/Seu Império aguarda_128x128.png";
-      case 256: return "/src/assets/icons/Seu Império aguarda_256x256.png";
-      case 512: return "/src/assets/icons/Seu Império aguarda_512x512.png";
-      default: return "/src/assets/icons/Seu Império aguarda_64x64.png";
+      case 16: return "/src/assets/icons/farmand_logosotexto_16x16.png";
+      case 24: return "/src/assets/icons/farmand_logosotexto_24x24.png";
+      case 32: return "/src/assets/icons/farmand_logosotexto_32x32.png";
+      case 48: return "/src/assets/icons/farmand_logosotexto_48x48.png";
+      case 64: return "/src/assets/icons/farmand_logosotexto_64x64.png";
+      case 128: return "/src/assets/icons/farmand_logosotexto_128x128.png";
+      case 256: return "/src/assets/icons/farmand_logosotexto_256x256.png";
+      case 512: return "/src/assets/icons/farmand_logosotexto_512x512.png";
+      default: return "/src/assets/icons/farmand_logosotexto_64x64.png";
     }
   };
 
