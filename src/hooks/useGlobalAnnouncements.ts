@@ -33,6 +33,9 @@ export const useGlobalAnnouncements = (location: 'homepage' | 'game' = 'homepage
   const [userViews, setUserViews] = useState<UserAnnouncementView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Controlar operações em andamento para evitar condições de corrida
+  const [operationsInProgress, setOperationsInProgress] = useState<Set<string>>(new Set());
 
   const fetchAnnouncements = async () => {
     try {
@@ -73,112 +76,159 @@ export const useGlobalAnnouncements = (location: 'homepage' | 'game' = 'homepage
   };
 
   const markAsViewed = async (announcementId: string) => {
+    // Verificar se a operação já está em andamento
+    if (operationsInProgress.has(announcementId)) {
+      return;
+    }
+
     try {
       const userId = (await supabase.auth.getUser()).data.user?.id;
       if (!userId) return;
 
-      // Verificar se já existe um registro
-      const existingView = userViews.find(view => view.announcement_id === announcementId);
+      // Marcar operação como em andamento
+      setOperationsInProgress(prev => new Set([...prev, announcementId]));
+
+      // Verificar se já foi marcado como visualizado para evitar chamadas desnecessárias
+      const existingView = userViews.find(view => 
+        view.announcement_id === announcementId && 
+        view.viewed_at && 
+        !view.dismissed
+      );
       
       if (existingView) {
-        // Se já foi visualizado, não fazer nada
-        if (existingView.viewed_at && !existingView.dismissed) {
-          return;
-        }
+        return; // Já foi visualizado e não foi dispensado
+      }
+
+      // Usar UPSERT para evitar erros de constraint única
+      const { error } = await supabase
+        .from('user_announcement_views')
+        .upsert({
+          user_id: userId,
+          announcement_id: announcementId,
+          viewed_at: new Date().toISOString(),
+          dismissed: false,
+          dismissed_at: undefined
+        }, {
+          onConflict: 'user_id,announcement_id'
+        });
+
+      if (error) throw error;
+
+      // Atualizar estado local de forma mais segura
+      setUserViews(prev => {
+        // Verificar se já existe uma visualização para este anúncio
+        const existingIndex = prev.findIndex(view => view.announcement_id === announcementId);
         
-        // Atualizar registro existente
-        const { error } = await supabase
-          .from('user_announcement_views')
-          .update({ 
+        if (existingIndex >= 0) {
+          // Atualizar visualização existente
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
             viewed_at: new Date().toISOString(),
             dismissed: false,
-            dismissed_at: null
-          })
-          .eq('id', existingView.id);
-
-        if (error) throw error;
-      } else {
-        // Criar novo registro
-        const { error } = await supabase
-          .from('user_announcement_views')
-          .insert({
+            dismissed_at: undefined
+          };
+          return updated;
+        } else {
+          // Adicionar nova visualização
+          const newView: UserAnnouncementView = {
+            id: `temp-${Date.now()}`,
             user_id: userId,
             announcement_id: announcementId,
             viewed_at: new Date().toISOString(),
-            dismissed: false
-          });
-
-        if (error) throw error;
-      }
-
-      // Atualizar estado local sem recarregar tudo
-      const newView: UserAnnouncementView = {
-        id: existingView?.id || `temp-${Date.now()}`,
-        user_id: userId,
-        announcement_id: announcementId,
-        viewed_at: new Date().toISOString(),
-        dismissed: false,
-        dismissed_at: undefined
-      };
-
-      setUserViews(prev => {
-        const filtered = prev.filter(view => view.announcement_id !== announcementId);
-        return [...filtered, newView];
+            dismissed: false,
+            dismissed_at: undefined
+          };
+          return [...prev, newView];
+        }
       });
     } catch (err) {
       console.error('Erro ao marcar anúncio como visualizado:', err);
+    } finally {
+      // Remover operação da lista de operações em andamento
+      setOperationsInProgress(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(announcementId);
+        return newSet;
+      });
     }
   };
 
   const dismissAnnouncement = async (announcementId: string) => {
+    // Verificar se a operação já está em andamento
+    if (operationsInProgress.has(announcementId)) {
+      return;
+    }
+
     try {
       const userId = (await supabase.auth.getUser()).data.user?.id;
       if (!userId) return;
 
-      const existingView = userViews.find(view => view.announcement_id === announcementId);
+      // Marcar operação como em andamento
+      setOperationsInProgress(prev => new Set([...prev, announcementId]));
+
+      // Verificar se já foi dispensado para evitar chamadas desnecessárias
+      const existingView = userViews.find(view => 
+        view.announcement_id === announcementId && 
+        view.dismissed
+      );
       
       if (existingView) {
-        // Atualizar registro existente
-        const { error } = await supabase
-          .from('user_announcement_views')
-          .update({ 
+        return; // Já foi dispensado
+      }
+
+      // Usar UPSERT para evitar erros de constraint única
+      const { error } = await supabase
+        .from('user_announcement_views')
+        .upsert({
+          user_id: userId,
+          announcement_id: announcementId,
+          viewed_at: new Date().toISOString(),
+          dismissed: true,
+          dismissed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,announcement_id'
+        });
+
+      if (error) throw error;
+
+      // Atualizar estado local de forma mais segura
+      setUserViews(prev => {
+        // Verificar se já existe uma visualização para este anúncio
+        const existingIndex = prev.findIndex(view => view.announcement_id === announcementId);
+        
+        if (existingIndex >= 0) {
+          // Atualizar visualização existente
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            viewed_at: new Date().toISOString(),
             dismissed: true,
             dismissed_at: new Date().toISOString()
-          })
-          .eq('id', existingView.id);
-
-        if (error) throw error;
-      } else {
-        // Criar novo registro
-        const { error } = await supabase
-          .from('user_announcement_views')
-          .insert({
+          };
+          return updated;
+        } else {
+          // Adicionar nova visualização
+          const newView: UserAnnouncementView = {
+            id: `temp-${Date.now()}`,
             user_id: userId,
             announcement_id: announcementId,
             viewed_at: new Date().toISOString(),
             dismissed: true,
             dismissed_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-      }
-
-      // Atualizar estado local sem recarregar tudo
-      const newView: UserAnnouncementView = {
-        id: existingView?.id || `temp-${Date.now()}`,
-        user_id: userId,
-        announcement_id: announcementId,
-        viewed_at: new Date().toISOString(),
-        dismissed: true,
-        dismissed_at: new Date().toISOString()
-      };
-
-      setUserViews(prev => {
-        const filtered = prev.filter(view => view.announcement_id !== announcementId);
-        return [...filtered, newView];
+          };
+          return [...prev, newView];
+        }
       });
     } catch (err) {
       console.error('Erro ao dispensar anúncio:', err);
+    } finally {
+      // Remover operação da lista de operações em andamento
+      setOperationsInProgress(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(announcementId);
+        return newSet;
+      });
     }
   };
 

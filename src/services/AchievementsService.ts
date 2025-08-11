@@ -1,4 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
+import { ALL_VICTORY_ACHIEVEMENTS, VICTORY_ACHIEVEMENTS, SPECIAL_VICTORY_ACHIEVEMENTS } from '../data/achievementsData';
 
 export interface Achievement {
   id: string;
@@ -552,5 +553,218 @@ export class AchievementsService {
       console.error('Erro ao excluir conquista:', error);
       return { success: false, error: error.message };
     }
+  }
+} 
+
+// Função para verificar conquistas de vitória
+export async function checkVictoryAchievements(
+  userId: string,
+  victoryData: {
+    victoryMode: string;
+    victoryType?: string;
+    victoryValue?: number;
+    turnCount?: number;
+    totalResources?: number;
+    productionPerTurn?: number;
+    cardsLost?: number;
+    catastrophesSurvived?: number;
+    gameMode?: string;
+  }
+): Promise<Achievement[]> {
+  try {
+    // Obter conquistas de vitória relevantes
+    const relevantAchievements = VICTORY_ACHIEVEMENTS.filter(achievement => {
+      const unlockCondition = achievement.unlock_condition;
+      
+      // Verificar conquistas por modo de vitória
+      if (unlockCondition.victoryMode && unlockCondition.victoryMode === victoryData.victoryMode) {
+        if (unlockCondition.victoryValue && victoryData.victoryValue) {
+          return victoryData.victoryValue >= unlockCondition.victoryValue;
+        }
+        return true;
+      }
+      
+      // Verificar conquistas por tipo de vitória
+      if (unlockCondition.victoryType && unlockCondition.victoryType === victoryData.victoryType) {
+        return true;
+      }
+      
+      // Verificar conquistas especiais
+      if (unlockCondition.type === 'speed_victory' && unlockCondition.maxTurns && victoryData.turnCount) {
+        return victoryData.turnCount <= unlockCondition.maxTurns;
+      }
+      
+      if (unlockCondition.type === 'perfect_victory') {
+        if (unlockCondition.victoryMode === 'landmarks' && victoryData.cardsLost !== undefined) {
+          return victoryData.cardsLost === 0;
+        }
+        // Outras verificações de vitória perfeita podem ser adicionadas aqui
+      }
+      
+      if (unlockCondition.type === 'catastrophe_survivor' && victoryData.catastrophesSurvived) {
+        return victoryData.catastrophesSurvived >= 3;
+      }
+      
+      if (unlockCondition.type === 'resource_scarcity' && victoryData.totalResources) {
+        return victoryData.totalResources < 100;
+      }
+      
+      return false;
+    });
+    
+    // Verificar conquistas especiais
+    const specialAchievements = await checkSpecialVictoryAchievements(userId, victoryData);
+    
+    const allUnlockedAchievements = [...relevantAchievements, ...specialAchievements];
+    
+    // Verificar se as conquistas já foram desbloqueadas
+    const { data: existingAchievements } = await supabase
+      .from('user_achievements')
+      .select('achievement_id')
+      .eq('user_id', userId)
+      .in('achievement_id', allUnlockedAchievements.map(a => a.id));
+    
+    const existingIds = existingAchievements?.map(a => a.achievement_id) || [];
+    const newAchievements = allUnlockedAchievements.filter(a => !existingIds.includes(a.id));
+    
+    // Desbloquear novas conquistas
+    if (newAchievements.length > 0) {
+      await unlockAchievements(userId, newAchievements);
+    }
+    
+    return newAchievements;
+  } catch (error) {
+    console.error('Erro ao verificar conquistas de vitória:', error);
+    return [];
+  }
+}
+
+// Função para verificar conquistas especiais de vitória
+async function checkSpecialVictoryAchievements(
+  userId: string,
+  victoryData: any
+): Promise<Achievement[]> {
+  const unlockedAchievements: Achievement[] = [];
+  
+  try {
+    // Verificar conquista de múltiplas vitórias
+    const { data: userVictories } = await supabase
+      .from('user_victories')
+      .select('victory_mode, victory_type')
+      .eq('user_id', userId);
+    
+    if (userVictories) {
+      const uniqueModes = new Set(userVictories.map(v => v.victory_mode));
+      
+      // Conquista de 5 modos diferentes
+      if (uniqueModes.size >= 5) {
+        const achievement = SPECIAL_VICTORY_ACHIEVEMENTS.find(a => a.id === 'victory_multiple_5');
+        if (achievement) unlockedAchievements.push(achievement);
+      }
+      
+      // Conquista de 10 modos diferentes
+      if (uniqueModes.size >= 10) {
+        const achievement = SPECIAL_VICTORY_ACHIEVEMENTS.find(a => a.id === 'victory_multiple_10');
+        if (achievement) unlockedAchievements.push(achievement);
+      }
+      
+      // Conquista de todos os modos
+      const totalVictories = userVictories.length;
+      if (totalVictories >= 100) {
+        const achievement = SPECIAL_VICTORY_ACHIEVEMENTS.find(a => a.id === 'victory_century');
+        if (achievement) unlockedAchievements.push(achievement);
+      }
+      
+      if (totalVictories >= 1000) {
+        const achievement = SPECIAL_VICTORY_ACHIEVEMENTS.find(a => a.id === 'victory_millennium');
+        if (achievement) unlockedAchievements.push(achievement);
+      }
+    }
+    
+    // Verificar conquista de Grão-Mestre (todos os modos)
+    const allGameModes = ['classic', 'complex', 'infinite', 'landmarks', 'reputation', 'elimination', 'resources', 'production'];
+    const hasAllModes = allGameModes.every(mode => 
+      userVictories?.some(v => v.victory_mode === mode)
+    );
+    
+    if (hasAllModes) {
+      const achievement = SPECIAL_VICTORY_ACHIEVEMENTS.find(a => a.id === 'victory_grandmaster');
+      if (achievement) unlockedAchievements.push(achievement);
+    }
+    
+  } catch (error) {
+    console.error('Erro ao verificar conquistas especiais:', error);
+  }
+  
+  return unlockedAchievements;
+}
+
+// Função para registrar vitória do usuário
+export async function recordUserVictory(
+  userId: string,
+  victoryData: {
+    victoryMode: string;
+    victoryType?: string;
+    victoryValue?: number;
+    turnCount?: number;
+    totalResources?: number;
+    productionPerTurn?: number;
+    cardsLost?: number;
+    catastrophesSurvived?: number;
+    gameMode?: string;
+    timestamp?: string;
+  }
+): Promise<void> {
+  try {
+    // Registrar vitória na tabela
+    const { error } = await supabase
+      .from('user_victories')
+      .insert({
+        user_id: userId,
+        victory_mode: victoryData.victoryMode,
+        victory_type: victoryData.victoryType,
+        victory_value: victoryData.victoryValue,
+        turn_count: victoryData.turnCount,
+        total_resources: victoryData.totalResources,
+        production_per_turn: victoryData.productionPerTurn,
+        cards_lost: victoryData.cardsLost,
+        catastrophes_survived: victoryData.catastrophesSurvived,
+        game_mode: victoryData.gameMode,
+        timestamp: victoryData.timestamp || new Date().toISOString()
+      });
+    
+    if (error) {
+      console.error('Erro ao registrar vitória:', error);
+      return;
+    }
+    
+    // Verificar conquistas de vitória
+    await checkVictoryAchievements(userId, victoryData);
+    
+  } catch (error) {
+    console.error('Erro ao registrar vitória do usuário:', error);
+  }
+} 
+
+// Função para desbloquear conquistas
+export async function unlockAchievements(userId: string, achievements: Achievement[]): Promise<void> {
+  try {
+    const achievementsToInsert = achievements.map(achievement => ({
+      user_id: userId,
+      achievement_id: achievement.id,
+      unlocked_at: new Date().toISOString(),
+      progress: achievement.max_progress || 1,
+      is_completed: true
+    }));
+
+    const { error } = await supabase
+      .from('user_achievements')
+      .insert(achievementsToInsert);
+
+    if (error) {
+      console.error('Erro ao desbloquear conquistas:', error);
+    }
+  } catch (error) {
+    console.error('Erro ao desbloquear conquistas:', error);
   }
 } 

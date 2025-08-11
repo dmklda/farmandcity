@@ -26,7 +26,7 @@ import MedievalDiceButton from '../components/MedievalDiceButton';
 import SavedGamesModal from '../components/SavedGamesModal';
 import PlayerStatsModal from '../components/PlayerStatsModal';
 import { CardMiniature } from '../components/CardMiniature';
-import { TestModeButton } from '../components/TestModeButton';
+// import { TestModeButton } from '../components/TestModeButton'; // Removido - botões de teste desativados
 import MedievalVictoryModal from '../components/MedievalVictoryModal';
 import MedievalDefeatModal from '../components/MedievalDefeatModal';
 import MedievalDiscardModal from '../components/MedievalDiscardModal';
@@ -827,7 +827,8 @@ const GamePage: React.FC = () => {
         onGoHome={handleGoHome}
       />
 
-      {/* Botão de Teste de Vitória */}
+      {/* Botões de Teste Desativados - Removidos para produção */}
+      {/* 
       {gameState.game.victorySystem && (
         <TestModeButton
           gameState={gameState.game}
@@ -894,6 +895,10 @@ const GamePage: React.FC = () => {
                 defeatMessage = getRandomDefeatMessage('reputation');
               } else if (gameState.game.turn > 50) {
                 defeatMessage = getRandomDefeatMessage('turns');
+              } else if (gameState.game.playerStats.reputation <= -1) {
+                defeatMessage = getRandomDefeatMessage('reputation');
+              } else if (gameState.game.turn > 50) {
+                defeatMessage = getRandomDefeatMessage('turns');
               } else if (gameState.game.deck.length === 0) {
                 defeatMessage = getRandomDefeatMessage('deck');
               }
@@ -912,6 +917,7 @@ const GamePage: React.FC = () => {
           }}
         />
       )}
+      */}
       
 
     </div>

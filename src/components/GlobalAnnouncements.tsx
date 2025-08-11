@@ -18,6 +18,7 @@ export const GlobalAnnouncements: React.FC<GlobalAnnouncementsProps> = ({
   className = ''
 }) => {
   const [markedAsViewed, setMarkedAsViewed] = useState<Set<string>>(new Set());
+  const [markingInProgress, setMarkingInProgress] = useState(false);
   
   const {
     announcements,
@@ -30,20 +31,36 @@ export const GlobalAnnouncements: React.FC<GlobalAnnouncementsProps> = ({
   // Marcar como visualizado quando o componente monta (apenas uma vez)
   useEffect(() => {
     const markAnnouncementsAsViewed = async () => {
+      // Evitar múltiplas execuções simultâneas
+      if (markingInProgress) return;
+      
       const announcementsToMark = announcements.filter(announcement => 
         announcement.dismissible && !markedAsViewed.has(announcement.id)
       );
       
-      for (const announcement of announcementsToMark) {
-        await markAsViewed(announcement.id);
-        setMarkedAsViewed(prev => new Set([...prev, announcement.id]));
+      if (announcementsToMark.length === 0) return;
+      
+      setMarkingInProgress(true);
+      
+      try {
+        // Marcar todos os anúncios de uma vez para evitar múltiplas chamadas
+        const promises = announcementsToMark.map(async (announcement) => {
+          await markAsViewed(announcement.id);
+          setMarkedAsViewed(prev => new Set([...prev, announcement.id]));
+        });
+        
+        await Promise.all(promises);
+      } catch (error) {
+        console.error('Erro ao marcar anúncios como visualizados:', error);
+      } finally {
+        setMarkingInProgress(false);
       }
     };
     
-    if (announcements.length > 0 && !loading) {
+    if (announcements.length > 0 && !loading && !markedAsViewed.size && !markingInProgress) {
       markAnnouncementsAsViewed();
     }
-  }, [loading, announcements, markAsViewed, markedAsViewed]);
+  }, [loading, announcements, markAsViewed, markedAsViewed, markingInProgress]);
 
   if (loading) {
     return null; // Não mostrar nada enquanto carrega
