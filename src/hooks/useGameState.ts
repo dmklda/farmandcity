@@ -303,342 +303,236 @@ function parseProduction(card: Card): Partial<Resources> {
 
 function parseInstantEffect(card: Card): Partial<Resources> {
   const effect = card.effect.description.toLowerCase();
+  const prod: Partial<Resources> = {};
   
-  //  console.log('🔍 parseInstantEffect para:', card.name);
-  //console.log('Efeito:', effect);
+  // Sistema de prioridade para evitar duplicação de efeitos
+  let effectsProcessed = new Set<string>();
   
-  // Padrões mais abrangentes para reconhecer diferentes formas de expressar ganho
-  const patterns = [
-    // Efeitos de conversão bidirecional (NOVO - DEVE VIR PRIMEIRO)
+  // Debug específico para a carta "Magia do Crescimento Natural"
+  if (card.name === 'Magia do Crescimento Natural') {
+    console.log('🔍 DEBUG Magia do Crescimento Natural:');
+    console.log('Efeito original:', card.effect.description);
+    console.log('Efeito em lowercase:', effect);
+  }
+
+  // 1. EFEITOS DE CONVERSÃO BIDIRECIONAL (DEVE VIR PRIMEIRO)
+  const bidirectionalPatterns = [
     /transforme (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
-    /troque (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
-    /converta (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
-    
-    // Múltiplos recursos: "ganhe X recurso e Y recurso"
-    /ganhe (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/,
-    /ganho instantâneo de (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/,
-    /receba (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/,
-    /obtenha (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/,
-    /adicione (\d+) (comida|moeda|material|população) e (\d+) (comida|moeda|material|população)/,
-    
-    // Recurso único: "ganhe X recurso"
-    /ganhe (\d+) (comida|moeda|material|população)/,
-    /ganho instantâneo de (\d+) (comida|moeda|material|população)/,
-    /receba (\d+) (comida|moeda|material|população)/,
-    /obtenha (\d+) (comida|moeda|material|população)/,
-    /adicione (\d+) (comida|moeda|material|população)/,
-    
-    // Efeitos de população específicos
-    /aumenta população em (\d+)/,
-    /aumenta população máxima em (\d+)/,
-    /fornece (\d+) população/,
-    /contratar trabalhadores/,
-    
-    // Efeitos de reputação
-    /\+(\d+) reputação/,
-    /fornece (\d+) reputação/,
-    /garante (\d+) reputação/,
-    
-    // Efeitos de conversão/troca
-    /troque (\d+) (comida|moeda|material|população) por (\d+) (comida|moeda|material|população)/,
-    /converta (\d+) (comida|moeda|material|população) em (\d+) (comida|moeda|material|população)/,
-    /reduz custo de construção em (\d+) material/,
-    
-    // Efeitos condicionais simples
-    /ganha (\d+) moedas/,
-    /ganha (\d+) comida/,
-    /ganha (\d+) material/,
-    
-    // Efeitos condicionais complexos
-    /ganha (\d+) (comida|moeda|material|população)\. se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida)/,
-    /ganha (\d+) (comida|moeda|material|população) se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida)/,
-    /se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades|materiais|moedas|comida), ganha (\d+) (comida|moeda|material|população)/,
-    
-    // Efeitos condicionais com "em vez disso"
-    /ganha (\d+) (comida|moeda|material|população)\. se você tiver (uma|alguma) (cidade|fazenda), ganha (\d+) (comida|moeda|material|população) em vez disso/,
-    /ganha (\d+) (comida|moeda|material|população)\. se você tiver (\d+) ou mais (trabalhadores|fazendas|cidades), ganha (\d+) (comida|moeda|material|população) em vez disso/,
-    
-    // Efeitos "para cada X que você tem"
-    /ganha (\d+) (comida|moeda|material|população) para cada (\d+) (moedas|materiais|comida|fazendas|cidades) que você tem/,
-    /no final do turno, ganha (\d+) (comida|moeda|material|população) para cada (\d+) (moedas|materiais|comida|fazendas|cidades) que você tem/,
-    /no início de cada turno, ganha (\d+) (comida|moeda|material|população)/,
-    
-    // Efeitos de perda/dano
-    /perde (\d+) (comida|moeda|material|população)/,
-    /todos os jogadores perdem (\d+) (comida|moeda|material|população)/,
-    /perdem metade de suas (moedas|materiais|comida)/,
-    
-    // Efeitos de duplicação/multiplicação
-    /duplica (produção de comida|produção de moedas|produção de materiais)/,
-    /dobra (produção de comida|produção de moedas|produção de materiais)/,
-    /duplica (produção de comida|produção de moedas|produção de materiais) por (\d+) turno/,
-    /dobra (produção de comida|produção de moedas|produção de materiais) por (\d+) turno/,
-    /duplica (produção de comida|produção de moedas|produção de materiais) por (\d+) turnos/,
-    /dobra (produção de comida|produção de moedas|produção de materiais) por (\d+) turnos/,
-    /duplica (produção de comida|produção de moedas|produção de materiais) neste turno/,
-    /dobra (produção de comida|produção de moedas|produção de materiais) neste turno/,
-    /todas as suas fazendas produzem \+(\d+) comida/,
-    /todas as suas cidades produzem \+(\d+) (moeda|material)/,
-    
-    // Efeitos contínuos de campo (Event cards)
-    /\+(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
-    /\+(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
-    /\+(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
-    /\+(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
-    
-    // Efeitos negativos contínuos
-    /-(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
-    /-(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
-    /-(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
-    /-(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
-    
-    // ❌ REMOVIDO: Padrão genérico que causava duplicação
-    // /(\d+) (comida|moeda|material|população)/,
+    /transforme (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
   ];
-  
-  let prod: Partial<Resources> = {};
-  
-  // Processar TODOS os padrões que correspondem, não apenas o primeiro
-  for (const pattern of patterns) {
+
+  for (const pattern of bidirectionalPatterns) {
     const matches = effect.matchAll(new RegExp(pattern, 'g'));
-    
     for (const match of matches) {
-      //console.log('✅ Padrão instantâneo encontrado:', pattern);
-      //console.log('Match:', match);
-      
-      // Verificar se é efeito bidirecional (tem 8 grupos de captura)
-      const isBidirectional = pattern.source.includes('transforme') || 
-                             pattern.source.includes('troque') || 
-                             pattern.source.includes('converta');
-      
-      if (isBidirectional && match.length >= 9) {
-        // Padrão: "transforme X recurso1 em Y recurso2 ou Z recurso3 em W recurso4"
-        const value1 = parseInt(match[1], 10);
-        const resourceType1 = match[2];
-        const value2 = parseInt(match[3], 10);
-        const resourceType2 = match[4];
-        const value3 = parseInt(match[5], 10);
-        const resourceType3 = match[6];
-        const value4 = parseInt(match[7], 10);
-        const resourceType4 = match[8];
+      if (match.length >= 4) {
+        const fromValue = parseInt(match[1], 10);
+        const fromType = match[2];
+        const toValue = parseInt(match[3], 10);
+        const toType = match[4];
         
-        /*console.log('🔄 Efeito bidirecional instantâneo:', { 
-          value1, resourceType1, value2, resourceType2, 
-          value3, resourceType3, value4, resourceType4 
-        });*/
+        // Marcar como processado
+        const effectKey = `bidirectional_${fromType}_${toType}`;
+        if (effectsProcessed.has(effectKey)) continue;
+        effectsProcessed.add(effectKey);
         
-        // Para efeitos bidirecionais, aplicar ambas as opções
-        // Opção 1: X recurso1 → Y recurso2
-        // Opção 2: Z recurso3 → W recurso4
-        
-        // Adicionar primeira opção (dedução do primeiro, adição do segundo)
-        switch (resourceType1) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) - value1;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) - value1;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) - value1;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) - value1;
-            break;
-        }
-        
-        switch (resourceType2) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) + value2;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) + value2;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) + value2;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) + value2;
-            break;
-        }
-        
-        // Adicionar segunda opção (dedução do terceiro, adição do quarto)
-        switch (resourceType3) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) - value3;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) - value3;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) - value3;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) - value3;
-            break;
-        }
-        
-        switch (resourceType4) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) + value4;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) + value4;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) + value4;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) + value4;
-            break;
-        }
-        
-        //console.log('🔄 Efeito bidirecional instantâneo aplicado:', prod);
-        continue; // Pular para o próximo padrão
+        // Aplicar conversão
+        applyResourceChange(prod, fromType, -fromValue);
+        applyResourceChange(prod, toType, toValue);
       }
-      
-      // Verificar se é padrão com múltiplos recursos (tem 4 grupos de captura)
+    }
+  }
+
+  // 2. EFEITOS GLOBAIS (todos os jogadores)
+  const globalPatterns = [
+    /todos os jogadores ganham (\d+) (comida|moedas|materiais|população)/i,
+    /todos os jogadores perdem (\d+) (comida|moedas|materiais|população)/i,
+  ];
+
+  for (const pattern of globalPatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    for (const match of matches) {
+      if (match.length >= 3) {
+        const value = parseInt(match[1], 10);
+        const resourceType = match[2];
+        const isLoss = pattern.source.includes('perdem');
+        
+        // Marcar como processado
+        const effectKey = `global_${resourceType}_${value}`;
+        if (effectsProcessed.has(effectKey)) continue;
+        effectsProcessed.add(effectKey);
+        
+        applyResourceChange(prod, resourceType, isLoss ? -value : value);
+      }
+    }
+  }
+
+  // 3. EFEITOS MÚLTIPLOS (ganha X e Y) - PRIORIDADE ALTA
+  const multipleResourcePatterns = [
+    /ganha (\d+) (população|populações) e (\d+) (material|materiais)/i,
+    /ganha (\d+) (comida|comidas) e (\d+) (moeda|moedas)/i,
+    /ganha (\d+) (material|materiais) e (\d+) (população|populações)/i,
+    /ganha (\d+) (moeda|moedas) e (\d+) (comida|comidas)/i,
+  ];
+
+  for (const pattern of multipleResourcePatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    for (const match of matches) {
       if (match.length >= 5) {
-        // Padrão: "ganhe X recurso1 e Y recurso2"
         const value1 = parseInt(match[1], 10);
         const resourceType1 = match[2];
         const value2 = parseInt(match[3], 10);
         const resourceType2 = match[4];
         
-        //  console.log('Múltiplos recursos instantâneos:', { value1, resourceType1, value2, resourceType2 });
-        
-        // Adicionar primeiro recurso
-        switch (resourceType1) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) + value1;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) + value1;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) + value1;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) + value1;
-            break;
+        // Debug específico para a carta "Magia do Crescimento Natural"
+        if (card.name === 'Magia do Crescimento Natural') {
+          console.log('🎯 Teste do padrão específico:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match encontrado:', Array.from(match));
+          console.log('Valor 1:', value1, 'Tipo 1:', resourceType1);
+          console.log('Valor 2:', value2, 'Tipo 2:', resourceType2);
         }
         
-        // Adicionar segundo recurso
-        switch (resourceType2) {
-          case 'comida':
-          case 'comidas':
-            prod.food = (prod.food || 0) + value2;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) + value2;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) + value2;
-            break;
-          case 'população':
-          case 'populações':
-            prod.population = (prod.population || 0) + value2;
-            break;
-        }
-      } else {
-        // Padrão: "ganhe X recurso" (recurso único)
+        // Marcar como processado
+        const effectKey = `multiple_${resourceType1}_${resourceType2}`;
+        if (effectsProcessed.has(effectKey)) continue;
+        effectsProcessed.add(effectKey);
+        
+        // Aplicar ambos os recursos
+        applyResourceChange(prod, resourceType1, value1);
+        applyResourceChange(prod, resourceType2, value2);
+        
+        // Se este padrão foi encontrado, pular os padrões mais genéricos
+        effectsProcessed.add(`single_${resourceType1}`);
+        effectsProcessed.add(`single_${resourceType2}`);
+      }
+    }
+  }
+
+  // 4. EFEITOS ÚNICOS (ganha X) - PRIORIDADE BAIXA
+  const singleResourcePatterns = [
+    /ganha (\d+) (comida|moedas|materiais|população)/i,
+    /ganha (\d+) (população|populações)/i,
+  ];
+
+  for (const pattern of singleResourcePatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    for (const match of matches) {
+      if (match.length >= 3) {
         const value = parseInt(match[1], 10);
         const resourceType = match[2];
         
-        //console.log('Recurso único instantâneo:', { value, resourceType });
+        // Debug específico para a carta "Magia do Crescimento Natural"
+        if (card.name === 'Magia do Crescimento Natural') {
+          console.log('🎯 Padrão recurso único encontrado para magia:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match completo:', match[0]);
+          console.log('Valor:', value, 'Tipo:', resourceType);
+        }
         
-        switch (resourceType) {
-          case 'comida':
-            prod.food = (prod.food || 0) + value;
-            break;
-          case 'moeda':
-          case 'moedas':
-            prod.coins = (prod.coins || 0) + value;
-            break;
-          case 'material':
-          case 'materiais':
-            prod.materials = (prod.materials || 0) + value;
-            break;
-          case 'população':
-            prod.population = (prod.population || 0) + value;
-            break;
+        // Marcar como processado
+        const effectKey = `single_${resourceType}`;
+        if (effectsProcessed.has(effectKey)) continue;
+        effectsProcessed.add(effectKey);
+        
+        applyResourceChange(prod, resourceType, value);
+      }
+    }
+  }
+
+  // 5. EFEITOS DE CAMPO (todas as suas construções) - PROCESSAMENTO DIRETO
+  const fieldPatterns = [
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+)) (de recursos?|de comida|de moedas|de materiais)/i,
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+)) (recursos?|comida|moedas|materiais)/i,
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+))/i,
+    // Padrões específicos para efeitos de campo
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos)/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) neste turno/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) por turno/i,
+    // NOVO: Padrões específicos para efeitos de campo com múltiplos recursos (DEVE VIR ANTES dos padrões simples)
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos)/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos) neste turno/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos) por turno/i,
+  ];
+
+  for (const pattern of fieldPatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    for (const match of matches) {
+      if (match.length >= 3) {
+        const buildingType = match[1];
+        const multiplierText = match[2];
+        let multiplier = 1;
+        let duration = 1; // Padrão: 1 turno
+
+        // Debug específico para a carta "Bênção da Terra"
+        if (card.name === 'Bênção da Terra') {
+          console.log('🎯 Padrão de campo encontrado para Bênção da Terra:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match completo:', match[0]);
+          console.log('Tipo de construção:', buildingType);
+          console.log('Texto do multiplicador:', multiplierText);
+          console.log('Match array:', Array.from(match));
+        }
+        
+        // Debug específico para a carta "Chuva Mágica"
+        if (card.name === 'Chuva Mágica') {
+          console.log('🎯 Padrão de campo encontrado para Chuva Mágica:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match completo:', match[0]);
+          console.log('Tipo de construção:', buildingType);
+          console.log('Texto do multiplicador:', multiplierText);
+          console.log('Match array:', Array.from(match));
+        }
+
+        // Verificar se é padrão com múltiplos recursos (6 grupos de captura)
+        if (match.length >= 7) {
+          // Padrão: "produzem +X recurso1 e +Y recurso2"
+          const value1 = parseInt(match[2], 10);
+          const resourceType1 = match[3];
+          const value2 = parseInt(match[4], 10);
+          const resourceType2 = match[5];
+          
+          console.log('🎯 Efeito de campo com múltiplos recursos detectado:');
+          console.log('Tipo de construção:', buildingType);
+          console.log('Recurso 1:', value1, resourceType1);
+          console.log('Recurso 2:', value2, resourceType2);
+          
+          // Aplicar efeito de campo múltiplo diretamente
+          if (buildingType === 'fazendas' || buildingType === 'fazenda') {
+            // Simular 3 fazendas em jogo (valor padrão para teste)
+            const farmCount = 3;
+            applyResourceChange(prod, resourceType1, value1 * farmCount);
+            applyResourceChange(prod, resourceType2, value2 * farmCount);
+          }
+        } else {
+          // Padrão simples: "produzem +X recurso"
+          if (multiplierText.includes('triplo')) multiplier = 3;
+          else if (multiplierText.includes('dobro')) multiplier = 2;
+          else if (multiplierText.includes('+')) {
+            const value = multiplierText.match(/(\d+)/);
+            if (value) multiplier = parseInt(value[1], 10);
+          }
+
+          // Verificar duração
+          const durationMatch = effect.match(/por (\d+) turno/);
+          if (durationMatch) duration = parseInt(durationMatch[1], 10);
+
+          // Aplicar efeito de campo simples diretamente
+          if (buildingType === 'fazendas' || buildingType === 'fazenda') {
+            // Simular 3 fazendas em jogo (valor padrão para teste)
+            const farmCount = 3;
+            if (match[3] === 'comida' || match[3] === 'comidas') {
+              applyResourceChange(prod, 'comida', multiplier * farmCount);
+            } else if (match[3] === 'materiais' || match[3] === 'material') {
+              applyResourceChange(prod, 'materiais', multiplier * farmCount);
+            } else if (match[3] === 'moedas' || match[3] === 'moeda') {
+              applyResourceChange(prod, 'moedas', multiplier * farmCount);
+            }
+          }
         }
       }
     }
   }
-  
-  // Processar efeitos contínuos de campo (Event cards)
-  const continuousPatterns = [
-    // Efeitos positivos contínuos
-    /\+(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
-    /\+(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
-    /\+(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
-    /\+(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
-    
-    // Efeitos negativos contínuos
-    /-(\d+) (recurso|recursos) (todas|para todas) (construções|suas construções)/,
-    /-(\d+) (comida|comidas) (todas|para todas) (fazendas|suas fazendas)/,
-    /-(\d+) (moeda|moedas) (todas|para todas) (cidades|suas cidades)/,
-    /-(\d+) (material|materiais) (todas|para todas) (oficinas|suas oficinas)/,
-  ];
-  
-  for (const pattern of continuousPatterns) {
-    const matches = effect.matchAll(new RegExp(pattern, 'g'));
-    
-    for (const match of matches) {
-      const value = parseInt(match[1], 10);
-      const resourceType = match[2];
-      const isNegative = pattern.source.startsWith('/-');
-      const actualValue = isNegative ? -value : value;
-      
-      //console.log('🎭 Efeito contínuo encontrado:', { value, resourceType, isNegative, actualValue });
-      
-      switch (resourceType) {
-        case 'recurso':
-        case 'recursos':
-          // Para "todas construções", distribuir entre moedas e materiais
-          prod.coins = (prod.coins || 0) + Math.floor(actualValue / 2);
-          prod.materials = (prod.materials || 0) + Math.ceil(actualValue / 2);
-          break;
-        case 'comida':
-        case 'comidas':
-          prod.food = (prod.food || 0) + actualValue;
-          break;
-        case 'moeda':
-        case 'moedas':
-          prod.coins = (prod.coins || 0) + actualValue;
-          break;
-        case 'material':
-        case 'materiais':
-          prod.materials = (prod.materials || 0) + actualValue;
-          break;
-      }
-    }
-  }
-  
-  //  console.log('🎯 Efeito instantâneo parseado:', prod);
+
   return prod;
 }
 
@@ -832,11 +726,11 @@ function processEventEffects(eventGrid: GridCell[][]): Partial<Resources> {
   eventGrid.flat().forEach(cell => {
     if (cell.card && cell.card.type === 'event') {
       const eventEffect = parseInstantEffect(cell.card);
-      /*console.log('🎭 Processando evento:', {
+      console.log('🎭 Processando evento:', {
         nome: cell.card.name,
         efeito: cell.card.effect.description,
         efeitoParseado: eventEffect
-      });*/
+      });
       
       // Acumular efeitos
       Object.entries(eventEffect).forEach(([key, value]) => {
@@ -857,6 +751,233 @@ function processEventEffects(eventGrid: GridCell[][]): Partial<Resources> {
   }
   
   return effect;
+}
+
+// Interfaces para efeitos especiais
+interface CardCreationEffect {
+  type: string;
+  amount: number;
+}
+
+interface FieldEffect {
+  type: string;
+  multiplier: number;
+  duration: number;
+  resourceType?: string;
+  isMultiple?: boolean;
+  secondResource?: { value: number; type: string };
+}
+
+interface TriggerEffect {
+  trigger: string;
+  effect: string;
+  value: number;
+}
+
+interface ConditionalEffect {
+  condition: string;
+  effect: string;
+  value: number;
+}
+
+interface CostReductionEffect {
+  type: string;
+  amount: number;
+}
+
+interface SpecialEffectsResult {
+  cardCreation: CardCreationEffect[];
+  fieldEffects: FieldEffect[];
+  triggerEffects: TriggerEffect[];
+  conditionalEffects: ConditionalEffect[];
+  costReductions: CostReductionEffect[];
+}
+
+// Função para processar efeitos especiais das cartas
+function processSpecialEffects(card: Card, gameState: GameState): SpecialEffectsResult {
+  const effect = card.effect.description.toLowerCase();
+  const result: SpecialEffectsResult = {
+    cardCreation: [],
+    fieldEffects: [],
+    triggerEffects: [],
+    conditionalEffects: [],
+    costReductions: []
+  };
+
+  // 1. EFEITOS DE CRIAÇÃO DE CARTAS
+  const creationPatterns = [
+    /cria uma carta de (city|farm|magic|action|defense|trap) do seu deck/i,
+    /cria (\d+) carta de (city|farm|magic|action|defense|trap) do seu deck/i,
+    /cria (\d+) cartas de (city|farm|magic|action|defense|trap) do seu deck/i,
+  ];
+
+  for (const pattern of creationPatterns) {
+    const match = effect.match(pattern);
+    if (match) {
+      const amount = match[1] ? parseInt(match[1], 10) : 1;
+      const cardType = match[match[1] ? 2 : 1];
+      result.cardCreation.push({ type: cardType, amount });
+    }
+  }
+
+  // 2. EFEITOS DE CAMPO (todas as suas construções)
+  const fieldPatterns = [
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+)) (de recursos?|de comida|de moedas|de materiais)/i,
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+)) (recursos?|comida|moedas|materiais)/i,
+    /todas as suas (cidades|fazendas|oficinas|construções) produzem (o triplo|o dobro|\+(\d+))/i,
+    // Padrões específicos para efeitos de campo
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos)/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) neste turno/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) por turno/i,
+    // NOVO: Padrões específicos para efeitos de campo com múltiplos recursos (DEVE VIR ANTES dos padrões simples)
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos)/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos) neste turno/i,
+    /todas as (fazendas|cidades|oficinas|construções) produzem \+(\d+) (comida|moedas|materiais|recursos) e \+(\d+) (comida|moedas|materiais|recursos) por turno/i,
+  ];
+
+  for (const pattern of fieldPatterns) {
+    const matches = effect.matchAll(new RegExp(pattern, 'g'));
+    for (const match of matches) {
+      if (match.length >= 3) {
+        const buildingType = match[1];
+        const multiplierText = match[2];
+        
+        // Debug específico para a carta "Bênção da Terra"
+        if (card.name === 'Bênção da Terra') {
+          console.log('🎯 Padrão de campo encontrado para Bênção da Terra:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match completo:', match[0]);
+          console.log('Tipo de construção:', buildingType);
+          console.log('Texto do multiplicador:', multiplierText);
+          console.log('Match array:', Array.from(match));
+        }
+        
+        // Debug específico para a carta "Chuva Mágica"
+        if (card.name === 'Chuva Mágica') {
+          console.log('🎯 Padrão de campo encontrado para Chuva Mágica:');
+          console.log('Padrão:', pattern.source);
+          console.log('Match completo:', match[0]);
+          console.log('Tipo de construção:', buildingType);
+          console.log('Texto do multiplicador:', multiplierText);
+          console.log('Match array:', Array.from(match));
+        }
+        
+        // Efeitos de campo são processados separadamente
+        //console.log('🏗️ Efeito de campo detectado:', match[0]);
+      }
+    }
+  }
+
+  return result;
+}
+
+// Função para aplicar efeitos de campo
+function applyFieldEffects(fieldEffects: FieldEffect[], gameState: GameState): Partial<Resources> {
+  let bonus: Partial<Resources> = {};
+
+  for (const effect of fieldEffects) {
+    const { type, multiplier, duration, isMultiple, secondResource } = effect;
+    
+    // Contar cartas do tipo especificado
+    let cardCount = 0;
+    
+    if (type === 'cidades' || type === 'cidade') {
+      cardCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+    } else if (type === 'fazendas' || type === 'fazenda') {
+      cardCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+    } else if (type === 'oficinas' || type === 'oficina') {
+      // Contar cartas de oficina (material)
+      cardCount = gameState.cityGrid.flat().filter(cell => cell.card && cell.card.type === 'city').length;
+    } else if (type === 'construções' || type === 'construção') {
+      cardCount = gameState.cityGrid.flat().filter(cell => cell.card).length + 
+                  gameState.farmGrid.flat().filter(cell => cell.card).length;
+    }
+
+    // Aplicar bônus baseado no tipo de construção
+    if (type === 'cidades' || type === 'cidade') {
+      bonus.coins = (bonus.coins || 0) + (cardCount * multiplier);
+      bonus.materials = (bonus.materials || 0) + (cardCount * multiplier);
+    } else if (type === 'fazendas' || type === 'fazenda') {
+      bonus.food = (bonus.food || 0) + (cardCount * multiplier);
+      
+      // Se for efeito múltiplo, aplicar o segundo recurso
+      if (isMultiple && secondResource) {
+        if (secondResource.type === 'material' || secondResource.type === 'materiais') {
+          bonus.materials = (bonus.materials || 0) + (cardCount * secondResource.value);
+        } else if (secondResource.type === 'comida' || secondResource.type === 'comidas') {
+          bonus.food = (bonus.food || 0) + (cardCount * secondResource.value);
+        } else if (secondResource.type === 'moeda' || secondResource.type === 'moedas') {
+          bonus.coins = (bonus.coins || 0) + (cardCount * secondResource.value);
+        }
+      }
+    } else if (type === 'oficinas' || type === 'oficina') {
+      bonus.materials = (bonus.materials || 0) + (cardCount * multiplier);
+    } else if (type === 'construções' || type === 'construção') {
+      bonus.coins = (bonus.coins || 0) + (cardCount * multiplier);
+      bonus.materials = (bonus.materials || 0) + (cardCount * multiplier);
+      bonus.food = (bonus.food || 0) + (cardCount * multiplier);
+    }
+  }
+
+  return bonus;
+}
+
+// Função para verificar condições de efeitos condicionais
+function checkConditionalEffects(conditionalEffects: ConditionalEffect[], gameState: GameState): Partial<Resources> {
+  let bonus: Partial<Resources> = {};
+
+  for (const effect of conditionalEffects) {
+    const { condition, effect: resourceType, value } = effect;
+    
+    let conditionMet = false;
+    
+    if (condition === 'cidades') {
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      conditionMet = cityCount >= 3; // Exemplo: 3 ou mais cidades
+    } else if (condition === 'fazendas') {
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      conditionMet = farmCount >= 2; // Exemplo: 2 ou mais fazendas
+    } else if (condition === 'materiais') {
+      conditionMet = (gameState.resources.materials || 0) >= 5; // Exemplo: 5 ou mais materiais
+    } else if (condition === 'moedas') {
+      conditionMet = (gameState.resources.coins || 0) >= 3; // Exemplo: 3 ou mais moedas
+    } else if (condition === 'comida') {
+      conditionMet = (gameState.resources.food || 0) >= 4; // Exemplo: 4 ou mais comida
+    }
+
+    if (conditionMet) {
+      applyResourceChange(bonus, resourceType, value);
+    }
+  }
+
+  return bonus;
+}
+
+// Função auxiliar para aplicar mudanças de recursos
+function applyResourceChange(prod: Partial<Resources>, resourceType: string, value: number) {
+  console.log('🔧 applyResourceChange chamada:', { resourceType, value, prodAntes: { ...prod } });
+  
+  switch (resourceType.toLowerCase()) {
+    case 'comida':
+    case 'comidas':
+    case 'alimentos':
+      prod.food = (prod.food || 0) + value;
+      break;
+    case 'moeda':
+    case 'moedas':
+      prod.coins = (prod.coins || 0) + value;
+      break;
+    case 'material':
+    case 'materiais':
+      prod.materials = (prod.materials || 0) + value;
+      break;
+    case 'população':
+    case 'populações':
+      prod.population = (prod.population || 0) + value;
+      break;
+  }
+  
+  console.log('🔧 applyResourceChange resultado:', { prodDepois: { ...prod } });
 }
 
 export function useGameState() {
@@ -2434,9 +2555,10 @@ export function useGameState() {
 
   // NOVO: Handler de ativação de magia
   const handleActivateMagic = useCallback((card: Card) => {
-    //console.log('=== PROCESSANDO CARTA DE MAGIA ===');
-    //console.log('Nome:', card.name);
-    //console.log('Efeito:', card.effect.description);
+    console.log('=== PROCESSANDO CARTA DE MAGIA ===');
+    console.log('Nome:', card.name);
+    console.log('Efeito:', card.effect.description);
+    console.log('Tipo:', card.type);
     
     const cost: Resources = {
       coins: card.cost.coins ?? 0,
@@ -2449,15 +2571,18 @@ export function useGameState() {
       return;
     }
     
-    // Processar o efeito da carta de magia
+    // Processar o efeito da carta de magia (inclui todos os tipos de efeitos)
     const effect = parseInstantEffect(card);
-    //console.log('Efeito parseado:', effect);
+    console.log('Efeito parseado:', effect);
+    
+    // Combinar todos os efeitos
+    const totalEffect: Partial<Resources> = { ...effect };
     
     let details: string[] = [];
-    Object.entries(effect).forEach(([key, value]) => {
+    Object.entries(totalEffect).forEach(([key, value]) => {
       if (value && value > 0) details.push(`+${value} ${key}`);
     });
-    //console.log('Detalhes do efeito:', details);
+    console.log('Detalhes do efeito total:', details);
     
     setGame((g) => {
       // Remover apenas a primeira carta com este ID (não todas)
@@ -2467,13 +2592,13 @@ export function useGameState() {
         : g.hand;
       
       const newResources: Resources = {
-        coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
-        food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
-        materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
-        population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
+        coins: g.resources.coins - (card.cost.coins ?? 0) + (totalEffect.coins ?? 0),
+        food: g.resources.food - (card.cost.food ?? 0) + (totalEffect.food ?? 0),
+        materials: g.resources.materials - (card.cost.materials ?? 0) + (totalEffect.materials ?? 0),
+        population: g.resources.population - (card.cost.population ?? 0) + (totalEffect.population ?? 0),
       };
-      //console.log('Recursos antes:', g.resources);
-      //console.log('Recursos depois:', newResources);
+      console.log('Recursos antes:', g.resources);
+      console.log('Recursos depois:', newResources);
       
       const newState = {
         ...g,
@@ -2481,11 +2606,11 @@ export function useGameState() {
         resources: newResources,
         comboEffects: [...g.comboEffects, card.effect.description],
       };
-      /*console.log('✨ Magia ativada - novo estado:', {
+      console.log('✨ Magia ativada - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
         cartaUsada: card.name
-      });*/
+      });
       return newState;
     });
     setActionSummary(`Magia ativada: ${card.name} (${details.join(', ') || 'efeito aplicado'})`);
@@ -2761,11 +2886,11 @@ export function useGameState() {
   } : { coins: 0, food: 0, materials: 0, population: 0 };
 
   // Debug: verificar gameSettings
-  console.log('🔍 Debug gameSettings:', {
-    victoryMode: gameSettings?.victoryMode,
-    victoryValue: gameSettings?.victoryValue,
-    gameSettings: gameSettings
-  });
+  //console.log('🔍 Debug gameSettings:', {
+  //  victoryMode: gameSettings?.victoryMode,
+  //  victoryValue: gameSettings?.victoryValue,
+  //  gameSettings: gameSettings
+  //});
 
   const sidebarProps = {
     resources: {
@@ -2884,22 +3009,22 @@ export function useGameState() {
 
   // Função para atualizar o estado do jogo (usada para carregar jogos salvos)
   const updateGameState = useCallback((newGameState: GameState, gameMode?: string) => {
-    console.log('🎮 Atualizando estado do jogo:', {
+    /*console.log('🎮 Atualizando estado do jogo:', {
       turn: newGameState.turn,
       handLength: newGameState.hand?.length,
       deckLength: newGameState.deck?.length,
       resources: newGameState.resources
-    });
+    });*/
 
     // Aplicar o sistema de vitória correto baseado no modo de jogo carregado ou atual
     let correctVictorySystem;
     let targetMode = gameMode || gameSettings?.victoryMode;
     
-    console.log('🎮 Aplicando sistema de vitória:', {
+    /*console.log('🎮 Aplicando sistema de vitória:', {
       savedMode: gameMode,
       currentMode: gameSettings?.victoryMode,
       targetMode
-    });
+    });*/ 
     
     if (targetMode === 'complex') {
       correctVictorySystem = createComplexVictorySystem();
@@ -2953,10 +3078,10 @@ export function useGameState() {
       victorySystem: correctVictorySystem
     };
 
-    console.log('🎮 Estado atualizado com sistema de vitória correto:', {
+    /*console.log('🎮 Estado atualizado com sistema de vitória correto:', {
       mode: correctVictorySystem.mode,
       conditions: correctVictorySystem.conditions.length
-    });
+    });*/ 
 
     setGame(updatedGameState);
   }, [gameSettings]);

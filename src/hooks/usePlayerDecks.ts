@@ -126,7 +126,7 @@ export const usePlayerDecks = () => {
             };
             gameCards.push(gameCard);
           } else {
-            console.warn(`Carta não encontrada: ${cardId} no deck ${deck.name}`);
+            //console.warn(`Carta não encontrada: ${cardId} no deck ${deck.name}`);
           }
         });
 

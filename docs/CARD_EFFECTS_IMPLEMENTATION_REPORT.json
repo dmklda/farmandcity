@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-08-11T23:48:57.017Z",
+  "total_cards": 256,
+  "cards_by_type": {
+    "landmark": 20,
+    "magic": 52,
+    "event": 26,
+    "action": 53,
+    "city": 51,
+    "farm": 54
+  },
+  "effects_by_type": {
+    "production": 89,
+    "defense": 2,
+    "triple_production": 1,
+    "global": 7,
+    "boost_all": 1,
+    "create": 2,
+    "gain": 10,
+    "protect": 1,
+    "steal_all": 1,
+    "steal": 1,
+    "destroy": 1,
+    "field_boost": 24,
+    "instant": 19,
+    "text_based": 30,
+    "portal": 1,
+    "dice_production": 8
+  },
+  "implementation_summary": {}
+}

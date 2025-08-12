@@ -51,7 +51,7 @@ interface AppProviderProps {
 }
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { 
     currency, 
     loading: currencyLoading, 
@@ -84,38 +84,85 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   // Log para debug
   useEffect(() => {
-    // // console.log('AppContext: currency atualizado:', currency);
+    console.log('AppContext: currency atualizado:', currency);
   }, [currency]);
 
   useEffect(() => {
-    // // console.log('AppContext: playerCards atualizado:', playerCards?.length);
+    console.log('AppContext: playerCards atualizado:', playerCards?.length);
   }, [playerCards]);
 
   // Log quando currentView muda
   useEffect(() => {
-    // // console.log('AppContext: currentView atualizado:', currentView);
+    console.log('AppContext: currentView atualizado:', currentView);
   }, [currentView]);
 
+  // Debug hook states
+  useEffect(() => {
+    console.log('AppContext: Hook states:', {
+      authLoading,
+      currencyLoading,
+      cardsLoading,
+      decksLoading,
+      user: !!user
+    });
+  }, [authLoading, currencyLoading, cardsLoading, decksLoading, user]);
+
   const value: AppContextType = {
-    user,
-    loading,
-    currency,
-    currencyLoading,
-    refreshCurrency,
-    spendCoins,
-    spendGems,
-    addCoins,
-    addGems,
-    playerCards,
-    cardsLoading,
-    refreshPlayerCards,
-    addCardToPlayer,
-    decks,
-    decksLoading,
+    user: user || null,
+    loading: authLoading || false,
+    currency: currency || null,
+    currencyLoading: currencyLoading || false,
+    refreshCurrency: refreshCurrency || (() => Promise.resolve()),
+    spendCoins: spendCoins || (() => Promise.resolve()),
+    spendGems: spendGems || (() => Promise.resolve()),
+    addCoins: addCoins || (() => Promise.resolve()),
+    addGems: addGems || (() => Promise.resolve()),
+    playerCards: playerCards || [],
+    cardsLoading: cardsLoading || false,
+    refreshPlayerCards: refreshPlayerCards || (() => Promise.resolve()),
+    addCardToPlayer: addCardToPlayer || (() => Promise.resolve()),
+    decks: decks || [],
+    decksLoading: decksLoading || false,
     currentView,
     setCurrentView,
-    signOut,
+    signOut: signOut || (() => Promise.resolve()),
   };
+
+  // Show loading state while hooks are initializing
+  // Only show loading if user is authenticated and hooks are still loading
+  if (user && (authLoading || currencyLoading || cardsLoading || decksLoading)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+          <span className="text-amber-500">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user, don't show loading state - let AuthGuard handle it
+  if (!user) {
+    return (
+      <AppContext.Provider value={value}>
+        {children}
+      </AppContext.Provider>
+    );
+  }
+
+  // Ensure all hooks are fully initialized before rendering children
+  if (authLoading || currencyLoading || cardsLoading || decksLoading) {
+    return (
+      <AppContext.Provider value={value}>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+            <span className="text-amber-500">Carregando...</span>
+          </div>
+        </div>
+      </AppContext.Provider>
+    );
+  }
 
   return (
     <AppContext.Provider value={value}>

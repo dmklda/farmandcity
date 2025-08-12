@@ -42,12 +42,16 @@ interface CardDetailModalProps {
 }
 
 const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose }) => {
-  if (!isOpen || !card) return null;
-  
+  // Always call hooks first, regardless of props
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
+  // Don't render anything if not open or no card
+  if (!isOpen || !card) {
+    return null;
+  }
 
   // Card type configuration from card_exemple_magicMCP.md
   const cardTypeConfig = {
@@ -262,6 +266,7 @@ const CardDetailModal: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose
 
   return createPortal(
     <motion.div 
+      key={`modal-${card.id}-${isOpen}`}
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] flex items-center justify-center p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -909,14 +914,27 @@ const EnhancedHand: React.FC<EnhancedHandProps> = ({
       </motion.div>
 
       {/* Detail Modal */}
-      <CardDetailModal
-        card={selectedCardForDetail}
-        isOpen={!!selectedCardForDetail}
-        onClose={() => setSelectedCardForDetail(null)}
-      />
+      {selectedCardForDetail && (
+        <CardDetailModalWrapper
+          key={selectedCardForDetail.id}
+          card={selectedCardForDetail}
+          isOpen={true}
+          onClose={() => setSelectedCardForDetail(null)}
+        />
+      )}
     </>
   );
 };
 
-export { CardDetailModal };
+// Wrapper component to ensure consistent hook calls
+const CardDetailModalWrapper: React.FC<CardDetailModalProps> = ({ card, isOpen, onClose }) => {
+  // Only render the modal when it should be open and has a card
+  if (!isOpen || !card) {
+    return null;
+  }
+  
+  return <CardDetailModal card={card} isOpen={isOpen} onClose={onClose} />;
+};
+
+export { CardDetailModalWrapper as CardDetailModal };
 export default EnhancedHand;
