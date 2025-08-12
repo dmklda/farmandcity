@@ -122,8 +122,14 @@ function determineEffectFrequency(effectType: SimpleEffectType, params: string[]
   if (effectType.startsWith('OPTIONAL_DISCARD_') ||
       effectType === 'OPTIONAL_DISCARD_BOOST_FARM' ||
       effectType === 'OPTIONAL_DISCARD_BOOST_CITY' ||
-      effectType === 'OPTIONAL_DISCARD_BOOST_LANDMARK') {
+      effectType === 'OPTIONAL_DISCARD_BOOST_LANDMARK' ||
+      effectType === 'OPTIONAL_DISCARD_BUY_MAGIC_CARD') {
     return 'ON_CONDITION'; // Executa se jogador escolher
+  }
+  
+  // Efeitos de boost para todas as construções
+  if (effectType === 'BOOST_ALL_CONSTRUCTIONS_DOUBLE') {
+    return 'PER_TURN'; // Executa a cada turno
   }
   
   // Efeitos contínuos

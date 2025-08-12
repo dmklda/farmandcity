@@ -1045,6 +1045,58 @@ export function useGameState() {
     card: null,
     effects: []
   });
+  
+  // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
+  const [temporaryBoosts, setTemporaryBoosts] = useState<Array<{
+    id: string;
+    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE';
+    amount: number;
+    duration: number;
+    appliedAt: number;
+    isActive: boolean;
+  }>>([]);
+  
+  // ===== SISTEMA DE COMPRA DE CARTAS MÁGICAS =====
+  const [magicCardPurchase, setMagicCardPurchase] = useState<{
+    isActive: boolean;
+    cardId: string;
+    cardName: string;
+    requiresDiscard: boolean;
+    discardedCard: Card | null;
+    availableMagicCards: Card[];
+    showMagicCardSelection: boolean;
+  }>({
+    isActive: false,
+    cardId: '',
+    cardName: '',
+    requiresDiscard: false,
+    discardedCard: null,
+    availableMagicCards: [],
+    showMagicCardSelection: false
+  });
+  
+  // Limpar boosts temporários expirados automaticamente
+  useEffect(() => {
+    if (gameLoading) return;
+    
+    const currentTurn = game.turn;
+    setTemporaryBoosts(prev => 
+      prev.filter(boost => {
+        const turnsElapsed = currentTurn - boost.appliedAt;
+        const isExpired = turnsElapsed >= boost.duration;
+        
+        if (isExpired && boost.isActive) {
+          // Marcar boost como expirado no histórico
+          addToHistory(`⏰ Boost ${boost.type} expirou após ${boost.duration} turnos`);
+        }
+        
+        return !isExpired;
+      }).map(boost => ({
+        ...boost,
+        isActive: currentTurn - boost.appliedAt < boost.duration
+      }))
+    );
+  }, [game.turn, gameLoading, addToHistory]);
 
   // Atualizar recursos e sistema de vitória quando as configurações carregarem
   useEffect(() => {
@@ -2394,6 +2446,21 @@ export function useGameState() {
         }
       }
       
+      // ===== DETECÇÃO DE BOOSTS ESPECIAIS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CONSTRUCTIONS_DOUBLE')) {
+        // Aplicar boost duplo para todas as construções
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'BOOST_ALL_CONSTRUCTIONS_DOUBLE',
+          amount: 2, // Dobro
+          duration: 1, // Apenas este turno
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`⚡ ${selectedCard.name}: Boost duplo ativado para todas as construções neste turno!`);
+      }
+      
       /*console.log('🏗️ Efeito da carta construída:', {
         nome: selectedCard.name,
         efeito: selectedCard.effect.description,
@@ -2649,19 +2716,45 @@ export function useGameState() {
       return newState;
     });
     
+    // ===== VERIFICAR SE É PARA COMPRA DE CARTA MÁGICA =====
+    if (magicCardPurchase.isActive && magicCardPurchase.requiresDiscard) {
+      // Carta foi descartada para compra de carta mágica
+      setMagicCardPurchase(prev => ({
+        ...prev,
+        discardedCard: card,
+        requiresDiscard: false
+      }));
+      
+      // Processar compra da carta mágica
+      processMagicCardPurchase(card);
+      
+      // Limpar modal e erro
+      setDiscardMode(false);
+      setError(null);
+      
+      // Adicionar ao histórico
+      addToHistory(`🔮 ${magicCardPurchase.cardName}: Carta descartada para comprar carta mágica`);
+      
+      // Feedback visual
+      setHighlight(`🔮 Carta descartada para comprar carta mágica: ${card.name}`);
+      setTimeout(() => setHighlight(null), 2000);
+      
+      return; // Sair da função para não executar lógica padrão
+    }
+    
     // Limpar modal e erro
     setDiscardMode(false);
     setError(null);
     
     // Adicionar ao histórico
-            addToHistory(`🗑️ Descartou: ${card.name}`);
+    addToHistory(`🗑️ Descartou: ${card.name}`);
     
     // Feedback visual
     setHighlight(`🗑️ Carta descartada: ${card.name}`);
     setTimeout(() => setHighlight(null), 2000);
     
     //console.log(`Carta ${card.name} descartada`);
-  }, [game.hand]);
+  }, [game.hand, magicCardPurchase, addToHistory]);
 
   const handleDiceRoll = useCallback(() => {
     if (game.phase !== 'build' || diceUsed) return;
@@ -2765,6 +2858,45 @@ export function useGameState() {
         }
       }
     });
+    
+    // ===== APLICAR BOOSTS TEMPORÁRIOS ATIVOS =====
+    const activeBoosts = temporaryBoosts.filter(boost => boost.isActive);
+    if (activeBoosts.length > 0) {
+      activeBoosts.forEach(boost => {
+        switch (boost.type) {
+          case 'BOOST_ALL_FARMS_FOOD':
+            // Boost de +1 comida para todas as fazendas
+            const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
+            if (farmCount > 0) {
+              prod.food += farmCount * boost.amount;
+              details.push(`🌾 Boost de fazenda: +${boost.amount} comida para ${farmCount} fazenda(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CITIES_COINS':
+            // Boost de +1 moeda para todas as cidades
+            const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
+            if (cityCount > 0) {
+              prod.coins += cityCount * boost.amount;
+              details.push(`🏙️ Boost de cidade: +${boost.amount} moeda para ${cityCount} cidade(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
+            // Boost duplo para todas as construções
+            const totalConstructions = game.farmGrid.flat().filter(cell => cell.card).length + 
+                                     game.cityGrid.flat().filter(cell => cell.card).length;
+            if (totalConstructions > 0) {
+              // Dobrar a produção base
+              prod.coins = Math.floor(prod.coins * boost.amount);
+              prod.food = Math.floor(prod.food * boost.amount);
+              prod.materials = Math.floor(prod.materials * boost.amount);
+              details.push(`⚡ Boost duplo: Produção dobrada para ${totalConstructions} construção(ões)`);
+            }
+            break;
+        }
+      });
+    }
     
     // APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA
     const catastropheReduction = game.productionReduction || 0;
@@ -3048,16 +3180,79 @@ export function useGameState() {
       setDiscardMode(true);
       addToHistory(`🎯 ${card.name}: Efeito opcional ativado! Descartar uma carta para aplicar o boost.`);
       
-      // Aplicar o efeito opcional (boost temporário)
+      // Aplicar o efeito opcional baseado no tipo
       effects.forEach(optionalEffect => {
-        if (optionalEffect.type === 'OPTIONAL_DISCARD_BOOST_FARM' && optionalEffect.duration) {
-          // Aplicar boost temporário para fazendas
-          setGame(g => ({
-            ...g,
-            // Aqui seria necessário implementar o sistema de boosts temporários
-            // Por enquanto, apenas registrar no histórico
-          }));
-          addToHistory(`🌾 Boost de fazenda ativado: +${optionalEffect.effect} por ${optionalEffect.duration} turnos`);
+        switch (optionalEffect.type) {
+          case 'OPTIONAL_DISCARD_BOOST_FARM':
+            if (optionalEffect.duration) {
+              // Aplicar boost temporário para fazendas
+              const boostId = `boost_${Date.now()}_${Math.random()}`;
+              setTemporaryBoosts(prev => [...prev, {
+                id: boostId,
+                type: 'BOOST_ALL_FARMS_FOOD',
+                amount: 1,
+                duration: optionalEffect.duration || 1,
+                appliedAt: game.turn,
+                isActive: true
+              }]);
+              addToHistory(`🌾 Boost de fazenda ativado: +1 alimento por ${optionalEffect.duration} turnos`);
+            }
+            break;
+            
+          case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
+            // Implementar sistema de compra de carta mágica
+            addToHistory(`🔮 ${card.name}: Efeito opcional ativado! Descartar uma carta para comprar carta mágica.`);
+            
+            // Ativar sistema de compra de carta mágica
+            setMagicCardPurchase({
+              isActive: true,
+              cardId: card.id,
+              cardName: card.name,
+              requiresDiscard: true,
+              discardedCard: null,
+              availableMagicCards: [],
+              showMagicCardSelection: false
+            });
+            
+            // Ativar modo de descarte para escolher carta a descartar
+            setDiscardMode(true);
+            break;
+            
+          case 'OPTIONAL_DISCARD_BOOST_CITY':
+            if (optionalEffect.duration) {
+              // Aplicar boost temporário para cidades
+              const boostId = `boost_${Date.now()}_${Math.random()}`;
+              setTemporaryBoosts(prev => [...prev, {
+                id: boostId,
+                type: 'BOOST_ALL_CITIES_COINS',
+                amount: 1,
+                duration: optionalEffect.duration || 1,
+                appliedAt: game.turn,
+                isActive: true
+              }]);
+              addToHistory(`🏙️ Boost de cidade ativado: +1 moeda por ${optionalEffect.duration} turnos`);
+            }
+            break;
+            
+          case 'OPTIONAL_DISCARD_BOOST_LANDMARK':
+            if (optionalEffect.duration) {
+              // Aplicar boost temporário para landmarks
+              const boostId = `boost_${Date.now()}_${Math.random()}`;
+              setTemporaryBoosts(prev => [...prev, {
+                id: boostId,
+                type: 'BOOST_ALL_CITIES_COINS', // Usar tipo existente por enquanto
+                amount: 1,
+                duration: optionalEffect.duration || 1,
+                appliedAt: game.turn,
+                isActive: true
+              }]);
+              addToHistory(`🗽 Boost de landmark ativado: +1 recurso por ${optionalEffect.duration} turnos`);
+            }
+            break;
+            
+          default:
+            addToHistory(`🎯 ${card.name}: Efeito opcional ativado: ${optionalEffect.effect}`);
+            break;
         }
       });
     } else {
@@ -3072,6 +3267,78 @@ export function useGameState() {
       effects: []
     });
   }, [optionalEffectDialog.card, optionalEffectDialog.effects, addToHistory]);
+
+  // ===== FUNÇÃO PARA PROCESSAR COMPRA DE CARTA MÁGICA =====
+  const processMagicCardPurchase = useCallback((discardedCard: Card) => {
+    if (!magicCardPurchase.isActive) return;
+    
+    // Sistema REAL de compra de carta mágica
+    // O jogador pode escolher entre cartas mágicas disponíveis
+    
+    // Buscar cartas mágicas disponíveis no deck do jogador
+    const availableMagicCards = game.deck.filter(card => card.type === 'magic');
+    
+    if (availableMagicCards.length === 0) {
+      // Não há cartas mágicas disponíveis
+      addToHistory(`🔮 ${magicCardPurchase.cardName}: Não há cartas mágicas disponíveis para compra`);
+      setError('Não há cartas mágicas disponíveis para compra');
+      
+      // Limpar sistema de compra
+      setMagicCardPurchase({
+        isActive: false,
+        cardId: '',
+        cardName: '',
+        requiresDiscard: false,
+        discardedCard: null,
+        availableMagicCards: [],
+        showMagicCardSelection: false
+      });
+      return;
+    }
+    
+    // Mostrar seleção de cartas mágicas disponíveis
+    setMagicCardPurchase(prev => ({
+      ...prev,
+      availableMagicCards: availableMagicCards,
+      showMagicCardSelection: true,
+      discardedCard: discardedCard
+    }));
+    
+    // Adicionar ao histórico
+    addToHistory(`🔮 ${magicCardPurchase.cardName}: Escolha uma carta mágica para comprar (Descartou: ${discardedCard.name})`);
+    
+  }, [magicCardPurchase, game.deck, addToHistory]);
+
+  // ===== FUNÇÃO PARA SELECIONAR CARTA MÁGICA =====
+  const selectMagicCard = useCallback((selectedMagicCard: Card) => {
+    if (!magicCardPurchase.isActive || !magicCardPurchase.discardedCard) return;
+    
+    // Remover carta mágica do deck e adicionar à mão
+    setGame(prev => ({
+      ...prev,
+      deck: prev.deck.filter(card => card.id !== selectedMagicCard.id),
+      hand: [...prev.hand, selectedMagicCard]
+    }));
+    
+    // Adicionar ao histórico
+    addToHistory(`🔮 ${magicCardPurchase.cardName}: Carta mágica "${selectedMagicCard.name}" comprada com sucesso! (Descartou: ${magicCardPurchase.discardedCard.name})`);
+    
+    // Limpar sistema de compra
+    setMagicCardPurchase({
+      isActive: false,
+      cardId: '',
+      cardName: '',
+      requiresDiscard: false,
+      discardedCard: null,
+      availableMagicCards: [],
+      showMagicCardSelection: false
+    });
+    
+    // Feedback visual
+    setHighlight(`🔮 Carta mágica "${selectedMagicCard.name}" comprada com sucesso!`);
+    setTimeout(() => setHighlight(null), 3000);
+    
+  }, [magicCardPurchase, addToHistory]);
 
   return {
     sidebarProps,
@@ -3125,5 +3392,11 @@ export function useGameState() {
     // ===== SISTEMA DE EFEITOS OPCIONAIS =====
     optionalEffectDialog,
     handleOptionalEffectChoice,
+    
+    // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
+    temporaryBoosts,
+    // ===== SISTEMA DE COMPRA DE CARTAS MÁGICAS =====
+    magicCardPurchase,
+    selectMagicCard,
   };
 }

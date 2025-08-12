@@ -221,6 +221,14 @@ export function executeSimpleEffect(
       // Implementar boost opcional de fazenda (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
       break;
+    case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
+      // Implementar compra opcional de carta mágica (requer descarte de carta)
+      // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      break;
+    case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
+      // Implementar boost duplo para todas as construções
+      // Este efeito será tratado pelo sistema de boost
+      break;
     case 'BOOST_ALL_CITIES_COINS':
       // Implementar boost para todas as cidades
       break;
@@ -753,6 +761,10 @@ export function extractOptionalEffects(effectLogic: string | null): Array<{
           break;
         case 'OPTIONAL_DISCARD_BOOST_LANDMARK':
           effectDescription = `+${amount} recurso para todos os landmarks por ${duration} turnos`;
+          costDescription = 'Descartar 1 carta da mão';
+          break;
+        case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
+          effectDescription = 'Comprar 1 carta mágica';
           costDescription = 'Descartar 1 carta da mão';
           break;
       }
