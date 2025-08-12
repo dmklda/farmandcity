@@ -16,20 +16,8 @@ const DECK_LIMIT = 28;
 const HAND_LIMIT = 7;
 const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end'];
 
-// Sistema Híbrido de Parsing de Efeitos
-// Combina parsing simples para efeitos básicos e JSON para efeitos complexos
-import { executeCardEffects, hasOptionalEffects, extractOptionalEffects } from '../utils/effectExecutor';
-import { cleanupExpiredRestrictions, canPlayCard as canPlayCardWithRestrictions } from '../utils/effectExecutor';
-import RestrictionsDisplay from '../components/RestrictionsDisplay';
-import OptionalEffectDialog from '../components/OptionalEffectDialog';
-
-function parseProduction(card: Card, currentGameState?: GameState, cardId?: string): Partial<Resources> {
-  // Priorizar o novo sistema baseado em effect_logic
-  if (card.effect_logic && currentGameState && cardId) {
-    return executeCardEffects(card.effect_logic, currentGameState, cardId);
-  }
-  
-  // Fallback para o sistema antigo baseado em texto
+// Funções de parsing melhoradas do código fornecido
+function parseProduction(card: Card): Partial<Resources> {
   const effect = card.effect.description.toLowerCase();
   
   //console.log('🔍 parseProduction para:', card.name);
@@ -798,9 +786,7 @@ function canStackCard(newCard: Card, existingCard: Card): boolean {
 function calculateStackedProduction(cards: Card[]): Partial<Resources> {
   if (cards.length === 0) return {};
   
-  // Por enquanto, usar o sistema antigo para evitar dependências circulares
   const baseProduction = parseProduction(cards[0]);
-  
   // Multiplicador balanceado: 1 carta = 1x, 2 cartas = 1.5x, 3 cartas = 2x, 4 cartas = 2.5x
   const multiplier = 1 + (cards.length - 1) * 0.5;
   
@@ -1029,22 +1015,6 @@ export function useGameState() {
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
   const [landmarkBuiltThisTurn, setLandmarkBuiltThisTurn] = useState(false);
-  
-  // ===== SISTEMA DE EFEITOS OPCIONAIS =====
-  const [optionalEffectDialog, setOptionalEffectDialog] = useState<{
-    isOpen: boolean;
-    card: Card | null;
-    effects: Array<{
-      type: string;
-      effect: string;
-      cost: string;
-      duration?: number;
-    }>;
-  }>({
-    isOpen: false,
-    card: null,
-    effects: []
-  });
 
   // Atualizar recursos e sistema de vitória quando as configurações carregarem
   useEffect(() => {
@@ -1812,12 +1782,6 @@ export function useGameState() {
       // Avança para novo turno e volta para 'draw'
       const newTurn = game.turn + 1;
       
-      // ===== LIMPEZA AUTOMÁTICA DE RESTRIÇÕES EXPIRADAS =====
-      // Limpar restrições que expiraram antes de avançar o turno
-      if (game.cardRestrictions && game.cardRestrictions.length > 0) {
-        cleanupExpiredRestrictions(game);
-      }
-      
       // Verificar limite de turnos
       const turnLimit = gameSettings.gameTurnLimit || 50;
       if (turnLimit > 0 && newTurn > turnLimit) {
@@ -2205,28 +2169,6 @@ export function useGameState() {
       population: card.cost.population ?? 0,
     };
 
-    // ===== VALIDAÇÃO DE RESTRIÇÕES TEMPORÁRIAS =====
-    // Verificar se há restrições ativas que impedem jogar este tipo de carta
-    if (game.cardRestrictions && game.cardRestrictions.length > 0) {
-      const canPlayWithRestrictions = canPlayCardWithRestrictions(card.type, game);
-      if (!canPlayWithRestrictions) {
-        // Encontrar a restrição específica para mostrar na mensagem
-        const activeRestriction = game.cardRestrictions.find(r => 
-          r.isActive && r.restrictedTypes.includes(card.type as any)
-        );
-        
-        if (activeRestriction) {
-          const turnsRemaining = activeRestriction.duration - (game.turn - activeRestriction.appliedAt);
-          return { 
-            playable: false, 
-            reason: `Não pode jogar cartas de ${card.type} por ${turnsRemaining} turno(s) restante(s)` 
-          };
-        }
-        
-        return { playable: false, reason: 'Carta bloqueada por restrição temporária' };
-      }
-    }
-
     // Magic: pode ser usada em qualquer fase, sem limite
     if (card.type === 'magic') {
       if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
@@ -2381,18 +2323,6 @@ export function useGameState() {
       const effect = targetCell.level && targetCell.level > 1 
         ? calculateStackedEffect(cards)
         : parseInstantEffect(selectedCard);
-      
-      // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
-      if (selectedCard.effect_logic && hasOptionalEffects(selectedCard.effect_logic)) {
-        const optionalEffects = extractOptionalEffects(selectedCard.effect_logic);
-        if (optionalEffects.length > 0) {
-          setOptionalEffectDialog({
-            isOpen: true,
-            card: selectedCard,
-            effects: optionalEffects
-          });
-        }
-      }
       
       /*console.log('🏗️ Efeito da carta construída:', {
         nome: selectedCard.name,
@@ -2745,7 +2675,7 @@ export function useGameState() {
     activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
       if (!parseDiceProduction(card)) {
-        const p = parseProduction(card, game, card.id);
+        const p = parseProduction(card);
         Object.entries(p).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
@@ -3031,99 +2961,51 @@ export function useGameState() {
     setGame(updatedGameState);
   }, [gameSettings]);
 
-  // ===== SISTEMA DE EFEITOS OPCIONAIS =====
-  
-  /**
-   * Função para lidar com a escolha do jogador sobre efeitos opcionais
-   */
-  const handleOptionalEffectChoice = useCallback((shouldActivate: boolean) => {
-    if (!optionalEffectDialog.card || !optionalEffectDialog.effects.length) return;
-    
-    const card = optionalEffectDialog.card;
-    const effects = optionalEffectDialog.effects;
-    
-    if (shouldActivate) {
-      // Jogador escolheu ativar o efeito opcional
-      // Implementar sistema de descarte de carta
-      setDiscardMode(true);
-      addToHistory(`🎯 ${card.name}: Efeito opcional ativado! Descartar uma carta para aplicar o boost.`);
-      
-      // Aplicar o efeito opcional (boost temporário)
-      effects.forEach(optionalEffect => {
-        if (optionalEffect.type === 'OPTIONAL_DISCARD_BOOST_FARM' && optionalEffect.duration) {
-          // Aplicar boost temporário para fazendas
-          setGame(g => ({
-            ...g,
-            // Aqui seria necessário implementar o sistema de boosts temporários
-            // Por enquanto, apenas registrar no histórico
-          }));
-          addToHistory(`🌾 Boost de fazenda ativado: +${optionalEffect.effect} por ${optionalEffect.duration} turnos`);
-        }
-      });
-    } else {
-      // Jogador escolheu não ativar o efeito opcional
-      addToHistory(`❌ ${card.name}: Efeito opcional não ativado. Apenas efeito básico aplicado.`);
-    }
-    
-    // Fechar o dialog
-    setOptionalEffectDialog({
-      isOpen: false,
-      card: null,
-      effects: []
-    });
-  }, [optionalEffectDialog.card, optionalEffectDialog.effects, addToHistory]);
-
-  return {
-    sidebarProps,
-    topBarProps,
-    gridBoardProps,
-    handProps,
-    discardModal,
-    // Estados e handlers adicionais
-    game,
-    selectedCard,
-    selectedGrid,
-    error,
-    setError,
-    victory,
-    setVictory,
-    defeat,
-    setDefeat,
-    history,
-    highlight,
-    productionSummary,
-    actionSummary,
-    diceResult,
-    diceUsed,
-    diceProductionSummary,
-    pendingDefense,
-    activatedCards, // Cartas ativadas por dado
-    // Estado de loading
-    loading: gameLoading,
-    // Props para modo infinito
-    discardedCards,
-    deckReshuffled,
-    // Handlers
-    handleNextPhase,
-    handleSelectCard,
-    handleSelectCell,
-    handleSelectFarm,
-    handleSelectCity,
-    handleDiscardCard,
-    handleDiceRoll,
-    handleProduction,
-    handleActivateMagic,
-    handleActivateDefense,
-    canPlayCardUI,
-    // Funções de persistência
-    saveGameState,
-    clearSavedGame,
-    updateGameState,
-    // Componente de restrições temporárias
-    RestrictionsDisplay: () => RestrictionsDisplay({ gameState: game }),
-    
-    // ===== SISTEMA DE EFEITOS OPCIONAIS =====
-    optionalEffectDialog,
-    handleOptionalEffectChoice,
-  };
+      return {
+      sidebarProps,
+      topBarProps,
+      gridBoardProps,
+      handProps,
+      discardModal,
+      // Estados e handlers adicionais
+      game,
+      selectedCard,
+      selectedGrid,
+      error,
+      setError,
+      victory,
+      setVictory,
+      defeat,
+      setDefeat,
+      history,
+      highlight,
+      productionSummary,
+      actionSummary,
+      diceResult,
+      diceUsed,
+      diceProductionSummary,
+      pendingDefense,
+      activatedCards, // Cartas ativadas por dado
+      // Estado de loading
+      loading: gameLoading,
+      // Props para modo infinito
+      discardedCards,
+      deckReshuffled,
+      // Handlers
+      handleNextPhase,
+      handleSelectCard,
+      handleSelectCell,
+      handleSelectFarm,
+      handleSelectCity,
+      handleDiscardCard,
+      handleDiceRoll,
+      handleProduction,
+      handleActivateMagic,
+      handleActivateDefense,
+      canPlayCardUI,
+      // Funções de persistência
+      saveGameState,
+      clearSavedGame,
+      updateGameState,
+    };
 }

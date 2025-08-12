@@ -1,6 +1,7 @@
 // Tipos e interfaces para o estado global do jogo
 import { Card } from './card';
 import { Resources } from './resources';
+import { EffectExecutionTracking, CardRestriction } from './card';
 
 export type GamePhase = 'draw' | 'action' | 'build' | 'production' | 'end';
 
@@ -75,4 +76,10 @@ export interface GameState {
   catastropheDuration?: number; // Duração restante da catástrofe em turnos
   catastropheName?: string; // Nome da catástrofe ativa
   lastCatastropheTurn?: number; // Último turno em que uma catástrofe foi ativada
+  
+  // Sistema de tracking de execução de efeitos
+  effectTracking?: Record<string, EffectExecutionTracking>; // Tracking de efeitos por carta e tipo
+  
+  // Sistema de restrições temporárias de cartas
+  cardRestrictions?: CardRestriction[]; // Restrições ativas de tipos de carta
 }

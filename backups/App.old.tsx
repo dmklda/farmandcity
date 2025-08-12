@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { GameState, GamePhase, GridCell } from './types/gameState.js';
-import { starterCards, baseDeck } from './backup/cards.js';
-import { useGameState } from './hooks/useGameState';
-import { Resources } from './types/resources.js';
-import EnhancedHand from './components/EnhancedHand.js';
-import Grid from './components/Grid.js';
-import ResourceBar from './components/ResourceBar.js';
-import GameControls from './components/GameControls.js';
-import PlayerStatsBar from './components/PlayerStatsBar.js';
-import { Card } from './types/card.js';
-import FixedSidebar from './components/FixedSidebar.js';
-import EnhancedTopBar from './components/EnhancedTopBar.js';
-import AuthPage from './components/AuthPage.js';
-import SavedGamesModal from './components/SavedGamesModal.js';
-import PlayerStatsModal from './components/PlayerStatsModal.js';
-import { supabase } from './integrations/supabase/client.js';
-import { GameStorageService } from './services/GameStorageService.js';
+import { GameState, GamePhase, GridCell } from '../src/types/gameState.js';
+import { starterCards, baseDeck } from '../src/backup/cards.js';
+import { useGameState } from '../src/hooks/useGameState.js';
+import { Resources } from '../src/types/resources.js';
+import EnhancedHand from '../src/components/EnhancedHand.js';
+import Grid from '../src/components/Grid.js';
+import ResourceBar from '../src/components/ResourceBar.js';
+import GameControls from '../src/components/GameControls.js';
+import PlayerStatsBar from '../src/components/PlayerStatsBar.js';
+import { Card } from '../src/types/card.js';
+import FixedSidebar from '../src/components/FixedSidebar.js';
+import EnhancedTopBar from '../src/components/EnhancedTopBar.js';
+import AuthPage from '../src/components/AuthPage.js';
+import SavedGamesModal from '../src/components/SavedGamesModal.js';
+import PlayerStatsModal from '../src/components/PlayerStatsModal.js';
+import { supabase } from '../src/integrations/supabase/client.js';
+import { GameStorageService } from '../src/services/GameStorageService.js';
 import type { User, Session } from '@supabase/supabase-js';
 
-import EnhancedGridBoard from './components/EnhancedGridBoard.js';
-import CardComponent from './components/CardComponent.js';
+import EnhancedGridBoard from '../src/components/EnhancedGridBoard.js';
+import CardComponent from '../src/components/CardComponent.js';
 
-import { DeckSelector } from './components/DeckSelector';
-import { DeckBuilder } from './components/DeckBuilder';
+import { DeckSelector } from '../src/components/DeckSelector.js';
+import { DeckBuilder } from '../src/components/DeckBuilder.js';
 
 function createEmptyGrid(rows: number, cols: number): GridCell[][] {
   return Array.from({ length: rows }, (_, y) =>
