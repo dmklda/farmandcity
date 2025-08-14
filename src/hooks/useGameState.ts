@@ -1058,7 +1058,7 @@ export function useGameState() {
   // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
   const [temporaryBoosts, setTemporaryBoosts] = useState<Array<{
     id: string;
-    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS' | 'BOOST_ALL_FARMS_FOOD_TEMP' | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST';
+    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS' | 'BOOST_ALL_FARMS_FOOD_TEMP' | 'BOOST_ALL_CITIES_COINS_TEMP' | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST';
     amount: number;
     duration: number;
     appliedAt: number;
@@ -3266,6 +3266,14 @@ export function useGameState() {
             if (farmCountTemp > 0) {
               prod.food += farmCountTemp * boost.amount;
               details.push(`🌾 Boost temporário de fazenda: +${boost.amount} comida para ${farmCountTemp} fazenda(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CITIES_COINS_TEMP':
+            const cityCountTemp = game.cityGrid.flat().filter(cell => cell.card).length;
+            if (cityCountTemp > 0) {
+              prod.coins += cityCountTemp * boost.amount;
+              details.push(`🏙️ Boost temporário de cidade: +${boost.amount} moeda para ${cityCountTemp} cidade(s)`);
             }
             break;
           case 'BOOST_CONSTRUCTION_COST_REDUCTION':

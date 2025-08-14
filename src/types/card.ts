@@ -62,7 +62,7 @@ export interface SimpleEffect {
 
 // Interface para efeitos condicionais
 export interface ConditionalEffect {
-  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5' | 'IF_CELESTIAL_FARMS_EXIST';
+  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5' | 'IF_CELESTIAL_FARMS_EXIST' | 'IF_VERTICAL_FARMS_EXIST';
   effect: SimpleEffect;
 }
 

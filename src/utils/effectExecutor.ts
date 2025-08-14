@@ -335,6 +335,9 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
     case 'IF_CELESTIAL_FARMS_EXIST':
       return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
       
+    case 'IF_VERTICAL_FARMS_EXIST':
+      return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('vertical'));
+      
     default:
       return false;
   }
