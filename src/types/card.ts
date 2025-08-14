@@ -34,7 +34,8 @@ export type SimpleEffectType =
   | 'TRADE_MATERIALS_FOR_FOOD' | 'TRADE_FOOD_FOR_COINS' | 'TRADE_COINS_FOR_MATERIALS'
   | 'OPTIONAL_DISCARD_BOOST_FARM' | 'OPTIONAL_DISCARD_BOOST_CITY' | 'OPTIONAL_DISCARD_BOOST_LANDMARK'
   | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'OPTIONAL_DISCARD_BUY_MAGIC_CARD'
-  | 'CANCEL_EVENT' | 'BLOCK_NEXT_NEGATIVE_EVENT' | 'BLOCK_ACTION' | 'DESTROY_CARD'
+  | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS'
+  | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'CREATE_CITY_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST' | 'CANCEL_EVENT' | 'BLOCK_NEXT_NEGATIVE_EVENT' | 'BLOCK_ACTION' | 'DESTROY_CARD'
   | 'STEAL_CARD' | 'PROTECT_AGAINST_EVENTS' | 'ABSORB_NEGATIVE_EFFECTS';
 
 // Tipos de frequência para efeitos
@@ -61,7 +62,7 @@ export interface SimpleEffect {
 
 // Interface para efeitos condicionais
 export interface ConditionalEffect {
-  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5';
+  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5' | 'IF_CELESTIAL_FARMS_EXIST';
   effect: SimpleEffect;
 }
 
@@ -173,4 +174,7 @@ export interface Card {
   
   // Novo campo para o sistema híbrido
   effect_logic?: string | null;
+  
+  // Campo para tags (workshop, city, farm, etc.)
+  tags?: string[];
 }

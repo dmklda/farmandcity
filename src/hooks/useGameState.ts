@@ -1005,6 +1005,15 @@ export function useGameState() {
   const [victory, setVictory] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [discardMode, setDiscardMode] = useState(false);
+  
+  // ===== DIFERENCIAÇÃO ENTRE MODOS DE DESCARTE =====
+  const [discardReason, setDiscardReason] = useState<'turn_change' | 'card_effect' | null>(null);
+  const [cardEffectDiscardInfo, setCardEffectDiscardInfo] = useState<{
+    cardName: string;
+    effect: string;
+    requiredDiscards: number;
+  } | null>(null);
+  
   const [defeat, setDefeat] = useState<string | null>(null);
   const [builtThisTurn, setBuiltThisTurn] = useState({ farm: false, city: false });
   const [actionThisTurn, setActionThisTurn] = useState(false);
@@ -1049,12 +1058,56 @@ export function useGameState() {
   // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
   const [temporaryBoosts, setTemporaryBoosts] = useState<Array<{
     id: string;
-    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE';
+    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS' | 'BOOST_ALL_FARMS_FOOD_TEMP' | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST';
     amount: number;
     duration: number;
     appliedAt: number;
     isActive: boolean;
   }>>([]);
+  
+  // ===== SISTEMA DE DESATIVAÇÃO DE CIDADES =====
+  const [deactivatedCities, setDeactivatedCities] = useState<Array<{
+    id: string;
+    cardId: string;
+    cardName: string;
+    gridX: number;
+    gridY: number;
+    deactivatedAt: number;
+    duration: number;
+    isActive: boolean;
+  }>>([]);
+  
+  // ===== SISTEMA DE SELEÇÃO DE CIDADE PARA DESATIVAR =====
+  const [cityDeactivationMode, setCityDeactivationMode] = useState<{
+    isActive: boolean;
+    cardId: string;
+    cardName: string;
+    requiresCitySelection: boolean;
+  }>({
+    isActive: false,
+    cardId: '',
+    cardName: '',
+    requiresCitySelection: false
+  });
+  
+  // ===== MODAL DE SELEÇÃO DE CIDADE PARA DESATIVAR =====
+  const [cityDeactivationModal, setCityDeactivationModal] = useState<{
+    isOpen: boolean;
+    cardId: string;
+    cardName: string;
+    availableCities: Array<{
+      id: string;
+      name: string;
+      gridX: number;
+      gridY: number;
+      type: string;
+    }>;
+  }>({
+    isOpen: false,
+    cardId: '',
+    cardName: '',
+    availableCities: []
+  });
   
   // ===== SISTEMA DE COMPRA DE CARTAS MÁGICAS =====
   const [magicCardPurchase, setMagicCardPurchase] = useState<{
@@ -1094,6 +1147,24 @@ export function useGameState() {
       }).map(boost => ({
         ...boost,
         isActive: currentTurn - boost.appliedAt < boost.duration
+      }))
+    );
+    
+    // Limpar desativações de cidades expiradas automaticamente
+    setDeactivatedCities(prev => 
+      prev.filter(deactivation => {
+        const turnsElapsed = currentTurn - deactivation.deactivatedAt;
+        const isExpired = turnsElapsed >= deactivation.duration;
+        
+        if (isExpired && deactivation.isActive) {
+          // Marcar desativação como expirada no histórico
+          addToHistory(`🏗️ Cidade "${deactivation.cardName}" reativada após ${deactivation.duration} turno(s)`);
+        }
+        
+        return !isExpired;
+      }).map(deactivation => ({
+        ...deactivation,
+        isActive: currentTurn - deactivation.deactivatedAt < deactivation.duration
       }))
     );
   }, [game.turn, gameLoading, addToHistory]);
@@ -1339,6 +1410,8 @@ export function useGameState() {
     if (gameLoading) return;
     if (game.hand.length > HAND_LIMIT && !discardMode && !victory && !defeat) {
       setDiscardMode(true);
+      setDiscardReason('turn_change');
+      setCardEffectDiscardInfo(null);
       setError(`Descarte obrigatório: você tem ${game.hand.length} cartas, máximo é ${HAND_LIMIT}`);
               addToHistory(`🗑️ Descarte obrigatório ativado: ${game.hand.length} cartas na mão`);
     }
@@ -1570,6 +1643,8 @@ export function useGameState() {
     if (gameLoading) return;
     if (game.phase === 'end' && game.hand.length > 0 && !discardMode && !victory && !defeat && !discardedThisTurn) {
       setDiscardMode(true);
+      setDiscardReason('turn_change');
+      setCardEffectDiscardInfo(null);
       setDiscardedThisTurn(true);
               addToHistory('🗑️ Descarte obrigatório: escolha uma carta para descartar.');
     }
@@ -2250,12 +2325,34 @@ export function useGameState() {
 
   // Função para saber se uma carta pode ser jogada
   function canPlayCardUI(card: Card) {
-    const cost: Resources = {
+    let cost: Resources = {
       coins: card.cost.coins ?? 0,
       food: card.cost.food ?? 0,
       materials: card.cost.materials ?? 0,
       population: card.cost.population ?? 0,
     };
+
+                // ===== APLICAR REDUÇÃO DE CUSTO DE CONSTRUÇÃO =====
+            const costReductionBoost = temporaryBoosts.find(boost => 
+              boost.type === 'BOOST_CONSTRUCTION_COST_REDUCTION' && boost.isActive
+            );
+            
+            if (costReductionBoost && (card.type === 'farm' || card.type === 'city' || card.type === 'landmark')) {
+              // Aplicar redução de custo de materiais
+              const reduction = Math.min(cost.materials, costReductionBoost.amount);
+              cost.materials = Math.max(0, cost.materials - reduction);
+            }
+            
+            // ===== APLICAR REDUÇÃO DE CUSTO DE CIDADES =====
+            const cityCostReductionBoost = temporaryBoosts.find(boost => 
+              boost.type === 'REDUCE_CITY_COST' && boost.isActive
+            );
+            
+            if (cityCostReductionBoost && card.type === 'city') {
+              // Aplicar redução de custo de materiais para cartas city
+              const reduction = Math.min(cost.materials, cityCostReductionBoost.amount);
+              cost.materials = Math.max(0, cost.materials - reduction);
+            }
 
     // ===== VALIDAÇÃO DE RESTRIÇÕES TEMPORÁRIAS =====
     // Verificar se há restrições ativas que impedem jogar este tipo de carta
@@ -2324,7 +2421,22 @@ export function useGameState() {
     // Farm/City: só na fase Build, limitada a 2 por turno (qualquer combinação)
     if (card.type === 'farm' || card.type === 'city') {
       if (game.phase !== 'build') return { playable: false, reason: 'Só pode construir na fase de construção' };
-      if (builtCountThisTurn >= 2) return { playable: false, reason: 'Só pode construir até 2 cartas por turno.' };
+      
+      // ===== VERIFICAR CONSTRUÇÃO EXTRA DE CIDADES =====
+      let maxBuilds = 2; // Limite padrão
+      const extraBuildCityBoost = temporaryBoosts.find(boost => 
+        boost.type === 'EXTRA_BUILD_CITY' && boost.isActive
+      );
+      
+      if (extraBuildCityBoost && card.type === 'city') {
+        maxBuilds = 2 + extraBuildCityBoost.amount; // 2 normais + extras
+      }
+      
+      if (builtCountThisTurn >= maxBuilds) {
+        const extraInfo = extraBuildCityBoost ? ` (2 normais + ${extraBuildCityBoost.amount} extra(s))` : '';
+        return { playable: false, reason: `Só pode construir até ${maxBuilds} cartas por turno${extraInfo}.` };
+      }
+      
       if (!canPlayCard(game.resources, cost)) return { playable: false, reason: 'Recursos insuficientes' };
       
       // Verificar se pode empilhar em alguma carta existente
@@ -2336,10 +2448,12 @@ export function useGameState() {
       ];
       const canStack = allCells.some(cell => cell.card && canStackCard(card, cell.card));
       
+      const extraInfo = extraBuildCityBoost && card.type === 'city' ? ` (construção extra ativa)` : '';
+      
       return { 
         playable: true, 
         canStack,
-        reason: canStack ? 'Pode construir ou empilhar' : 'Pode construir'
+        reason: canStack ? `Pode construir ou empilhar${extraInfo}` : `Pode construir${extraInfo}`
       };
     }
     
@@ -2399,6 +2513,53 @@ export function useGameState() {
       setError('Recursos insuficientes para jogar esta carta.');
       return;
     }
+    // ===== DETECÇÃO DE DESATIVAÇÃO DE CIDADES =====
+    if (selectedCard.effect_logic && selectedCard.effect_logic.includes('DEACTIVATE_CITY_CARD')) {
+      // Verificar se há cidades disponíveis
+      const availableCities = game.cityGrid.flat().map((cell, y) => 
+        cell.card ? {
+          id: cell.card.id,
+          name: cell.card.name,
+          gridX: 0, // Será calculado corretamente
+          gridY: y,
+          type: cell.card.type
+        } : null
+      ).filter((city): city is { id: string; name: string; gridX: number; gridY: number; type: CardType } => city !== null);
+      
+      if (availableCities.length === 0) {
+        setError('Não há cidades disponíveis para desativar');
+        return;
+      }
+      
+      // Abrir modal de seleção de cidade
+      setCityDeactivationModal({
+        isOpen: true,
+        cardId: selectedCard.id,
+        cardName: selectedCard.name,
+        availableCities: availableCities
+      });
+      
+      // Aplicar ganho de materiais imediatamente
+      const materialsGain = 3; // Valor fixo do effect_logic
+      setGame(prev => ({
+        ...prev,
+        resources: {
+          ...prev.resources,
+          materials: prev.resources.materials + materialsGain
+        }
+      }));
+      
+      addToHistory(`🏗️ ${selectedCard.name}: Selecione uma cidade para desativar por 1 turno (+${materialsGain} materiais ganhos)`);
+      setHighlight(`🏗️ Selecione uma cidade para desativar!`);
+      setTimeout(() => setHighlight(null), 3000);
+      
+      // Não continuar com a construção da carta
+      setSelectedCard(null);
+      setSelectedGrid(null);
+      setError(null);
+      return;
+    }
+    
     setGame((g) => {
       const newGrid = grid.map((row, iy) =>
         row.map((cell, ix) => {
@@ -2448,7 +2609,6 @@ export function useGameState() {
       
       // ===== DETECÇÃO DE BOOSTS ESPECIAIS =====
       if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CONSTRUCTIONS_DOUBLE')) {
-        // Aplicar boost duplo para todas as construções
         const boostId = `boost_${Date.now()}_${Math.random()}`;
         setTemporaryBoosts(prev => [...prev, {
           id: boostId,
@@ -2460,6 +2620,178 @@ export function useGameState() {
         }]);
         addToHistory(`⚡ ${selectedCard.name}: Boost duplo ativado para todas as construções neste turno!`);
       }
+      
+      // ===== DETECÇÃO DE WORKSHOP BOOSTS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS')) {
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 2;
+        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
+        
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS',
+          amount: amount,
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🏭 ${selectedCard.name}: Boost de materiais ativado para todas as oficinas por ${duration} turno(s)!`);
+      }
+      
+      // ===== DETECÇÃO DE REDUÇÃO DE CUSTO DE CONSTRUÇÃO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_CONSTRUCTION_COST_REDUCTION')) {
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
+        
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'BOOST_CONSTRUCTION_COST_REDUCTION',
+          amount: amount,
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🚧 ${selectedCard.name}: Redução de custo de construção ativada por ${duration} turno(s)!`);
+      }
+      
+      // ===== DETECÇÃO DE CONSTRUÇÃO EXTRA DE CIDADES =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('EXTRA_BUILD_CITY')) {
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
+        
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'EXTRA_BUILD_CITY',
+          amount: amount,
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🏙️ ${selectedCard.name}: Construção extra de cidades ativada por ${duration} turno(s)!`);
+      }
+      
+      // ===== DETECÇÃO DE REDUÇÃO DE PRODUÇÃO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('REDUCE_PRODUCTION')) {
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
+        
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'REDUCE_PRODUCTION',
+          amount: amount,
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🌑 ${selectedCard.name}: Redução de produção ativada por ${duration} turno(s)!`);
+      }
+      
+      // ===== DETECÇÃO DE ECLIPSE MÍSTICO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('IF_TEMPLE_EXISTS')) {
+        // Verificar se existe QUALQUER carta com tag 'temple' no landmarksGrid
+        const hasTemple = game.landmarksGrid.flat().some(cell => 
+          cell.card && cell.card.tags && cell.card.tags.includes('temple')
+        );
+        
+        if (hasTemple) {
+          // Templo existe: ganha +1 moeda por turno
+          const boostId = `boost_${Date.now()}_${Math.random()}`;
+          setTemporaryBoosts(prev => [...prev, {
+            id: boostId,
+            type: 'IF_TEMPLE_EXISTS',
+            amount: 1,
+            duration: 3, // Por 3 turnos
+            appliedAt: game.turn,
+            isActive: true
+          }]);
+          addToHistory(`🌟 ${selectedCard.name}: Templo encontrado! Ganha +1 moeda por turno por 3 turnos!`);
+        } else {
+          // Templo não existe: descarta 1 carta
+          addToHistory(`🌟 ${selectedCard.name}: Nenhum templo encontrado. Descarte 1 carta da sua mão.`);
+          // Ativar modo de descarte por efeito de carta
+          setDiscardMode(true);
+          setDiscardReason('card_effect');
+          setCardEffectDiscardInfo({
+            cardName: selectedCard.name,
+            effect: 'Eclipse Místico: Descarte obrigatório por não ter templo',
+            requiredDiscards: 1
+          });
+        }
+      }
+      
+      // ===== DETECÇÃO DE CRIAÇÃO DE CARTAS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('CREATE_CITY_CARD')) {
+        // Processar efeito de criação de cartas de city
+        const effectParts = selectedCard.effect_logic.split('|');
+        let cardsToCreate = 1; // Padrão
+        
+        if (effectParts.length > 1) {
+          // Formato: RANDOM_CHANCE:50:CREATE_CITY_CARD:2|CREATE_CITY_CARD:1
+          const randomChance = Math.random() * 100;
+          if (randomChance < 50) {
+            cardsToCreate = parseInt(effectParts[0].split(':')[3]) || 2;
+          } else {
+            cardsToCreate = parseInt(effectParts[1].split(':')[1]) || 1;
+          }
+        } else {
+          // Formato simples: CREATE_CITY_CARD:1
+          cardsToCreate = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        }
+        
+        // Buscar cartas de city no deck
+        const cityCards = game.deck.filter(card => card.type === 'city');
+        const cardsToAdd = cityCards.slice(0, Math.min(cardsToCreate, cityCards.length));
+        
+        if (cardsToAdd.length > 0) {
+          // Adicionar cartas à mão
+          setGame(prev => ({
+            ...prev,
+            hand: [...prev.hand, ...cardsToAdd],
+            deck: prev.deck.filter(card => !cardsToAdd.includes(card))
+          }));
+          
+          addToHistory(`🏙️ ${selectedCard.name}: Criou ${cardsToAdd.length} carta(s) de city na mão!`);
+          setHighlight(`🏙️ +${cardsToAdd.length} carta(s) de city criada(s)!`);
+          setTimeout(() => setHighlight(null), 2000);
+        } else {
+          addToHistory(`⚠️ ${selectedCard.name}: Não há cartas de city disponíveis no deck.`);
+        }
+      }
+      
+      // ===== DETECÇÃO DE PRODUÇÃO DE REPUTAÇÃO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('PRODUCE_REPUTATION')) {
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'PRODUCE_REPUTATION',
+          amount: amount,
+          duration: 1, // Por 1 turno
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🏛️ ${selectedCard.name}: Produz +${amount} reputação por turno!`);
+      }
+      
+      // ===== DETECÇÃO DE REDUÇÃO DE CUSTO DE CIDADES =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('REDUCE_CITY_COST')) {
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 2;
+        const boostId = `boost_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'REDUCE_CITY_COST',
+          amount: amount,
+          duration: 1, // Por 1 turno
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🏙️ ${selectedCard.name}: Reduz custo de cartas city em -${amount} materiais por turno!`);
+      }
+      
+
       
       /*console.log('🏗️ Efeito da carta construída:', {
         nome: selectedCard.name,
@@ -2587,7 +2919,16 @@ export function useGameState() {
     }
     
     // Processar o efeito da carta de magia
-    const effect = parseInstantEffect(card);
+    let effect: Partial<Resources> = {};
+    
+    // Priorizar o novo sistema baseado em effect_logic
+    if (card.effect_logic && card.effect_logic.includes('IF_CITY_EXISTS')) {
+      // Usar o novo sistema para efeitos condicionais
+      effect = executeCardEffects(card.effect_logic, game, card.id) || {};
+    } else {
+      // Fallback para o sistema antigo
+      effect = parseInstantEffect(card);
+    }
     //console.log('Efeito parseado:', effect);
     
     let details: string[] = [];
@@ -2746,8 +3087,16 @@ export function useGameState() {
     setDiscardMode(false);
     setError(null);
     
-    // Adicionar ao histórico
-    addToHistory(`🗑️ Descartou: ${card.name}`);
+    // Limpar informações de descarte
+    setDiscardReason(null);
+    setCardEffectDiscardInfo(null);
+    
+    // Adicionar ao histórico baseado no motivo
+    if (discardReason === 'card_effect') {
+      addToHistory(`🎴 Descartou por efeito de carta: ${card.name}`);
+    } else {
+      addToHistory(`🗑️ Descartou: ${card.name}`);
+    }
     
     // Feedback visual
     setHighlight(`🗑️ Carta descartada: ${card.name}`);
@@ -2893,6 +3242,87 @@ export function useGameState() {
               prod.materials = Math.floor(prod.materials * boost.amount);
               details.push(`⚡ Boost duplo: Produção dobrada para ${totalConstructions} construção(ões)`);
             }
+            break;
+          case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS':
+            const workshopCities = game.cityGrid.flat().filter(cell => 
+              cell.card && cell.card.tags && cell.card.tags.includes('workshop')
+            );
+            if (workshopCities.length > 0) {
+              prod.materials += workshopCities.length * boost.amount;
+              details.push(`🏭 Boost de oficinas: +${boost.amount} materiais para ${workshopCities.length} oficina(s)`);
+            }
+            break;
+          case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS':
+            const workshopCitiesCoins = game.cityGrid.flat().filter(cell => 
+              cell.card && cell.card.tags && cell.card.tags.includes('workshop')
+            );
+            if (workshopCitiesCoins.length > 0) {
+              prod.coins += workshopCitiesCoins.length * boost.amount;
+              details.push(`🏭 Boost de oficinas: +${boost.amount} moedas para ${workshopCitiesCoins.length} oficina(s)`);
+            }
+            break;
+          case 'BOOST_ALL_FARMS_FOOD_TEMP':
+            const farmCountTemp = game.farmGrid.flat().filter(cell => cell.card).length;
+            if (farmCountTemp > 0) {
+              prod.food += farmCountTemp * boost.amount;
+              details.push(`🌾 Boost temporário de fazenda: +${boost.amount} comida para ${farmCountTemp} fazenda(s)`);
+            }
+            break;
+          case 'BOOST_CONSTRUCTION_COST_REDUCTION':
+            // Redução de custo de construção (já aplicada na validação de cartas)
+            details.push(`🚧 Redução de custo de construção: -${boost.amount} material por ${boost.duration} turno(s)`);
+            // Nota: A redução real é aplicada em canPlayCardUI durante validação
+            break;
+            
+          case 'EXTRA_BUILD_CITY':
+            // Construção extra de cidades (será aplicada na validação de cartas)
+            details.push(`🏙️ Construção extra de cidades: +${boost.amount} cidade(s) por ${boost.duration} turno(s)`);
+            // Nota: A construção extra é aplicada em canPlayCardUI durante validação
+            break;
+            
+          case 'REDUCE_PRODUCTION':
+            // Redução de produção (aplicada imediatamente)
+            if (boost.amount > 0) {
+              // Reduzir todos os recursos em boost.amount
+              const originalProd = { ...prod };
+              prod.coins = Math.max(0, prod.coins - boost.amount);
+              prod.food = Math.max(0, prod.food - boost.amount);
+              prod.materials = Math.max(0, prod.materials - boost.amount);
+              prod.population = Math.max(0, prod.population - boost.amount);
+              
+              // Adicionar detalhes da redução
+              const totalReduction = (originalProd.coins - prod.coins) + (originalProd.food - prod.food) + 
+                                   (originalProd.materials - prod.materials) + (originalProd.population - prod.population);
+              
+              if (totalReduction > 0) {
+                details.push(`🌑 Redução de produção: -${boost.amount} recurso(s) por ${boost.duration} turno(s)`);
+              }
+            }
+            break;
+            
+          case 'IF_TEMPLE_EXISTS':
+            // Eclipse Místico: ganha moedas se templo existir
+            prod.coins += boost.amount;
+            details.push(`🌟 Eclipse Místico: +${boost.amount} moeda(s) por ${boost.duration} turno(s)`);
+            break;
+            
+          case 'PRODUCE_REPUTATION':
+            // Estátua Simples: produz reputação
+            // Aplicar reputação diretamente ao gameState
+            setGame(prev => ({
+              ...prev,
+              playerStats: {
+                ...prev.playerStats,
+                reputation: Math.min(10, prev.playerStats.reputation + boost.amount)
+              }
+            }));
+            details.push(`🏛️ Produção de reputação: +${boost.amount} por ${boost.duration} turno(s)`);
+            break;
+            
+          case 'REDUCE_CITY_COST':
+            // Estátua Simples: reduz custo de cartas city
+            // Este efeito é aplicado em canPlayCardUI, não aqui
+            details.push(`🏙️ Redução de custo de city: -${boost.amount} materiais por ${boost.duration} turno(s)`);
             break;
         }
       });
@@ -3178,6 +3608,12 @@ export function useGameState() {
       // Jogador escolheu ativar o efeito opcional
       // Implementar sistema de descarte de carta
       setDiscardMode(true);
+      setDiscardReason('card_effect');
+      setCardEffectDiscardInfo({
+        cardName: card.name,
+        effect: 'Efeito opcional: descarte para ativar boost',
+        requiredDiscards: 1
+      });
       addToHistory(`🎯 ${card.name}: Efeito opcional ativado! Descartar uma carta para aplicar o boost.`);
       
       // Aplicar o efeito opcional baseado no tipo
@@ -3216,6 +3652,12 @@ export function useGameState() {
             
             // Ativar modo de descarte para escolher carta a descartar
             setDiscardMode(true);
+            setDiscardReason('card_effect');
+            setCardEffectDiscardInfo({
+              cardName: card.name,
+              effect: 'Compra de carta mágica: descarte para comprar',
+              requiredDiscards: 1
+            });
             break;
             
           case 'OPTIONAL_DISCARD_BOOST_CITY':
@@ -3340,6 +3782,118 @@ export function useGameState() {
     
   }, [magicCardPurchase, addToHistory]);
 
+  // ===== FUNÇÃO PARA DESATIVAR CIDADE =====
+  const deactivateCity = useCallback((gridX: number, gridY: number) => {
+    if (!cityDeactivationMode.isActive || !cityDeactivationMode.requiresCitySelection) return;
+    
+    const targetCell = game.cityGrid[gridY]?.[gridX];
+    if (!targetCell || !targetCell.card) {
+      setError('Nenhuma cidade encontrada nesta posição');
+      return;
+    }
+    
+    // Criar desativação
+    const deactivationId = `deactivation_${Date.now()}_${Math.random()}`;
+    const newDeactivation = {
+      id: deactivationId,
+      cardId: targetCell.card.id,
+      cardName: targetCell.card.name,
+      gridX: gridX,
+      gridY: gridY,
+      deactivatedAt: game.turn,
+      duration: 1,
+      isActive: true
+    };
+    
+    // Adicionar à lista de cidades desativadas
+    setDeactivatedCities(prev => [...prev, newDeactivation]);
+    
+    // Adicionar ao histórico
+    addToHistory(`🏗️ ${cityDeactivationMode.cardName}: Cidade "${targetCell.card.name}" desativada por 1 turno`);
+    
+    // Limpar modo de desativação
+    setCityDeactivationMode({
+      isActive: false,
+      cardId: '',
+      cardName: '',
+      requiresCitySelection: false
+    });
+    
+    // Feedback visual
+    setHighlight(`🏗️ Cidade "${targetCell.card.name}" desativada!`);
+    setTimeout(() => setHighlight(null), 3000);
+    
+  }, [cityDeactivationMode, game.cityGrid, game.turn, addToHistory]);
+
+  // Calcular produção base das fazendas
+  const farmProduction = game.farmGrid.flat().reduce((total, cell) => {
+    if (cell.card && cell.card.effect_logic) {
+      const production = parseProduction(cell.card, game, cell.card.id);
+      return {
+        coins: total.coins + (production.coins || 0),
+        food: total.food + (production.food || 0),
+        materials: total.materials + (production.materials || 0),
+        population: total.population + (production.population || 0)
+      };
+    }
+    return total;
+  }, { coins: 0, food: 0, materials: 0, population: 0 });
+
+  // Calcular produção base das cidades (excluindo cidades desativadas)
+  const cityProduction = game.cityGrid.flat().reduce((total, cell) => {
+    if (cell.card && cell.card.effect_logic) {
+      // Verificar se a cidade está desativada
+      const isDeactivated = deactivatedCities.some(deactivation => 
+        deactivation.cardId === cell.card!.id && deactivation.isActive
+      );
+      
+      if (isDeactivated) {
+        // Cidade desativada não produz
+        return total;
+      }
+      
+      const production = parseProduction(cell.card, game, cell.card.id);
+      return {
+        coins: total.coins + (production.coins || 0),
+        food: total.food + (production.food || 0),
+        materials: total.materials + (production.materials || 0),
+        population: total.population + (production.population || 0)
+      };
+    }
+    return total;
+  }, { coins: 0, food: 0, materials: 0, population: 0 });
+
+  // ===== VALIDAÇÃO PARA CARTAS DE DESATIVAÇÃO =====
+  const canPlayDeactivationCard = useCallback((card: Card) => {
+    if (card.effect_logic && card.effect_logic.includes('DEACTIVATE_CITY_CARD')) {
+      // Verificar se há cidades disponíveis para desativar
+      const availableCities = game.cityGrid.flat().filter(cell => 
+        cell.card && 
+        // Não pode desativar cidades já desativadas
+        !deactivatedCities.some(deactivation => 
+          deactivation.cardId === cell.card!.id && deactivation.isActive
+        )
+      );
+      
+      if (availableCities.length === 0) {
+        return {
+          canPlay: false,
+          reason: 'Não há cidades disponíveis para desativar'
+        };
+      }
+      
+      return {
+        canPlay: true,
+        reason: `${availableCities.length} cidade(s) disponível(is) para desativação`
+      };
+    }
+    
+    return {
+      canPlay: true,
+      reason: 'Carta não requer validação especial'
+    };
+  }, [game.cityGrid, deactivatedCities]);
+
   return {
     sidebarProps,
     topBarProps,
@@ -3398,5 +3952,15 @@ export function useGameState() {
     // ===== SISTEMA DE COMPRA DE CARTAS MÁGICAS =====
     magicCardPurchase,
     selectMagicCard,
+    
+    // ===== SISTEMA DE DESATIVAÇÃO DE CIDADES =====
+    deactivatedCities,
+    cityDeactivationMode,
+    deactivateCity,
+    canPlayDeactivationCard,
+    
+    // ===== SISTEMA DE DIFERENCIAÇÃO DE DESCARTE =====
+    discardReason,
+    cardEffectDiscardInfo,
   };
 }

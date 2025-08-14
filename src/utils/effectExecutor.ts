@@ -332,6 +332,9 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
     case 'IF_COINS_GE_5':
       return (gameState.resources.coins || 0) >= 5;
       
+    case 'IF_CELESTIAL_FARMS_EXIST':
+      return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
+      
     default:
       return false;
   }
