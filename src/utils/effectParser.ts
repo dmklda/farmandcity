@@ -47,9 +47,16 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
     // Processar parâmetros adicionais
     if (params.length > 1) {
       const secondParam = params[1];
-      
-      // Verificar se é duração ou intervalo de turnos
-      if (!isNaN(parseInt(secondParam))) {
+      // Para efeitos de troca, o segundo parâmetro é o recurso a receber
+      if (
+        effectType === 'TRADE_MATERIALS_FOR_FOOD' ||
+        effectType === 'TRADE_FOOD_FOR_COINS' ||
+        effectType === 'TRADE_COINS_FOR_MATERIALS'
+      ) {
+        if (!isNaN(parseInt(secondParam))) {
+          (effect as any).extraAmount = parseInt(secondParam);
+        }
+      } else if (!isNaN(parseInt(secondParam))) {
         if (effect.frequency === 'ON_TURN_X') {
           effect.turnInterval = parseInt(secondParam);
         } else {
@@ -57,6 +64,13 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
         }
       } else {
         effect.condition = secondParam;
+      }
+      // Processar terceiro parâmetro se existir
+      if (params.length > 2) {
+        const thirdParam = params[2];
+        if (!isNaN(parseInt(thirdParam))) {
+          effect.duration = parseInt(thirdParam);
+        }
       }
     }
     
@@ -123,7 +137,8 @@ function determineEffectFrequency(effectType: SimpleEffectType, params: string[]
       effectType === 'OPTIONAL_DISCARD_BOOST_FARM' ||
       effectType === 'OPTIONAL_DISCARD_BOOST_CITY' ||
       effectType === 'OPTIONAL_DISCARD_BOOST_LANDMARK' ||
-      effectType === 'OPTIONAL_DISCARD_BUY_MAGIC_CARD') {
+      effectType === 'OPTIONAL_DISCARD_BUY_MAGIC_CARD' ||
+      effectType === 'OPTIONAL_DISCARD_ELEMENTAL') {
     return 'ON_CONDITION'; // Executa se jogador escolher
   }
   

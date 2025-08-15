@@ -12,7 +12,6 @@ import { useUnlockedCards } from './useUnlockedCards';
 import { useCatastrophes } from './useCatastrophes';
 import { useCardCopyLimits } from './useCardCopyLimits';
 
-const DECK_LIMIT = 28;
 const HAND_LIMIT = 7;
 const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end'];
 
@@ -904,25 +903,19 @@ export function useGameState() {
     if (activeDeck && activeDeck.cards && activeDeck.cards.length > 0) {
       //console.log(`✅ Usando deck ativo: ${activeDeck.name} com ${activeDeck.cards.length} cartas`);
       //console.log('Cartas do deck ativo:', activeDeck.cards.map(c => c.name));
-      const result = activeDeck.cards.slice(0, DECK_LIMIT);
-      //console.log('Resultado do deck ativo:', result.length, 'cartas');
-      return result;
+      return activeDeck.cards;
     }
     
     // Fallback: cartas do jogador
     if (playerCards.length > 0) {
       //console.log(`🔄 Usando cartas do jogador: ${playerCards.length} cartas`);
-      const result = shuffle([...playerCards]).slice(0, DECK_LIMIT);
-      //console.log('Resultado das cartas do jogador:', result.length, 'cartas');
-      return result;
+      return shuffle([...playerCards]);
     }
     
     // Fallback final: starter deck
     if (starterDeck.length > 0) {
       //console.log(`🔄 Usando starter deck: ${starterDeck.length} cartas`);
-      const result = shuffle([...starterDeck]).slice(0, DECK_LIMIT);
-      //console.log('Resultado do starter deck:', result.length, 'cartas');
-      return result;
+      return shuffle([...starterDeck]);
     }
     
     //console.log('❌ Nenhuma carta disponível');
@@ -1055,13 +1048,50 @@ export function useGameState() {
     effects: []
   });
   
+  // ===== SISTEMA DE EFEITOS OPCIONAIS DE PAGAMENTO =====
+  const [optionalPaymentDialog, setOptionalPaymentDialog] = useState<{
+    isOpen: boolean;
+    card: Card | null;
+    coinCost: number;
+    effect: string;
+    effectType: string;
+    effectAmount: number;
+  }>({
+    isOpen: false,
+    card: null,
+    coinCost: 0,
+    effect: '',
+    effectType: '',
+    effectAmount: 0
+  });
+  
   // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
   const [temporaryBoosts, setTemporaryBoosts] = useState<Array<{
     id: string;
-    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS' | 'BOOST_ALL_FARMS_FOOD_TEMP' | 'BOOST_ALL_CITIES_COINS_TEMP' | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST';
+    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'BOOST_ALL_CONSTRUCTIONS_DOUBLE' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS' | 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS' | 'BOOST_ALL_FARMS_FOOD_TEMP' | 'BOOST_ALL_CITIES_COINS_TEMP' | 'BOOST_CONSTRUCTION_COST_REDUCTION' | 'EXTRA_BUILD_CITY' | 'REDUCE_PRODUCTION' | 'IF_TEMPLE_EXISTS' | 'DISCARD_CARD' | 'PRODUCE_REPUTATION' | 'REDUCE_CITY_COST' | 'BOOST_ALL_FARMS_MATERIALS_TEMP' | 'BLOCK_NEXT_NEGATIVE_EVENT' | 'BOOST_ALL_CONSTRUCTIONS' | 'DUPLICATE_MAGIC_EFFECTS' | 'BOOST_ALL_CITIES_MATERIALS_TEMP' | 'RESTRICT_FARM_ACTIVATION';
     amount: number;
     duration: number;
     appliedAt: number;
+    isActive: boolean;
+  }>>([]);
+
+  // ===== SISTEMA DE BOOSTS CONTÍNUOS =====
+  const [continuousBoosts, setContinuousBoosts] = useState<Array<{
+    id: string;
+    type: 'BOOST_ALL_FARMS_FOOD' | 'BOOST_ALL_CITIES_COINS' | 'DUPLICATE_MAGIC_EFFECTS' | 'BOOST_ALL_CITIES_MATERIALS';
+    amount: number;
+    cardId: string;
+    cardName: string;
+    isActive: boolean;
+  }>>([]);
+
+  // ===== SISTEMA DE CARTAS EXTRAS =====
+  const [extraCardPlays, setExtraCardPlays] = useState<Array<{
+    id: string;
+    type: 'EXTRA_CARD_PLAY';
+    amount: number;
+    cardId: string;
+    cardName: string;
     isActive: boolean;
   }>>([]);
   
@@ -1128,6 +1158,61 @@ export function useGameState() {
     showMagicCardSelection: false
   });
   
+  // Função para processar o pagamento opcional e aplicar o efeito
+  const handleOptionalPayment = useCallback((accept: boolean) => {
+    if (!optionalPaymentDialog.isOpen || !optionalPaymentDialog.card) return;
+    
+    if (accept) {
+      // Verificar se o jogador ainda tem moedas suficientes
+      if (game.resources.coins >= optionalPaymentDialog.coinCost) {
+        // Aplicar o custo
+        setGame(g => ({
+          ...g,
+          resources: {
+            ...g.resources,
+            coins: g.resources.coins - optionalPaymentDialog.coinCost
+          }
+        }));
+        
+        // Aplicar o efeito
+        switch (optionalPaymentDialog.effectType) {
+          case 'EXTRA_CARD_PLAY':
+            // Adicionar uma jogada extra
+            const extraPlayId = `extra_play_${Date.now()}_${Math.random()}`;
+            setExtraCardPlays(prev => [...prev, {
+              id: extraPlayId,
+              type: 'EXTRA_CARD_PLAY',
+              amount: optionalPaymentDialog.effectAmount,
+              cardId: optionalPaymentDialog.card?.id || '',
+              cardName: optionalPaymentDialog.card?.name || '',
+              isActive: true
+            }]);
+            addToHistory(`🎴 ${optionalPaymentDialog.card?.name}: Pagou ${optionalPaymentDialog.coinCost} moedas para jogar ${optionalPaymentDialog.effectAmount} carta(s) extra`);
+            break;
+            
+          // Adicionar outros tipos de efeitos conforme necessário
+          default:
+            addToHistory(`💰 ${optionalPaymentDialog.card?.name}: Pagou ${optionalPaymentDialog.coinCost} moedas para um efeito desconhecido`);
+            break;
+        }
+      } else {
+        addToHistory(`❌ ${optionalPaymentDialog.card?.name}: Moedas insuficientes para pagar o efeito opcional`);
+      }
+    } else {
+      addToHistory(`❌ ${optionalPaymentDialog.card?.name}: Efeito opcional recusado`);
+    }
+    
+    // Fechar o diálogo
+    setOptionalPaymentDialog({
+      isOpen: false,
+      card: null,
+      coinCost: 0,
+      effect: '',
+      effectType: '',
+      effectAmount: 0
+    });
+  }, [game.resources.coins, optionalPaymentDialog]);
+
   // Limpar boosts temporários expirados automaticamente
   useEffect(() => {
     if (gameLoading) return;
@@ -1271,6 +1356,10 @@ export function useGameState() {
         setGameLoading(true);
         return;
       }
+      
+      // Log detalhado para debug de cartas inválidas
+      const debugDeck = activeDeck.cards;
+      console.log('Deck ativo recebido:', debugDeck.length, debugDeck.map(c => c?.id || 'INVALID'));
       
       // Verificar se já há um estado salvo para este deck
       const savedState = loadGameState();
@@ -2607,6 +2696,33 @@ export function useGameState() {
         }
       }
       
+      // ===== DETECÇÃO DE OPTIONAL_PAY_COINS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('OPTIONAL_PAY_COINS')) {
+        // Extrair parâmetros do efeito
+        const payMatch = selectedCard.effect_logic.match(/OPTIONAL_PAY_COINS:(\d+):([A-Z_]+):(\d+)/);
+        if (payMatch) {
+          const coinCost = parseInt(payMatch[1]);
+          const effectType = payMatch[2];
+          const effectAmount = parseInt(payMatch[3]);
+          
+          // Verificar se o jogador tem moedas suficientes
+          if (game.resources.coins >= coinCost) {
+            setOptionalPaymentDialog({
+              isOpen: true,
+              card: selectedCard,
+              coinCost: coinCost,
+              effect: `${effectType}:${effectAmount}`,
+              effectType: effectType,
+              effectAmount: effectAmount
+            });
+            
+            addToHistory(`💰 ${selectedCard.name}: Você pode pagar ${coinCost} moedas para ${effectType === 'EXTRA_CARD_PLAY' ? 'jogar uma carta extra' : 'obter um efeito especial'}`);
+          } else {
+            addToHistory(`💰 ${selectedCard.name}: Efeito opcional indisponível (requer ${coinCost} moedas)`);
+          }
+        }
+      }
+      
       // ===== DETECÇÃO DE BOOSTS ESPECIAIS =====
       if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CONSTRUCTIONS_DOUBLE')) {
         const boostId = `boost_${Date.now()}_${Math.random()}`;
@@ -2620,6 +2736,173 @@ export function useGameState() {
         }]);
         addToHistory(`⚡ ${selectedCard.name}: Boost duplo ativado para todas as construções neste turno!`);
       }
+      
+      // ===== DETECÇÃO DE SOBRECARGA MÁGICA =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('DUPLICATE_MAGIC_EFFECTS')) {
+        // Extrair duração do efeito
+        const durationMatch = selectedCard.effect_logic.match(/DUPLICATE_MAGIC_EFFECTS:(\d+):(\d+)/);
+        const duration = durationMatch ? parseInt(durationMatch[2]) : 1;
+        
+        const boostId = `magic_boost_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'DUPLICATE_MAGIC_EFFECTS',
+          amount: 2, // Dobro
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`⚡ ${selectedCard.name}: Efeitos de magia duplicados por ${duration} turno(s)!`);
+      }
+      
+      // ===== DETECÇÃO DE TEMPESTADE PRÓSPERA =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_MATERIALS_TEMP')) {
+        // Verificar se tem 3 ou mais cidades
+        const cityCount = g.cityGrid.flat().filter(cell => cell.card).length;
+        const has3OrMoreCities = cityCount >= 3;
+        
+        // Extrair o valor do boost baseado na condição
+        let amount = 2; // Valor padrão
+        
+        if (has3OrMoreCities && selectedCard.effect_logic.includes('IF_CITY_GE_3')) {
+          // Se tiver 3+ cidades, usar o valor maior
+          const matchAmount = selectedCard.effect_logic.match(/BOOST_ALL_CITIES_MATERIALS_TEMP:(\d+):1/);
+          if (matchAmount) {
+            amount = parseInt(matchAmount[1]);
+          }
+          addToHistory(`🏙️ ${selectedCard.name}: Bônus de 3+ cidades ativado!`);
+        }
+        
+        const boostId = `city_materials_boost_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'BOOST_ALL_CITIES_MATERIALS_TEMP',
+          amount: amount,
+          duration: 1, // Apenas este turno
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        addToHistory(`🏙️ ${selectedCard.name}: Cidades produzem +${amount} materiais neste turno!`);
+      }
+      
+      // ===== DETECÇÃO DE TEMPESTADE REPENTINA =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('RESTRICT_FARM_ACTIVATION')) {
+        // Extrair duração do efeito
+        const durationMatch = selectedCard.effect_logic.match(/RESTRICT_FARM_ACTIVATION:(\d+)/);
+        const duration = durationMatch ? parseInt(durationMatch[1]) : 1;
+        
+        const restrictId = `farm_restrict_${Date.now()}_${Math.random()}`;
+        setTemporaryBoosts(prev => [...prev, {
+          id: restrictId,
+          type: 'RESTRICT_FARM_ACTIVATION',
+          amount: 1,
+          duration: duration,
+          appliedAt: game.turn,
+          isActive: true
+        }]);
+        
+        // Adicionar boost para o próximo turno
+        if (selectedCard.effect_logic.includes('BOOST_ALL_FARMS_FOOD_TEMP')) {
+          const boostMatch = selectedCard.effect_logic.match(/BOOST_ALL_FARMS_FOOD_TEMP:(\d+):(\d+)/);
+          if (boostMatch) {
+            const boostAmount = parseInt(boostMatch[1]);
+            const boostDuration = parseInt(boostMatch[2]);
+            
+            const boostId = `farm_boost_${Date.now()}_${Math.random()}`;
+            setTemporaryBoosts(prev => [...prev, {
+              id: boostId,
+              type: 'BOOST_ALL_FARMS_FOOD_TEMP',
+              amount: boostAmount,
+              duration: boostDuration,
+              appliedAt: game.turn + 1, // Aplicar no próximo turno
+              isActive: false // Será ativado no próximo turno
+            }]);
+            
+            addToHistory(`🌪️ ${selectedCard.name}: Fazendas não produzem neste turno, mas produzem o dobro no próximo!`);
+          }
+        }
+      }
+
+      // ===== DETECÇÃO DE BOOSTS CONTÍNUOS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_FARMS_FOOD')) {
+        const boostId = `continuous_boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        
+        setContinuousBoosts(prev => [...prev, {
+          id: boostId,
+          type: 'BOOST_ALL_FARMS_FOOD',
+          amount: amount,
+          cardId: selectedCard.id,
+          cardName: selectedCard.name,
+          isActive: true
+        }]);
+        addToHistory(`🌾 ${selectedCard.name}: Boost contínuo de +${amount} comida para todas as fazendas ativado!`);
+      }
+
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_COINS')) {
+        const boostId = `continuous_boost_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        
+        setContinuousBoosts(prev => [...prev, {
+          id: boostId,
+          cardId: selectedCard.id,
+          cardName: selectedCard.name,
+          type: 'BOOST_ALL_CITIES_COINS',
+          amount: amount,
+          isActive: true
+        }]);
+        addToHistory(`🏙️ ${selectedCard.name}: Boost contínuo de +${amount} moeda para todas as cidades ativado!`);
+      }
+      
+      // ===== DETECÇÃO DE BOOST_ALL_CITIES_MATERIALS CONTÍNUO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_MATERIALS') && 
+          selectedCard.effect_logic.includes('PER_TURN')) {
+        const boostId = `continuous_boost_materials_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        
+        setContinuousBoosts(prev => [...prev, {
+          id: boostId,
+          cardId: selectedCard.id,
+          cardName: selectedCard.name,
+          type: 'BOOST_ALL_CITIES_MATERIALS',
+          amount: amount,
+          isActive: true
+        }]);
+        addToHistory(`🏙️ ${selectedCard.name}: Boost contínuo de +${amount} material para todas as cidades ativado!`);
+      }
+      
+      // ===== DETECÇÃO DE DUPLICATE_MAGIC_EFFECTS CONTÍNUO =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('DUPLICATE_MAGIC_EFFECTS') && 
+          selectedCard.effect_logic.includes('PER_TURN')) {
+        const boostId = `continuous_magic_boost_${Date.now()}_${Math.random()}`;
+        
+        setContinuousBoosts(prev => [...prev, {
+          id: boostId,
+          cardId: selectedCard.id,
+          cardName: selectedCard.name,
+          type: 'DUPLICATE_MAGIC_EFFECTS',
+          amount: 2, // Dobro
+          isActive: true
+        }]);
+        addToHistory(`⚡ ${selectedCard.name}: Efeitos de magia permanentemente duplicados!`);
+      }
+
+      // ===== DETECÇÃO DE CARTAS EXTRAS =====
+      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('EXTRA_CARD_PLAY')) {
+        const boostId = `extra_card_${Date.now()}_${Math.random()}`;
+        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
+        
+        setExtraCardPlays(prev => [...prev, {
+          id: boostId,
+          type: 'EXTRA_CARD_PLAY',
+          amount: amount,
+          cardId: selectedCard.id,
+          cardName: selectedCard.name,
+          isActive: true
+        }]);
+        addToHistory(`🎴 ${selectedCard.name}: Permite jogar +${amount} carta(s) extra por turno!`);
+      }
+
       
       // ===== DETECÇÃO DE WORKSHOP BOOSTS =====
       if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS')) {
@@ -2886,6 +3169,74 @@ export function useGameState() {
           landmarks: g.playerStats.landmarks + (isLandmark ? 1 : 0),
         },
       };
+      
+      // ===== DETECÇÃO DE EFEITOS ON_PLAY_FARM =====
+      if (selectedCard.type === 'farm') {
+        // Procurar cartas no tabuleiro com efeito ON_PLAY_FARM
+        const cardsWithOnPlayFarmEffect = [
+          ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card),
+          ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card),
+          ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card)
+        ];
+        
+        for (const card of cardsWithOnPlayFarmEffect) {
+          if (card && card.effect_logic) {
+            // Extrair o efeito ON_PLAY_FARM
+            const effectParts = card.effect_logic.split(';');
+            const onPlayFarmPart = effectParts.find(part => part.startsWith('ON_PLAY_FARM:'));
+            
+            if (onPlayFarmPart) {
+              const [_, ...effectParams] = onPlayFarmPart.split(':');
+              if (effectParams.length >= 2) {
+                const effectType = effectParams[0] as any;
+                const amount = parseInt(effectParams[1]);
+                
+                if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
+                  newState.resources.materials += amount;
+                  addToHistory(`🏭 ${card.name} ativado: +${amount} materiais ao jogar uma fazenda`);
+                } else if (effectType === 'DRAW_CARD' && !isNaN(amount)) {
+                  // Implementar lógica para comprar cartas
+                  // Será tratado pelo sistema de estado do jogo após retornar
+                  (newState as any).drawCards = (newState as any).drawCards || 0;
+                  (newState as any).drawCards += amount;
+                  addToHistory(`🎴 ${card.name} ativado: Compre ${amount} carta(s) ao jogar uma fazenda`);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // ===== DETECÇÃO DE EFEITOS ON_PLAY_CITY =====
+      if (selectedCard.type === 'city') {
+        // Procurar cartas no tabuleiro com efeito ON_PLAY_CITY
+        const cardsWithOnPlayCityEffect = [
+          ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card),
+          ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card),
+          ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card)
+        ];
+        
+        for (const card of cardsWithOnPlayCityEffect) {
+          if (card && card.effect_logic) {
+            // Extrair o efeito ON_PLAY_CITY
+            const effectParts = card.effect_logic.split(';');
+            const onPlayCityPart = effectParts.find(part => part.startsWith('ON_PLAY_CITY:'));
+            
+            if (onPlayCityPart) {
+              const [_, ...effectParams] = onPlayCityPart.split(':');
+              if (effectParams.length >= 2) {
+                const effectType = effectParams[0] as any;
+                const amount = parseInt(effectParams[1]);
+                
+                if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
+                  newState.resources.materials += amount;
+                  addToHistory(`🏭 ${card.name} ativado: +${amount} materiais ao jogar uma cidade`);
+                }
+              }
+            }
+          }
+        }
+      }
       /*console.log('🏗️ Carta jogada em grid - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
@@ -2899,6 +3250,62 @@ export function useGameState() {
     setSelectedGrid(null);
     setError(null);
     setBuiltCountThisTurn((prev) => prev + 1);
+    
+    // Processar efeitos especiais após jogar a carta
+    setTimeout(() => {
+      // Verificar se há cartas para comprar (efeito DRAW_CARD)
+      setGame(g => {
+        let updatedGame = {...g};
+        
+        // Processar DRAW_CARD
+        if ((updatedGame as any).drawCards && (updatedGame as any).drawCards > 0) {
+          const cardsToDraw = (updatedGame as any).drawCards;
+          const newCards = updatedGame.deck.slice(0, cardsToDraw);
+          const newDeck = updatedGame.deck.slice(cardsToDraw);
+          
+          addToHistory(`🎴 Comprou ${cardsToDraw} carta(s) adicional(is)`);
+          
+          updatedGame = {
+            ...updatedGame,
+            hand: [...updatedGame.hand, ...newCards],
+            deck: newDeck,
+            drawCards: 0 // Resetar o contador
+          };
+        }
+        
+        // Processar DRAW_CITY_CARD
+        if ((updatedGame as any).drawCityCards && (updatedGame as any).drawCityCards > 0) {
+          const cardsToDrawCount = (updatedGame as any).drawCityCards;
+          
+          // Encontrar cartas do tipo city no deck
+          const cityCards = updatedGame.deck.filter(card => card.type === 'city');
+          
+          if (cityCards.length > 0) {
+            // Pegar até o número especificado de cartas city
+            const cityCardsToDraw = cityCards.slice(0, cardsToDrawCount);
+            
+            // Remover estas cartas do deck
+            const newDeck = updatedGame.deck.filter(card => 
+              !cityCardsToDraw.some(cityCard => cityCard.id === card.id)
+            );
+            
+            addToHistory(`🏙️ Comprou ${cityCardsToDraw.length} carta(s) city adicional(is)`);
+            
+            updatedGame = {
+              ...updatedGame,
+              hand: [...updatedGame.hand, ...cityCardsToDraw],
+              deck: newDeck,
+              drawCityCards: 0 // Resetar o contador
+            };
+          } else {
+            addToHistory(`❌ Não há cartas city disponíveis no deck`);
+            updatedGame.drawCityCards = 0; // Resetar o contador mesmo sem cartas
+          }
+        }
+        
+        return updatedGame;
+      });
+    }, 100);
   }, [selectedCard, selectedGrid, game.phase, game.resources, game.farmGrid, game.cityGrid, game.landmarksGrid, game.eventGrid, builtCountThisTurn]);
 
   // NOVO: Handler de ativação de magia
@@ -2918,6 +3325,17 @@ export function useGameState() {
       return;
     }
     
+    // Verificar se há efeito de duplicação de magia ativo (temporário ou contínuo)
+    const duplicateMagicBoostTemp = temporaryBoosts.find(boost => 
+      boost.type === 'DUPLICATE_MAGIC_EFFECTS' && boost.isActive
+    );
+    
+    const duplicateMagicBoostContinuous = continuousBoosts.find(boost => 
+      boost.type === 'DUPLICATE_MAGIC_EFFECTS' && boost.isActive
+    );
+    
+    const duplicateMagicBoost = duplicateMagicBoostTemp || duplicateMagicBoostContinuous;
+    
     // Processar o efeito da carta de magia
     let effect: Partial<Resources> = {};
     
@@ -2929,6 +3347,18 @@ export function useGameState() {
       // Fallback para o sistema antigo
       effect = parseInstantEffect(card);
     }
+    
+    // Duplicar efeito se o boost estiver ativo
+    if (duplicateMagicBoost) {
+      // Duplicar todos os efeitos numéricos
+      Object.keys(effect).forEach(key => {
+        if (typeof effect[key as keyof Resources] === 'number') {
+          effect[key as keyof Resources] = (effect[key as keyof Resources] || 0) * 2;
+        }
+      });
+      addToHistory(`⚡ Efeito de magia duplicado por Sobrecarga Mágica!`);
+    }
+    
     //console.log('Efeito parseado:', effect);
     
     let details: string[] = [];
@@ -2959,6 +3389,36 @@ export function useGameState() {
         resources: newResources,
         comboEffects: [...g.comboEffects, card.effect.description],
       };
+      
+      // ===== DETECÇÃO DE EFEITOS ON_PLAY_MAGIC =====
+      // Procurar cartas no tabuleiro com efeito ON_PLAY_MAGIC
+      const cardsWithOnPlayMagicEffect = [
+        ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card),
+        ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card),
+        ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card)
+      ];
+      
+      for (const cardWithEffect of cardsWithOnPlayMagicEffect) {
+        if (cardWithEffect && cardWithEffect.effect_logic) {
+          // Extrair o efeito ON_PLAY_MAGIC
+          const effectParts = cardWithEffect.effect_logic.split(';');
+          const onPlayMagicPart = effectParts.find(part => part.startsWith('ON_PLAY_MAGIC:'));
+          
+          if (onPlayMagicPart) {
+            const [_, ...effectParams] = onPlayMagicPart.split(':');
+            if (effectParams.length >= 2) {
+              const effectType = effectParams[0] as any;
+              const amount = parseInt(effectParams[1]);
+              
+              if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
+                newState.resources.materials += amount;
+                addToHistory(`🏭 ${cardWithEffect.name} ativado: +${amount} materiais ao jogar uma magia`);
+              }
+            }
+          }
+        }
+      }
+      
       /*console.log('✨ Magia ativada - novo estado:', {
         deckLength: newState.deck.length,
         handLength: newState.hand.length,
@@ -2972,7 +3432,7 @@ export function useGameState() {
     setSelectedGrid(null);
     setError(null);
     setTimeout(() => setActionSummary(null), 1800);
-  }, [game]);
+  }, [game, temporaryBoosts, continuousBoosts]);
 
   // NOVO: Handler de ativação de defesa (reação a evento)
   const handleActivateDefense = useCallback((card: Card) => {
@@ -3093,7 +3553,19 @@ export function useGameState() {
     
     // Adicionar ao histórico baseado no motivo
     if (discardReason === 'card_effect') {
-      addToHistory(`🎴 Descartou por efeito de carta: ${card.name}`);
+      // Verificar se é efeito de ganhar materiais
+      if (cardEffectDiscardInfo && cardEffectDiscardInfo.effect.includes('ganhar') && cardEffectDiscardInfo.effect.includes('materiais')) {
+        setGame(prev => ({
+          ...prev,
+          resources: {
+            ...prev.resources,
+            materials: (prev.resources.materials || 0) + 2 // padrão 2 materiais
+          }
+        }));
+        addToHistory(`🪓 Descartou para ganhar 2 materiais pelo efeito opcional!`);
+      } else {
+        addToHistory(`🎴 Descartou por efeito de carta: ${card.name}`);
+      }
     } else {
       addToHistory(`🗑️ Descartou: ${card.name}`);
     }
@@ -3208,6 +3680,41 @@ export function useGameState() {
       }
     });
     
+    // ===== APLICAR BOOSTS CONTÍNUOS ATIVOS =====
+    const activeContinuousBoosts = continuousBoosts.filter(boost => boost.isActive);
+    if (activeContinuousBoosts.length > 0) {
+      activeContinuousBoosts.forEach(boost => {
+        switch (boost.type) {
+          case 'BOOST_ALL_FARMS_FOOD':
+            // Boost contínuo de +1 comida para todas as fazendas
+            const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
+            if (farmCount > 0) {
+              prod.food += farmCount * boost.amount;
+              details.push(`🌾 ${boost.cardName}: +${boost.amount} comida para ${farmCount} fazenda(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CITIES_COINS':
+            // Boost contínuo de +1 moeda para todas as cidades
+            const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
+            if (cityCount > 0) {
+              prod.coins += cityCount * boost.amount;
+              details.push(`🏙️ ${boost.cardName}: +${boost.amount} moeda para ${cityCount} cidade(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CITIES_MATERIALS':
+            // Boost contínuo de +1 material para todas as cidades
+            const cityCountMaterials = game.cityGrid.flat().filter(cell => cell.card).length;
+            if (cityCountMaterials > 0) {
+              prod.materials += cityCountMaterials * boost.amount;
+              details.push(`🏙️ ${boost.cardName}: +${boost.amount} material para ${cityCountMaterials} cidade(s)`);
+            }
+            break;
+        }
+      });
+    }
+
     // ===== APLICAR BOOSTS TEMPORÁRIOS ATIVOS =====
     const activeBoosts = temporaryBoosts.filter(boost => boost.isActive);
     if (activeBoosts.length > 0) {
@@ -3276,6 +3783,14 @@ export function useGameState() {
               details.push(`🏙️ Boost temporário de cidade: +${boost.amount} moeda para ${cityCountTemp} cidade(s)`);
             }
             break;
+            
+          case 'BOOST_ALL_CITIES_MATERIALS_TEMP':
+            const cityCountMaterialsTemp = game.cityGrid.flat().filter(cell => cell.card).length;
+            if (cityCountMaterialsTemp > 0) {
+              prod.materials += cityCountMaterialsTemp * boost.amount;
+              details.push(`🏙️ Boost temporário de cidade: +${boost.amount} materiais para ${cityCountMaterialsTemp} cidade(s)`);
+            }
+            break;
           case 'BOOST_CONSTRUCTION_COST_REDUCTION':
             // Redução de custo de construção (já aplicada na validação de cartas)
             details.push(`🚧 Redução de custo de construção: -${boost.amount} material por ${boost.duration} turno(s)`);
@@ -3332,19 +3847,78 @@ export function useGameState() {
             // Este efeito é aplicado em canPlayCardUI, não aqui
             details.push(`🏙️ Redução de custo de city: -${boost.amount} materiais por ${boost.duration} turno(s)`);
             break;
+          case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
+            const farmCountMaterialsTemp = game.farmGrid.flat().filter(cell => cell.card).length;
+            if (farmCountMaterialsTemp > 0) {
+              prod.materials += farmCountMaterialsTemp * boost.amount;
+              details.push(`🌾 Boost temporário de fazenda: +${boost.amount} materiais para ${farmCountMaterialsTemp} fazenda(s)`);
+            }
+            break;
+            
+          case 'BOOST_ALL_CONSTRUCTIONS':
+            // Boost para todas as construções (farm, city, landmark)
+            const farmCountAll = game.farmGrid.flat().filter(cell => cell.card).length;
+            const cityCountAll = game.cityGrid.flat().filter(cell => cell.card).length;
+            const landmarkCount = game.landmarksGrid.flat().filter(cell => cell.card).length;
+            const totalConstructionsAll = farmCountAll + cityCountAll + landmarkCount;
+            
+            if (totalConstructionsAll > 0) {
+              // Adicionar boost a todos os recursos
+              prod.coins += totalConstructionsAll * boost.amount;
+              prod.food += totalConstructionsAll * boost.amount;
+              prod.materials += totalConstructionsAll * boost.amount;
+              details.push(`🏗️ Boost de construções: +${boost.amount} recursos para ${totalConstructionsAll} construção(ões)`);
+            }
+            break;
+          case 'BLOCK_NEXT_NEGATIVE_EVENT':
+            // Bloquear próxima catástrofe
+            details.push('🛡️ Catástrofe bloqueada por efeito especial!');
+            addToHistory('🛡️ Uma catástrofe foi bloqueada por efeito especial!');
+            break;
+            
+          case 'DUPLICATE_MAGIC_EFFECTS':
+            // Este efeito é aplicado diretamente no handleActivateMagic
+            details.push(`⚡ Sobrecarga Mágica: Efeitos de magia duplicados por ${boost.duration} turno(s)`);
+            break;
+            
+          case 'RESTRICT_FARM_ACTIVATION':
+            // Este efeito restringe a ativação de fazendas
+            details.push(`🚫 Tempestade Repentina: Fazendas não produzem por ${boost.duration} turno(s)`);
+            // Aplicar restrição diretamente
+            const farmCells = game.farmGrid.flat().filter(cell => cell.card);
+            for (const cell of farmCells) {
+              if (cell.card) {
+                // Desativar temporariamente a carta
+                cell.card.deactivated = true;
+              }
+            }
+            break;
         }
       });
     }
     
     // APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA
     const catastropheReduction = game.productionReduction || 0;
-    if (catastropheReduction > 0) {
+    let catastropheBlocked = false;
+    if (catastropheReduction > 0 && activeBoosts.find(boost => boost.type === 'BLOCK_NEXT_NEGATIVE_EVENT' && boost.isActive)) {
+      // Bloquear penalidade
+      catastropheBlocked = true;
+      // Consumir boost (reduzir duração ou remover)
+      setTemporaryBoosts(prev => prev.map(b =>
+        b.id === activeBoosts.find(boost => boost.type === 'BLOCK_NEXT_NEGATIVE_EVENT' && boost.isActive)?.id
+          ? { ...b, duration: b.duration ? b.duration - 1 : 0, isActive: !!(b.duration && b.duration > 1) }
+          : b
+      ).filter(b => b.isActive !== false));
+      details.push('🛡️ Catástrofe bloqueada por efeito especial!');
+      addToHistory('🛡️ Uma catástrofe foi bloqueada por efeito especial!');
+    }
+    // ===== APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA =====
+    if (catastropheReduction > 0 && !catastropheBlocked) {
       const originalProd = { ...prod };
       prod.coins = Math.floor(prod.coins * (1 - catastropheReduction));
       prod.food = Math.floor(prod.food * (1 - catastropheReduction));
       prod.materials = Math.floor(prod.materials * (1 - catastropheReduction));
       prod.population = Math.floor(prod.population * (1 - catastropheReduction));
-      
       // Adicionar detalhes da redução
       if (originalProd.coins > prod.coins) details.push(`🌪️ Catástrofe: -${originalProd.coins - prod.coins} coins`);
       if (originalProd.food > prod.food) details.push(`🌪️ Catástrofe: -${originalProd.food - prod.food} food`);
@@ -3401,11 +3975,11 @@ export function useGameState() {
   } : { coins: 0, food: 0, materials: 0, population: 0 };
 
   // Debug: verificar gameSettings
-  console.log('🔍 Debug gameSettings:', {
+  /*console.log('🔍 Debug gameSettings:', {
     victoryMode: gameSettings?.victoryMode,
     victoryValue: gameSettings?.victoryValue,
     gameSettings: gameSettings
-  });
+  });*/
 
   const sidebarProps = {
     resources: {
@@ -3494,10 +4068,9 @@ export function useGameState() {
       selectedCardId: selectedCard?.id
     });*/
     
-    // Calcular cartas restantes no baralho: total do deck ativo - cartas na mão
-    const totalDeckCards = activeDeck?.cards?.length || game.deck.length;
-    const cardsInHand = game.hand.length;
-    const remainingDeckCards = Math.max(0, totalDeckCards - cardsInHand);
+    // Calcular cartas restantes no baralho: usar diretamente o tamanho do deck atual
+    // Isso já considera cartas jogadas e descartadas corretamente
+    const remainingDeckCards = game.deck.length;
     
     return {
       hand: game.hand,
@@ -3508,7 +4081,7 @@ export function useGameState() {
       discardMode,
       deckSize: remainingDeckCards,
     };
-  }, [game.hand, game.deck.length, activeDeck?.cards?.length, selectedCard?.id, discardMode, handleSelectCard, canPlayCardUI, handleDiscardCard]);
+  }, [game.hand, game.deck.length, selectedCard?.id, discardMode, handleSelectCard, canPlayCardUI, handleDiscardCard]);
 
   const discardModal = discardMode;
 
@@ -3700,6 +4273,65 @@ export function useGameState() {
             }
             break;
             
+          case 'OPTIONAL_DISCARD_ELEMENTAL':
+          case 'INVOKE_RANDOM_ELEMENTAL':
+            // Adicionar Elemental aleatório à mão do jogador
+            addToHistory(`🔮 ${card.name}: Efeito opcional ativado! Descartar uma carta para invocar elemental.`);
+            
+            // Lista de todos os elementais disponíveis
+            const availableElementals = game.deck.filter(c => c.tags && c.tags.includes('elemental') && c.name !== 'Invocação Elemental');
+            
+            if (availableElementals.length > 0) {
+              // Escolher elemental aleatório
+              const randomIndex = Math.floor(Math.random() * availableElementals.length);
+              const selectedElemental = availableElementals[randomIndex];
+              
+              // Adicionar à mão do jogador
+              setGame((g) => ({
+                ...g,
+                hand: [...g.hand, selectedElemental]
+              }));
+              addToHistory(`🌪️ ${selectedElemental.name} invocado e adicionado à sua mão!`);
+            } else {
+              addToHistory(`❌ Erro: Nenhum elemental encontrado no deck.`);
+            }
+            
+            // Ativar modo de descarte para escolher carta a descartar
+            setDiscardMode(true);
+            setDiscardReason('card_effect');
+            setCardEffectDiscardInfo({
+              cardName: card.name,
+              effect: 'Invocação Elemental: descarte para invocar',
+              requiredDiscards: 1
+            });
+            break;
+            
+          case 'OPTIONAL_PAY_COINS': {
+            // Efeito: pagar moedas para comprar carta
+            const coinsToPay = 5; // fixo para Mercado Local
+            if (game.resources.coins < coinsToPay) {
+              setError('Você não tem moedas suficientes para comprar uma carta (5 moedas necessárias).');
+              addToHistory(`❌ ${card.name}: Tentou comprar carta, mas não tinha moedas suficientes.`);
+              break;
+            }
+            if (game.deck.length === 0) {
+              setError('Não há cartas no baralho para comprar.');
+              addToHistory(`❌ ${card.name}: Tentou comprar carta, mas o baralho está vazio.`);
+              break;
+            }
+            // Comprar a carta do topo do deck
+            const boughtCard = game.deck[0];
+            setGame((g) => ({
+              ...g,
+              resources: { ...g.resources, coins: g.resources.coins - coinsToPay },
+              hand: [...g.hand, boughtCard],
+              deck: g.deck.slice(1),
+            }));
+            addToHistory(`🛒 ${card.name}: Pagou 5 moedas e comprou a carta "${boughtCard.name}".`);
+            setHighlight(`🛒 Comprou: ${boughtCard.name}`);
+            setTimeout(() => setHighlight(null), 2000);
+            break;
+          }
           default:
             addToHistory(`🎯 ${card.name}: Efeito opcional ativado: ${optionalEffect.effect}`);
             break;
@@ -3901,6 +4533,16 @@ export function useGameState() {
       reason: 'Carta não requer validação especial'
     };
   }, [game.cityGrid, deactivatedCities]);
+
+  // Função utilitária para checar indestrutibilidade
+  function isCardIndestructible(card: Card): boolean {
+    if (!card) return false;
+    // Checa effect_logic
+    if (card.effect_logic && typeof card.effect_logic === 'string' && card.effect_logic.includes('INDESTRUCTIBLE')) return true;
+    // Checa boosts temporários/contínuos
+    const allBoosts = [...(temporaryBoosts || []), ...(continuousBoosts || [])] as any[];
+    return allBoosts.some(boost => boost.type === 'INDESTRUCTIBLE' && !!boost.isActive && boost.cardId === card.id);
+  }
 
   return {
     sidebarProps,

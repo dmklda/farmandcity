@@ -84,6 +84,46 @@ export function testEffectExecutor() {
   console.log('🧪 Testes de execução concluídos!');
 }
 
+// Teste específico para Horta Divina (versão Node.js compatível)
+export function testHortaDivinaSimple() {
+  console.log('🧪 Testando Horta Divina (versão simples)...');
+  
+  try {
+    // Teste do effect_logic da Horta Divina
+    const hortaDivinaEffect = "IF_HORTA_EXISTS:PRODUCE_FOOD:1;PRODUCE_MATERIALS:1";
+    console.log('📝 Effect_logic da Horta Divina:', hortaDivinaEffect);
+    
+    // Testar parsing
+    const parsed = parseEffectLogic(hortaDivinaEffect);
+    console.log('✅ Parseado:', JSON.stringify(parsed, null, 2));
+    console.log('✅ Válido:', validateEffectLogic(hortaDivinaEffect));
+    console.log('✅ Tipo:', getEffectLogicType(hortaDivinaEffect));
+    
+    // Verificar se tem efeitos condicionais
+    if (parsed && parsed.conditional) {
+      console.log('✅ Efeitos condicionais encontrados:', parsed.conditional.length);
+      parsed.conditional.forEach((effect, index) => {
+        console.log(`  ${index + 1}. Tipo: ${effect.type}, Efeito: ${effect.effect.type}, Quantidade: ${effect.effect.amount}`);
+      });
+    }
+    
+    // Verificar se tem efeitos simples
+    if (parsed && parsed.simple) {
+      console.log('✅ Efeitos simples encontrados:', parsed.simple.length);
+      parsed.simple.forEach((effect, index) => {
+        console.log(`  ${index + 1}. Tipo: ${effect.type}, Quantidade: ${effect.amount}`);
+      });
+    }
+    
+    console.log('🧪 Teste da Horta Divina concluído com sucesso!');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Erro no teste da Horta Divina:', error);
+    return false;
+  }
+}
+
 // Função principal de teste
 export function runAllTests() {
   console.log('🚀 Iniciando todos os testes do sistema híbrido...');

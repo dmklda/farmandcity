@@ -221,6 +221,16 @@ export function executeSimpleEffect(
       // Implementar boost opcional de fazenda (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
       break;
+    case 'OPTIONAL_DISCARD_ELEMENTAL':
+      // Sistema de descarte opcional para invocar elemental
+      // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      // O elemental será adicionado à mão do jogador quando ele escolher descartar
+      break;
+      
+    case 'INVOKE_RANDOM_ELEMENTAL':
+      // Sistema de invocação aleatória de elemental
+      // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      break;
     case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
       // Implementar compra opcional de carta mágica (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
@@ -238,14 +248,36 @@ export function executeSimpleEffect(
     case 'BOOST_ALL_FARMS':
       // Implementar boost para todas as fazendas
       break;
-    case 'TRADE_MATERIALS_FOR_FOOD':
-      // Implementar sistema de troca
+    case 'TRADE_MATERIALS_FOR_FOOD': {
+      const materialsToTrade = effect.amount;
+      const foodToGain = (effect as any).extraAmount || effect.amount;
+      if ((gameState.resources.materials || 0) >= materialsToTrade) {
+        changes.materials = (changes.materials || 0) - materialsToTrade;
+        changes.food = (changes.food || 0) + foodToGain;
+      }
       break;
-    case 'TRADE_FOOD_FOR_COINS':
-      // Implementar sistema de troca
+    }
+    case 'TRADE_FOOD_FOR_COINS': {
+      const foodToTrade = effect.amount;
+      const coinsToGain = (effect as any).extraAmount || effect.amount;
+      if ((gameState.resources.food || 0) >= foodToTrade) {
+        changes.food = (changes.food || 0) - foodToTrade;
+        changes.coins = (changes.coins || 0) + coinsToGain;
+      }
       break;
-    case 'TRADE_COINS_FOR_MATERIALS':
-      // Implementar sistema de troca
+    }
+    case 'TRADE_COINS_FOR_MATERIALS': {
+      const coinsToTrade = effect.amount;
+      const materialsToGain = (effect as any).extraAmount || effect.amount;
+      if ((gameState.resources.coins || 0) >= coinsToTrade) {
+        changes.coins = (changes.coins || 0) - coinsToTrade;
+        changes.materials = (changes.materials || 0) + materialsToGain;
+      }
+      break;
+    }
+    case 'EXTRA_CARD_PLAY':
+      // Este efeito será tratado pelo sistema de estado do jogo
+      // para permitir jogar cartas adicionais
       break;
     case 'CANCEL_EVENT':
       // Implementar cancelamento de eventos
@@ -265,6 +297,91 @@ export function executeSimpleEffect(
     case 'ABSORB_NEGATIVE_EFFECTS':
       // Implementar absorção de efeitos negativos
       break;
+    case 'OPTIONAL_DISCARD_GAIN_MATERIALS':
+      // Efeito opcional: descartar uma carta para ganhar materiais
+      // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      break;
+    case 'INDESTRUCTIBLE':
+      // Efeito de indestrutibilidade: lógica implementada no useGameState
+      break;
+    case 'BOOST_ALL_CITIES_TEMP': {
+      // Aplica boost temporário para todas as cidades
+      // Retorna um campo especial para ser tratado pelo sistema de produção
+      (changes as any).citiesBoostTemp = (changes as any).citiesBoostTemp || 0;
+      (changes as any).citiesBoostTemp += effect.amount;
+      break;
+    }
+    case 'BOOST_ALL_FARMS_TEMP': {
+      // Aplica boost temporário para todas as fazendas
+      (changes as any).farmsBoostTemp = (changes as any).farmsBoostTemp || 0;
+      (changes as any).farmsBoostTemp += effect.amount;
+      break;
+    }
+    case 'BOOST_ALL_CONSTRUCTIONS': {
+      // Aplica boost para todas as construções (farm, city, landmark)
+      (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
+      (changes as any).constructionsBoost += effect.amount;
+      break;
+    }
+    case 'ON_PLAY_FARM': {
+      // Este efeito é tratado pelo sistema de eventos do jogo
+      // Será acionado quando uma carta de farm for jogada
+      break;
+    }
+    case 'ON_PLAY_CITY': {
+      // Este efeito é tratado pelo sistema de eventos do jogo
+      // Será acionado quando uma carta de city for jogada
+      break;
+    }
+    case 'DRAW_CARD': {
+      // Este efeito é tratado pelo sistema de estado do jogo
+      // para permitir comprar cartas adicionais
+      (changes as any).drawCards = (changes as any).drawCards || 0;
+      (changes as any).drawCards += effect.amount;
+      break;
+    }
+    case 'DRAW_CITY_CARD': {
+      // Este efeito é tratado pelo sistema de estado do jogo
+      // para permitir comprar cartas city específicas
+      (changes as any).drawCityCards = (changes as any).drawCityCards || 0;
+      (changes as any).drawCityCards += effect.amount;
+      break;
+    }
+    case 'DUPLICATE_MAGIC_EFFECTS': {
+      // Este efeito é tratado pelo sistema de estado do jogo
+      // para duplicar o efeito de todas as magias jogadas
+      (changes as any).duplicateMagicEffects = true;
+      (changes as any).duplicateMagicEffectsDuration = effect.duration || 1;
+      break;
+    }
+    case 'ON_PLAY_MAGIC': {
+      // Este efeito é tratado pelo sistema de eventos do jogo
+      // Será acionado quando uma carta de magia for jogada
+      break;
+    }
+    case 'BOOST_ALL_CITIES_MATERIALS_TEMP': {
+      // Aplica boost temporário de materiais para todas as cidades
+      (changes as any).citiesMaterialsBoostTemp = (changes as any).citiesMaterialsBoostTemp || 0;
+      (changes as any).citiesMaterialsBoostTemp += effect.amount;
+      break;
+    }
+    case 'BOOST_ALL_CITIES_MATERIALS': {
+      // Aplica boost contínuo de materiais para todas as cidades
+      // Este efeito é tratado pelo sistema de boosts contínuos
+      break;
+    }
+    case 'OPTIONAL_PAY_COINS': {
+      // Este efeito é tratado pelo sistema de UI para escolha do jogador
+      // Permite pagar moedas para obter um efeito opcional
+      break;
+    }
+    case 'RESTRICT_FARM_ACTIVATION': {
+      // Este efeito é tratado pelo sistema de estado do jogo
+      // para restringir a ativação de fazendas
+      (changes as any).restrictFarmActivation = true;
+      (changes as any).restrictFarmActivationDuration = effect.duration || 1;
+      break;
+    }
   }
   
   // Atualizar tracking se o efeito foi executado
@@ -327,16 +444,40 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
       return allCards.filter(card => card.type === 'magic').length > 0;
       
     case 'IF_WATER_EXISTS':
-      return allCards.some(card => card.name.toLowerCase().includes('poço') || card.name.toLowerCase().includes('agua'));
+      return allCards.some(card =>
+        (card.name.toLowerCase().includes('poço') || card.name.toLowerCase().includes('agua')) ||
+        (card.tags && (card.tags.includes('agua') || card.tags.includes('poco')))
+      );
       
     case 'IF_COINS_GE_5':
       return (gameState.resources.coins || 0) >= 5;
+      
+    case 'IF_COINS_GE_10':
+      return (gameState.resources.coins || 0) >= 10;
       
     case 'IF_CELESTIAL_FARMS_EXIST':
       return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
       
     case 'IF_VERTICAL_FARMS_EXIST':
       return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('vertical'));
+      
+    case 'IF_HAND_GE_5':
+      return (gameState.hand?.length || 0) >= 5;
+      
+    case 'IF_HORTA_EXISTS':
+      return allCards.some(card => card.name.toLowerCase().includes('horta'));
+      
+    case 'IF_SACRED_FIELD_EXISTS':
+      return allCards.some(card => card.name.toLowerCase().includes('sagrado') || card.name.toLowerCase().includes('sagrada') || card.name.toLowerCase().includes('templo') || card.name.toLowerCase().includes('altar'));
+      
+    case 'IF_SACRED_TAG_EXISTS':
+      return allCards.some(card => card.tags && card.tags.includes('sagrado'));
+      
+    case 'IF_CITY_GE_3':
+      return allCards.filter(card => card.type === 'city').length >= 3;
+      
+    case 'IF_POPULATION_GE_2':
+      return (gameState.resources.population || 0) >= 2;
       
     default:
       return false;
@@ -773,6 +914,18 @@ export function extractOptionalEffects(effectLogic: string | null): Array<{
           effectDescription = 'Comprar 1 carta mágica';
           costDescription = 'Descartar 1 carta da mão';
           break;
+        case 'OPTIONAL_DISCARD_ELEMENTAL':
+          effectDescription = `Invocar um elemental que produz ${amount} material por ${duration} turnos`;
+          costDescription = 'Descartar 1 carta da mão';
+          break;
+        case 'INVOKE_RANDOM_ELEMENTAL':
+          effectDescription = `Invocar um elemental aleatório poderoso`;
+          costDescription = 'Descartar 1 carta da mão';
+          break;
+        case 'OPTIONAL_DISCARD_GAIN_MATERIALS':
+          effectDescription = `Descartar 1 carta para ganhar ${amount} materiais imediatamente`;
+          costDescription = 'Descartar 1 carta da mão';
+          break;
       }
       
       optionalEffects.push({
@@ -780,6 +933,22 @@ export function extractOptionalEffects(effectLogic: string | null): Array<{
         effect: effectDescription,
         cost: costDescription,
         duration: duration ? parseInt(duration) : undefined
+      });
+    }
+    // Novo: reconhecer OPTIONAL_PAY_COINS
+    if (trimmed.startsWith('OPTIONAL_PAY_COINS')) {
+      const [type, coins, action, amount] = trimmed.split(':');
+      let effectDescription = '';
+      let costDescription = '';
+      if (type === 'OPTIONAL_PAY_COINS' && action === 'DRAW_CARD') {
+        effectDescription = `Pagar ${coins} moedas para comprar ${amount} carta(s) do baralho`;
+        costDescription = `Pagar ${coins} moedas`;
+      }
+      optionalEffects.push({
+        type,
+        effect: effectDescription,
+        cost: costDescription,
+        duration: undefined
       });
     }
   }

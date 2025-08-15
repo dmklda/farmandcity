@@ -82,4 +82,13 @@ export interface GameState {
   
   // Sistema de restrições temporárias de cartas
   cardRestrictions?: CardRestriction[]; // Restrições ativas de tipos de carta
+  
+  // Propriedades dinâmicas para efeitos especiais
+  drawCards?: number; // Número de cartas para comprar (efeito DRAW_CARD)
+  drawCityCards?: number; // Número de cartas city para comprar (efeito DRAW_CITY_CARD)
+  duplicateMagicEffects?: boolean; // Se os efeitos de magia devem ser duplicados
+  duplicateMagicEffectsDuration?: number; // Duração do efeito de duplicação de magia
+  citiesMaterialsBoostTemp?: number; // Boost temporário de materiais para cidades
+  restrictFarmActivation?: boolean; // Se a ativação de fazendas está restrita
+  restrictFarmActivationDuration?: number; // Duração da restrição de ativação de fazendas
 }
