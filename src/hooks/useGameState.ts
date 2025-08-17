@@ -18,17 +18,24 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 // Sistema Híbrido de Parsing de Efeitos
 // Combina parsing simples para efeitos básicos e JSON para efeitos complexos
 import { executeCardEffects, hasOptionalEffects, extractOptionalEffects } from '../utils/effectExecutor';
+import { parseEffectLogic } from '../utils/effectParser';
 import { cleanupExpiredRestrictions, canPlayCard as canPlayCardWithRestrictions } from '../utils/effectExecutor';
 import RestrictionsDisplay from '../components/RestrictionsDisplay';
 import OptionalEffectDialog from '../components/OptionalEffectDialog';
 
+/**
+ * @deprecated Use executeCardEffects from effectExecutor.ts instead
+ * Esta função está sendo mantida temporariamente para compatibilidade
+ */
 function parseProduction(card: Card, currentGameState?: GameState, cardId?: string): Partial<Resources> {
-  // Priorizar o novo sistema baseado em effect_logic
-  if (card.effect_logic && currentGameState && cardId) {
+  // Usar exclusivamente o novo sistema baseado em effect_logic
+  if (currentGameState && cardId && card.effect_logic) {
     return executeCardEffects(card.effect_logic, currentGameState, cardId);
   }
   
-  // Fallback para o sistema antigo baseado em texto
+  console.warn('[DEPRECATED] parseProduction está obsoleta. Use executeCardEffects para a carta:', card.name, card.id);
+  
+  // Fallback para o sistema antigo baseado em texto (será removido em breve)
   const effect = card.effect.description.toLowerCase();
   
   //console.log('🔍 parseProduction para:', card.name);
@@ -312,16 +319,25 @@ function parseProduction(card: Card, currentGameState?: GameState, cardId?: stri
   return prod;
 }
 
+/**
+ * @deprecated Use executeCardEffects from effectExecutor.ts instead
+ * Esta função está sendo mantida temporariamente para compatibilidade
+ */
 function parseInstantEffect(card: Card): Partial<Resources> {
-  const effect = card.effect.description.toLowerCase();
+  // Se tiver effect_logic, deveria estar usando executeCardEffects
+  if (card.effect_logic) {
+    console.warn('[DEPRECATED] parseInstantEffect está obsoleta. Use executeCardEffects para a carta:', card.name, card.id);
+    return {};
+  }
   
-  //  console.log('🔍 parseInstantEffect para:', card.name);
-  //console.log('Efeito:', effect);
+  const effect = card.effect.description.toLowerCase();
+  // Log do efeito instantâneo
+  console.log('[EFFECT] parseInstantEffect', card.name, card.id, effect);
   
   // Padrões mais abrangentes para reconhecer diferentes formas de expressar ganho
   const patterns = [
     // Efeitos de conversão bidirecional (NOVO - DEVE VIR PRIMEIRO)
-    /transforme (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
+    /transforme (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
     /troque (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) por (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
     /converta (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) ou (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações) em (\d+) (comida|comidas|moeda|moedas|material|materiais|população|populações)/i,
     
@@ -650,10 +666,21 @@ function parseInstantEffect(card: Card): Partial<Resources> {
   }
   
   //  console.log('🎯 Efeito instantâneo parseado:', prod);
+  console.log('[EFFECT] Resultado parseInstantEffect', card.name, card.id, prod);
   return prod;
 }
 
+/**
+ * @deprecated Use executeCardEffects from effectExecutor.ts instead
+ * Esta função está sendo mantida temporariamente para compatibilidade
+ */
 function parseDiceProduction(card: Card): { prod: Partial<Resources>; dice: number } | null {
+  // Se tiver effect_logic, deveria estar usando executeCardEffects
+  if (card.effect_logic) {
+    console.warn('[DEPRECATED] parseDiceProduction está obsoleta. Use executeCardEffects para a carta:', card.name, card.id);
+    return null;
+  }
+  
   const effect = card.effect.description.toLowerCase();
   
   // Padrões para produção por dado com múltiplos recursos
@@ -729,11 +756,14 @@ function canPlayCard(resources: Resources, cost: Resources) {
 }
 
 // Função para calcular produção por turno detalhada
-function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[][]) {
+function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[][], gameState: GameState) {
   const prod: Resources = { coins: 0, food: 0, materials: 0, population: 0 };
   const details: { coins: string[], food: string[], materials: string[], population: string[], reputation: string[] } = {
     coins: [], food: [], materials: [], population: [], reputation: []
   };
+  
+  // Criar uma cópia do estado do jogo para evitar modificações durante o cálculo
+  const gameCopy = JSON.parse(JSON.stringify(gameState));
   
   const allCells = [
     ...farmGrid.flat(),
@@ -747,9 +777,44 @@ function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[
     const cards = cell.stack ? [cell.card, ...cell.stack] : [cell.card];
     const level = cards.length;
     
-    // Só produção automática por turno
+        // Verificar se a carta tem effect_logic e se é produção automática por turno
+    // Reduzir logs para melhorar performance e legibilidade
+    // console.log('[PRODUCTION DEBUG] Verificando carta:', cell.card.name, 'effect_logic:', cell.card.effect_logic);
+    
+    if (cell.card.effect_logic) {
+      const parsed = parseEffectLogic(cell.card.effect_logic);
+      // console.log('[PRODUCTION DEBUG] Carta com effect_logic:', cell.card.name, 'parsed:', parsed);
+      
+      // Verificar se tem efeitos simples que são de produção (não de dado)
+      // Verificar explicitamente que não é um efeito ON_DICE
+      if (parsed?.simple && parsed.simple.some(e => 
+          e.type.startsWith('PRODUCE_') && 
+          (!e.frequency || e.frequency === 'PER_TURN')
+      ) && !cell.card.effect_logic.includes('ON_DICE')) {
+        // console.log('[PRODUCTION DEBUG] Carta com produção por turno:', cell.card.name, 'effect_logic:', cell.card.effect_logic);
+        // Usar o novo sistema baseado em effect_logic
+        const p = calculateStackedEffect(cards, gameCopy);
+        
+        Object.entries(p).forEach(([key, value]) => {
+          if (value && value > 0) {
+            if (key === 'reputation') {
+              prod.reputation = (prod.reputation || 0) + value;
+              const levelText = level > 1 ? ` (Nível ${level})` : '';
+              details.reputation!.push(`${cell.card!.name}${levelText}: +${value}`);
+            } else {
+              prod[key as keyof Resources] += value;
+              const levelText = level > 1 ? ` (Nível ${level})` : '';
+              details[key as keyof Resources].push(`${cell.card!.name}${levelText}: +${value}`);
+            }
+          }
+        });
+      }
+    } else {
+      // Fallback para o sistema antigo (será removido em breve)
+      // console.log('[PRODUCTION DEBUG] Carta SEM effect_logic:', cell.card.name, 'usando sistema antigo');
     const effect = cell.card.effect.description.toLowerCase();
     if (/por turno/.test(effect) && !/dado/.test(effect)) {
+        console.warn('[DEPRECATED] Usando sistema antigo para a carta sem effect_logic:', cell.card.name);
       const p = calculateStackedProduction(cards);
       Object.entries(p).forEach(([key, value]) => {
         if (value && value > 0) {
@@ -764,6 +829,7 @@ function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[
           }
         }
       });
+      }
     }
   });
   
@@ -794,8 +860,14 @@ function canStackCard(newCard: Card, existingCard: Card): boolean {
 
 
 // Função para calcular produção de carta empilhada com multiplicador balanceado
+/**
+ * @deprecated Use calculateStackedEffect instead
+ * Esta função está sendo mantida temporariamente para compatibilidade
+ */
 function calculateStackedProduction(cards: Card[]): Partial<Resources> {
   if (cards.length === 0) return {};
+  
+  console.warn('[DEPRECATED] calculateStackedProduction está obsoleta. Use calculateStackedEffect para as cartas:', cards.map(c => c.name));
   
   // Por enquanto, usar o sistema antigo para evitar dependências circulares
   const baseProduction = parseProduction(cards[0]);
@@ -814,20 +886,17 @@ function calculateStackedProduction(cards: Card[]): Partial<Resources> {
 }
 
 // Função para calcular efeito de carta empilhada com multiplicador balanceado
-function calculateStackedEffect(cards: Card[]): Partial<Resources> {
+function calculateStackedEffect(cards: Card[], gameState: GameState): Partial<Resources> {
   if (cards.length === 0) return {};
-  
-  const baseEffect = parseInstantEffect(cards[0]);
-  // Multiplicador balanceado: 1 carta = 1x, 2 cartas = 1.5x, 3 cartas = 2x, 4 cartas = 2.5x
+  const baseEffect = executeCardEffects(cards[0].effect_logic ?? null, gameState, cards[0].id) || {};
   const multiplier = 1 + (cards.length - 1) * 0.5;
-  
   const stackedEffect: Partial<Resources> = {};
   Object.entries(baseEffect).forEach(([key, value]) => {
-    if (value && value > 0) {
+    if (typeof value === 'number' && value > 0) {
       stackedEffect[key as keyof Resources] = Math.round(value * multiplier);
     }
   });
-  
+  console.log('[EFFECT] calculateStackedEffect', cards.map(c => c.name), '\nBase:', baseEffect, '\nMultiplicador:', multiplier, '\nStacked:', stackedEffect);
   return stackedEffect;
 }
 
@@ -837,14 +906,14 @@ function calculateCardLevel(cards: Card[]): number {
 }
 
 // Função para processar efeitos dos eventos ativos
-function processEventEffects(eventGrid: GridCell[][]): Partial<Resources> {
+function processEventEffects(eventGrid: GridCell[][], gameState: GameState): Partial<Resources> {
   let effect: Partial<Resources> = {};
   let details: string[] = [];
   
   // Processar todos os eventos ativos
   eventGrid.flat().forEach(cell => {
     if (cell.card && cell.card.type === 'event') {
-      const eventEffect = parseInstantEffect(cell.card);
+      const eventEffect = executeCardEffects(cell.card.effect_logic ?? null, gameState, cell.card.id) || {};
       /*console.log('🎭 Processando evento:', {
         nome: cell.card.name,
         efeito: cell.card.effect.description,
@@ -892,30 +961,81 @@ export function useGameState() {
   const [pendingDefense, setPendingDefense] = useState<Card | null>(null);
   
   const getActiveDeck = useCallback(() => {
-    //console.log('=== DEBUG: getActiveDeck chamado ===');
-    //console.log('activeDeck:', activeDeck);
-    //console.log('activeDeck?.cards:', activeDeck?.cards);
-    //console.log('activeDeck?.cards?.length:', activeDeck?.cards?.length);
-    //console.log('playerCards:', playerCards.length);
-    //console.log('starterDeck:', starterDeck.length);
+    console.log('[GAME DEBUG] getActiveDeck chamado');
+    console.log('[GAME DEBUG] Verificando effect_logic das cartas do jogador:', 
+      playerCards.slice(0, 3).map(c => ({ 
+        name: c.name, 
+        id: c.id, 
+        effect_logic: c.effect_logic 
+      }))
+    );
+    console.log('[GAME DEBUG] Verificando effect_logic das cartas do deck ativo:', 
+      activeDeck?.cards?.slice(0, 3).map(c => ({ 
+        name: c.name, 
+        id: c.id, 
+        effect_logic: c.effect_logic 
+      }))
+    );
     
     // Prioridade: deck ativo do usuário
     if (activeDeck && activeDeck.cards && activeDeck.cards.length > 0) {
       //console.log(`✅ Usando deck ativo: ${activeDeck.name} com ${activeDeck.cards.length} cartas`);
       //console.log('Cartas do deck ativo:', activeDeck.cards.map(c => c.name));
-      return activeDeck.cards;
+      
+      // Verificar se as cartas do deck ativo têm effect_logic
+      console.log('[CARDS DEBUG] Verificando effect_logic das cartas do deck ativo em getActiveDeck:',
+        activeDeck.cards.slice(0, 3).map(c => ({
+          name: c.name,
+          id: c.id,
+          effect_logic: c.effect_logic
+        }))
+      );
+      
+      // Garantir que todas as cartas tenham effect_logic preservado
+      return activeDeck.cards.map((card: Card) => ({
+        ...card,
+        effect_logic: card.effect_logic
+      }));
     }
     
     // Fallback: cartas do jogador
     if (playerCards.length > 0) {
       //console.log(`🔄 Usando cartas do jogador: ${playerCards.length} cartas`);
-      return shuffle([...playerCards]);
+      
+      // Verificar se as cartas do jogador têm effect_logic
+      console.log('[CARDS DEBUG] Verificando effect_logic das cartas do jogador em getActiveDeck:',
+        playerCards.slice(0, 3).map(c => ({
+          name: c.name,
+          id: c.id,
+          effect_logic: c.effect_logic
+        }))
+      );
+      
+      // Garantir que todas as cartas tenham effect_logic preservado
+      return shuffle(playerCards.map((card: Card) => ({
+        ...card,
+        effect_logic: card.effect_logic
+      })));
     }
     
     // Fallback final: starter deck
     if (starterDeck.length > 0) {
       //console.log(`🔄 Usando starter deck: ${starterDeck.length} cartas`);
-      return shuffle([...starterDeck]);
+      
+      // Verificar se as cartas do starter deck têm effect_logic
+      console.log('[CARDS DEBUG] Verificando effect_logic das cartas do starter deck em getActiveDeck:',
+        starterDeck.slice(0, 3).map(c => ({
+          name: c.name,
+          id: c.id,
+          effect_logic: c.effect_logic
+        }))
+      );
+      
+      // Garantir que todas as cartas tenham effect_logic preservado
+      return shuffle(starterDeck.map((card: Card) => ({
+        ...card,
+        effect_logic: card.effect_logic
+      })));
     }
     
     //console.log('❌ Nenhuma carta disponível');
@@ -925,8 +1045,30 @@ export function useGameState() {
   // Função para salvar estado do jogo
   const saveGameState = useCallback((gameState: GameState) => {
     try {
-      const gameData = {
+      // Verificar se as cartas na mão têm effect_logic
+      console.log('[GAME DEBUG] Verificando effect_logic das cartas na mão antes de salvar:', 
+        gameState.hand.slice(0, 3).map(c => ({ 
+          name: c.name, 
+          id: c.id, 
+          effect_logic: c.effect_logic 
+        }))
+      );
+      
+      // Garantir que todas as cartas tenham effect_logic preservado
+      const gameStateWithEffectLogic = {
         ...gameState,
+        hand: gameState.hand.map((card: Card) => ({
+          ...card,
+          effect_logic: card.effect_logic
+        })),
+        deck: gameState.deck.map((card: Card) => ({
+          ...card,
+          effect_logic: card.effect_logic
+        }))
+      };
+      
+      const gameData = {
+        ...gameStateWithEffectLogic,
         timestamp: Date.now(),
         deckActiveId: activeDeck?.id || null
       };
@@ -958,8 +1100,21 @@ export function useGameState() {
         if (isRecent && isSameDeck) {
           console.log('🎮 Estado salvo encontrado, turno:', parsedState.turn);
           
+          // Garantir que todas as cartas tenham effect_logic preservado
+          const stateWithEffectLogic = {
+            ...parsedState,
+            hand: parsedState.hand.map((card: Card) => ({
+              ...card,
+              effect_logic: card.effect_logic
+            })),
+            deck: parsedState.deck.map((card: Card) => ({
+              ...card,
+              effect_logic: card.effect_logic
+            }))
+          };
+          
           // Retornar o estado sem o sistema de vitória para que seja aplicado o correto
-          const { victorySystem, ...stateWithoutVictory } = parsedState;
+          const { victorySystem, ...stateWithoutVictory } = stateWithEffectLogic;
           return stateWithoutVictory;
         } else {
           console.log('🎮 Estado ignorado:', !isRecent ? 'antigo' : 'deck diferente');
@@ -1366,7 +1521,19 @@ export function useGameState() {
       
       if (savedState) {
         console.log('🎮 Estado salvo encontrado, restaurando jogo...');
-        setGame(savedState);
+        // Garantir que o effect_logic seja preservado ao restaurar o jogo
+        const restoredState = {
+          ...savedState,
+          hand: savedState.hand.map((card: Card) => ({
+            ...card,
+            effect_logic: card.effect_logic
+          })),
+          deck: savedState.deck.map((card: Card) => ({
+            ...card,
+            effect_logic: card.effect_logic
+          }))
+        };
+        setGame(restoredState);
         setGameLoading(false);
         return;
       }
@@ -1377,7 +1544,12 @@ export function useGameState() {
       //console.log('Cartas do deck:', newDeck.map(c => c.name));
       
       if (newDeck.length > 0) {
-        const shuffledDeck = shuffle([...newDeck]);
+        // Garantir que todas as cartas tenham o campo effect_logic preservado
+        const deckWithEffectLogic = newDeck.map((card: Card) => ({
+          ...card,
+          effect_logic: card.effect_logic
+        }));
+        const shuffledDeck = shuffle([...deckWithEffectLogic]);
         const initialHand = shuffledDeck.slice(0, 5);
         
         /*console.log('Atualizando jogo com:', {
@@ -1387,11 +1559,28 @@ export function useGameState() {
         });*/
         
         setGame(prev => {
+          // Garantir que todas as cartas tenham effect_logic preservado
           const newState = {
             ...prev,
-            deck: shuffledDeck.slice(5), // Remover as 5 cartas da mão inicial
-            hand: initialHand
+            deck: shuffledDeck.slice(5).map((card: Card) => ({
+              ...card,
+              effect_logic: card.effect_logic
+            })), // Remover as 5 cartas da mão inicial
+            hand: initialHand.map((card: Card) => ({
+              ...card,
+              effect_logic: card.effect_logic
+            }))
           };
+          
+          // Verificar se as cartas têm effect_logic
+          console.log('[GAME DEBUG] Verificando effect_logic das cartas na mão inicial:', 
+            newState.hand.slice(0, 3).map(c => ({ 
+              name: c.name, 
+              id: c.id, 
+              effect_logic: c.effect_logic 
+            }))
+          );
+          
           /*console.log('🎮 setGame chamado - novo estado:', {
             deckLength: newState.deck.length,
             handLength: newState.hand.length,
@@ -1895,7 +2084,20 @@ export function useGameState() {
           });*/
           
           setGame((g) => {
-            const cartaComprada = g.deck[0];
+            // Garantir que a carta comprada tenha o campo effect_logic preservado
+      const cartaComprada = {
+              ...g.deck[0],
+              effect_logic: g.deck[0].effect_logic // Garantir que effect_logic seja preservado
+            };
+            
+            // Não executar o efeito da carta ao comprar
+            // Apenas registrar para debug
+            if (cartaComprada.effect_logic) {
+              console.log('[EFFECT DEBUG] Carta comprada com effect_logic:', cartaComprada.name);
+            }
+            // Verificar se a carta comprada tem effect_logic
+            console.log('[GAME DEBUG] Carta comprada:', cartaComprada.name, cartaComprada.id);
+            console.log('[GAME DEBUG] effect_logic da carta comprada:', cartaComprada.effect_logic);
             const newState = {
               ...g,
               hand: [...g.hand, cartaComprada],
@@ -1917,7 +2119,20 @@ export function useGameState() {
           if (gameSettings?.victoryMode === 'infinite' && discardedCards.length > 0) {
             // Rebaralhar deck com cartas descartadas
             const reshuffledDeck = shuffle([...discardedCards]);
-            const cartaComprada = reshuffledDeck[0];
+            // Garantir que a carta comprada tenha o campo effect_logic preservado
+            const cartaComprada = {
+              ...reshuffledDeck[0],
+              effect_logic: reshuffledDeck[0].effect_logic // Garantir que effect_logic seja preservado
+            };
+            
+            // Não executar o efeito da carta ao comprar (reshuffle)
+            // Apenas registrar para debug
+            if (cartaComprada.effect_logic) {
+              console.log('[EFFECT DEBUG] Carta comprada com effect_logic (reshuffle):', cartaComprada.name);
+            }
+            // Verificar se a carta comprada tem effect_logic
+            console.log('[GAME DEBUG] Carta comprada (reshuffle):', cartaComprada.name, cartaComprada.id);
+            console.log('[GAME DEBUG] effect_logic da carta comprada (reshuffle):', cartaComprada.effect_logic);
             
             setGame((g) => ({
               ...g,
@@ -2052,7 +2267,7 @@ export function useGameState() {
       
       // Verificar vitória por produção (modo simples)
       if (gameSettings.victoryMode === 'production') {
-        const { prod: currentProduction } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
+        const { prod: currentProduction } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid, game);
         const totalProduction = currentProduction.coins + currentProduction.food + 
                                currentProduction.materials + currentProduction.population;
         const productionGoal = gameSettings.victoryValue || 100;
@@ -2297,6 +2512,11 @@ export function useGameState() {
   const handleSelectCard = useCallback((card: Card) => {
     if (victory) return;
     
+    // Verificar se a carta tem effect_logic quando é selecionada
+    console.log('[CARD DEBUG] Carta selecionada para jogar:', card.name, card.id);
+    console.log('[CARD DEBUG] effect_logic da carta selecionada:', card.effect_logic);
+    console.log('[CARD DEBUG] Tipo de effect_logic:', typeof card.effect_logic);
+    
     //console.log('=== DEBUG: Carta selecionada ===');
     //console.log('Nome:', card.name);
     //console.log('Tipo:', card.type);
@@ -2324,14 +2544,22 @@ export function useGameState() {
         materials: card.cost.materials ?? 0,
         population: card.cost.population ?? 0,
       };
-      const effect = parseInstantEffect(card);
-      //console.log('Efeito parseado:', effect);
+      console.log('[CARD DEBUG] Carta jogada:', card.name, card.id);
+      console.log('[CARD DEBUG] effect_logic da carta:', card.effect_logic);
+      console.log('[CARD DEBUG] Tipo de effect_logic:', typeof card.effect_logic);
+      // Verificar effect_logic antes de executar
+      console.log('[EFFECT DEBUG] Executando efeito para carta:', card.name, card.id);
+      console.log('[EFFECT DEBUG] effect_logic antes de executar:', card.effect_logic);
+      console.log('[EFFECT DEBUG] Tipo de effect_logic:', typeof card.effect_logic);
+      
+      const effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
+      console.log('[EFFECT DEBUG] Efeito calculado:', effect);
       
       let details: string[] = [];
       Object.entries(effect).forEach(([key, value]) => {
         if (value && value > 0) details.push(`+${value} ${key}`);
       });
-      //console.log('Detalhes do efeito:', details);
+      console.log('[EFFECT DEBUG] Detalhes do efeito:', details);
       
       setGame((g) => {
         // Remover apenas a primeira carta com este ID (não todas)
@@ -2340,14 +2568,20 @@ export function useGameState() {
           ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
           : g.hand;
         
+        console.log('[RESOURCES DEBUG] Recursos antes de aplicar efeito:', g.resources);
+        console.log('[RESOURCES DEBUG] Custo da carta:', card.cost);
+        console.log('[RESOURCES DEBUG] Efeito a aplicar:', effect);
+        
+        // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
         const newResources: Resources = {
-          coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
-          food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
-          materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
-          population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
+          coins: g.resources.coins - (card.cost.coins ?? 0),
+          food: g.resources.food - (card.cost.food ?? 0),
+          materials: g.resources.materials - (card.cost.materials ?? 0),
+          population: g.resources.population - (card.cost.population ?? 0),
         };
-        //console.log('Recursos antes:', g.resources);
-        //console.log('Recursos depois:', newResources);
+        
+        console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
+        
         return {
           ...g,
           hand: newHand,
@@ -2649,13 +2883,28 @@ export function useGameState() {
       return;
     }
     
+    // Adicionar logs para rastrear mudanças de recursos ao construir
+    console.log('[RESOURCES TRACKING] Antes de construir:', 
+                {coins: game.resources.coins, food: game.resources.food, materials: game.resources.materials});
+    
     setGame((g) => {
       const newGrid = grid.map((row, iy) =>
         row.map((cell, ix) => {
           if (ix === x && iy === y) {
             if (cell.card && canStackCard(selectedCard, cell.card)) {
-              // Empilhar carta
-              const newStack = cell.stack ? [...cell.stack, selectedCard] : [selectedCard];
+              // Empilhar carta - Garantir que effect_logic é preservado
+              // Criar cópia completa da carta selecionada para preservar effect_logic
+              const cardCopy = JSON.parse(JSON.stringify(selectedCard));
+              
+              // Verificar se effect_logic está presente (log removido para reduzir ruído)
+              console.log('[CARD DEBUG] Empilhando carta com effect_logic:', 
+                selectedCard.name, 
+                selectedCard.id, 
+                'effect_logic:', 
+                selectedCard.effect_logic
+              );
+              
+              const newStack = cell.stack ? [...cell.stack, cardCopy] : [cardCopy];
               const totalCards = [cell.card, ...newStack];
               const level = calculateCardLevel(totalCards);
               return { 
@@ -2664,8 +2913,19 @@ export function useGameState() {
                 level 
               };
             } else {
-              // Nova carta
-              return { ...cell, card: selectedCard, level: 1 };
+              // Nova carta - Garantir que effect_logic é preservado
+              // Criar cópia completa da carta selecionada para preservar effect_logic
+              const cardCopy = JSON.parse(JSON.stringify(selectedCard));
+              
+              // Verificar se effect_logic está presente (log removido para reduzir ruído)
+              console.log('[CARD DEBUG] Adicionando nova carta com effect_logic:', 
+                selectedCard.name, 
+                selectedCard.id, 
+                'effect_logic:', 
+                selectedCard.effect_logic
+              );
+              
+              return { ...cell, card: cardCopy, level: 1 };
             }
           }
           return cell;
@@ -2680,9 +2940,28 @@ export function useGameState() {
       // Processar o efeito da carta construída (considerando empilhamento)
       const targetCell = newGrid[y][x];
       const cards = targetCell.stack ? [targetCell.card!, ...targetCell.stack] : [targetCell.card!];
-      const effect = targetCell.level && targetCell.level > 1 
-        ? calculateStackedEffect(cards)
-        : parseInstantEffect(selectedCard);
+      // Logs reduzidos para melhorar performance e legibilidade
+      // console.log('[CARD DEBUG] Carta construída:', selectedCard.name, selectedCard.id);
+      // console.log('[CARD DEBUG] effect_logic da carta:', selectedCard.effect_logic);
+      // console.log('[CARD DEBUG] Tipo de effect_logic:', typeof selectedCard.effect_logic);
+      // Verificar effect_logic antes de executar (construção)
+      console.log('[EFFECT DEBUG] Executando efeito para construção:', selectedCard.name, selectedCard.id);
+      console.log('[EFFECT DEBUG] effect_logic antes de executar (construção):', selectedCard.effect_logic);
+      console.log('[EFFECT DEBUG] Tipo de effect_logic (construção):', typeof selectedCard.effect_logic);
+      
+      // Verificar se é um efeito baseado em dados (ON_DICE) e evitar execução imediata
+      let effect: Partial<Resources> = {};
+      if (targetCell.level && targetCell.level > 1) {
+        effect = calculateStackedEffect(cards, g);
+      } else if (selectedCard.effect_logic && selectedCard.effect_logic.includes('ON_DICE')) {
+              // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
+      console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
+      console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
+        // Não executar o efeito agora, retornar objeto vazio
+      } else {
+        // Para outros efeitos, executar normalmente
+        effect = executeCardEffects(selectedCard.effect_logic ?? null, g, selectedCard.id) || {};
+      }
       
       // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
       if (selectedCard.effect_logic && hasOptionalEffects(selectedCard.effect_logic)) {
@@ -3008,7 +3287,10 @@ export function useGameState() {
       // ===== DETECÇÃO DE CRIAÇÃO DE CARTAS =====
       if (selectedCard.effect_logic && selectedCard.effect_logic.includes('CREATE_CITY_CARD')) {
         // Processar efeito de criação de cartas de city
-        const effectParts = selectedCard.effect_logic.split('|');
+        // Usar ';' como separador principal e '|' como alternativa (para compatibilidade)
+        const effectParts = selectedCard.effect_logic.includes(';') 
+          ? selectedCard.effect_logic.split(';')
+          : selectedCard.effect_logic.split('|');
         let cardsToCreate = 1; // Padrão
         
         if (effectParts.length > 1) {
@@ -3084,12 +3366,19 @@ export function useGameState() {
         empilhada: targetCell.level && targetCell.level > 1
       });*/
       
+      console.log('[RESOURCES DEBUG] Recursos antes de construir:', g.resources);
+      console.log('[RESOURCES DEBUG] Custo da carta construída:', selectedCard.cost);
+      console.log('[RESOURCES DEBUG] Efeito da carta construída:', effect);
+      
+      // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
       const newResources: Resources = {
-        coins: g.resources.coins - (selectedCard.cost.coins ?? 0) + (effect.coins ?? 0),
-        food: g.resources.food - (selectedCard.cost.food ?? 0) + (effect.food ?? 0),
-        materials: g.resources.materials - (selectedCard.cost.materials ?? 0) + (effect.materials ?? 0),
-        population: g.resources.population - (selectedCard.cost.population ?? 0) + (effect.population ?? 0),
+        coins: g.resources.coins - (selectedCard.cost.coins ?? 0),
+        food: g.resources.food - (selectedCard.cost.food ?? 0),
+        materials: g.resources.materials - (selectedCard.cost.materials ?? 0),
+        population: g.resources.population - (selectedCard.cost.population ?? 0),
       };
+      
+      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
       
       /*console.log('🏗️ Recursos atualizados:', {
         antes: g.resources,
@@ -3342,10 +3631,10 @@ export function useGameState() {
     // Priorizar o novo sistema baseado em effect_logic
     if (card.effect_logic && card.effect_logic.includes('IF_CITY_EXISTS')) {
       // Usar o novo sistema para efeitos condicionais
-      effect = executeCardEffects(card.effect_logic, game, card.id) || {};
+      effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
     } else {
       // Fallback para o sistema antigo
-      effect = parseInstantEffect(card);
+      effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
     }
     
     // Duplicar efeito se o boost estiver ativo
@@ -3452,7 +3741,7 @@ export function useGameState() {
     }
     
     // Processar o efeito da carta de defesa
-    const effect = parseInstantEffect(card);
+    const effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
     //console.log('Efeito parseado:', effect);
     
     let details: string[] = [];
@@ -3579,7 +3868,15 @@ export function useGameState() {
 
   const handleDiceRoll = useCallback(() => {
     if (game.phase !== 'build' || diceUsed) return;
-    const roll = Math.floor(Math.random() * 6) + 1;
+    
+    // Garantir que o dado gera números de 1 a 6 aleatoriamente
+    // Usando Math.random() para maior aleatoriedade
+    const min = 1;
+    const max = 6;
+    const roll = Math.floor(Math.random() * (max - min + 1)) + min;
+    
+    // Log para verificar a aleatoriedade
+    console.log('[DICE] Rolagem de dado:', roll);
     setDiceResult(roll);
     setDiceUsed(true);
     // Produção baseada no dado
@@ -3591,15 +3888,37 @@ export function useGameState() {
     ] as Card[];
     const activatedCardIds: string[] = [];
     allCards.forEach((card) => {
-      const diceProd = parseDiceProduction(card);
-      if (diceProd && diceProd.dice === roll) {
+      if (card.effect_logic && card.effect_logic.includes('ON_DICE')) {
+        // Usar o novo sistema baseado em effect_logic
+        console.log(`[DICE DEBUG] Verificando carta ${card.name} para dado ${roll}, effect_logic: ${card.effect_logic}`);
+        
+        // Extrair os números de dado da string effect_logic
+        const diceMatch = card.effect_logic.match(/ON_DICE:(\d+(?:,\d+)*)/);
+        if (diceMatch) {
+          const diceNumbers = diceMatch[1].split(',').map(d => parseInt(d.trim()));
+          console.log(`[DICE DEBUG] Números de dado para ${card.name}: ${diceNumbers.join(', ')}`);
+          
+          // Verificar se o dado rolado está entre os números válidos
+          if (diceNumbers.includes(roll)) {
+            console.log(`[DICE DEBUG] Ativando carta ${card.name} para dado ${roll}`);
+            
         // Rastrear cartas ativadas
         activatedCardIds.push(card.id);
         
-        Object.entries(diceProd.prod).forEach(([key, value]) => {
+            // Executar o efeito da carta com o dado rolado
+            const effect = executeCardEffects(card.effect_logic, game, card.id, roll);
+            
+            // Acumular efeitos
+            Object.entries(effect).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
         });
+          }
+        }
+      } else if (card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado')) {
+        // Não usar mais o sistema antigo para efeitos de dados
+        // Isso evita os avisos de [DEPRECATED]
+        // Nenhuma ação necessária aqui, pois todos os efeitos de dados devem usar effect_logic
       }
     });
     
@@ -3620,19 +3939,31 @@ export function useGameState() {
     } else {
       setDiceProductionSummary(`Dado: ${roll} | Nenhuma produção ativada.`);
     }
-    setGame((g) => ({
-      ...g,
-      resources: {
+    // Adicionar logs para rastrear mudanças de recursos
+    console.log('[RESOURCES TRACKING] Antes de aplicar produção do dado:', 
+                {coins: game.resources.coins, food: game.resources.food, materials: game.resources.materials});
+    console.log('[RESOURCES TRACKING] Produção do dado:', 
+                {coins: prod.coins, food: prod.food, materials: prod.materials});
+    
+    setGame((g) => {
+      const newResources = {
         coins: g.resources.coins + prod.coins,
         food: g.resources.food + prod.food,
         materials: g.resources.materials + prod.materials,
         population: g.resources.population,
-      },
+      };
+      
+      console.log('[RESOURCES TRACKING] Depois de aplicar produção do dado:', newResources);
+      
+      return {
+        ...g,
+        resources: newResources,
       playerStats: {
         ...g.playerStats,
         totalProduction: g.playerStats.totalProduction + prod.coins + prod.food + prod.materials,
       },
-    }));
+      };
+    });
     
     // O resultado do dado persiste até a próxima fase de construção
     // Não limpar automaticamente - será limpo apenas quando necessário
@@ -3658,8 +3989,11 @@ export function useGameState() {
     
     activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
-      if (!parseDiceProduction(card)) {
-        const p = parseProduction(card, game, card.id);
+      // Verificar explicitamente que não é um efeito ON_DICE
+      if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
+          !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
+        // Usar diretamente executeCardEffects em vez de parseProduction
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, game, card.id) : {};
         Object.entries(p).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
@@ -3668,7 +4002,7 @@ export function useGameState() {
     });
     
     // Processar efeitos dos eventos ativos
-    const eventEffects = processEventEffects(game.eventGrid);
+    const eventEffects = processEventEffects(game.eventGrid, game);
     Object.entries(eventEffects).forEach(([key, value]) => {
       if (value) {
         prod[key as keyof Resources] += value;
@@ -3955,7 +4289,7 @@ export function useGameState() {
   }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction]);
 
   // --- PROPS PARA COMPONENTES ---
-  const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid);
+  const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid, game);
   
   // Aplicar redução de produção se houver catástrofe ativa
   const catastropheReduction = game.productionReduction || 0;
@@ -4097,6 +4431,16 @@ export function useGameState() {
 
   // Função para atualizar o estado do jogo (usada para carregar jogos salvos)
   const updateGameState = useCallback((newGameState: GameState, gameMode?: string) => {
+    // Verificar se há cartas na mão e se elas têm effect_logic
+    if (newGameState.hand) {
+      console.log('[GAME DEBUG] Verificando effect_logic das cartas na mão ao atualizar estado:', 
+        newGameState.hand.slice(0, 3).map(c => ({ 
+          name: c.name, 
+          id: c.id, 
+          effect_logic: c.effect_logic 
+        }))
+      );
+    }
     console.log('🎮 Atualizando estado do jogo:', {
       turn: newGameState.turn,
       handLength: newGameState.hand?.length,
@@ -4466,9 +4810,24 @@ export function useGameState() {
   }, [cityDeactivationMode, game.cityGrid, game.turn, addToHistory]);
 
   // Calcular produção base das fazendas
+  // Criar uma cópia do estado do jogo para evitar modificações durante o cálculo de produção
+  const gameCopy = JSON.parse(JSON.stringify(game));
+  
   const farmProduction = game.farmGrid.flat().reduce((total, cell) => {
     if (cell.card && cell.card.effect_logic) {
-      const production = parseProduction(cell.card, game, cell.card.id);
+      // Calcular a produção sem modificar o estado do jogo original
+      // Não usar executeCardEffects diretamente para evitar modificar o estado
+      const parsed = parseEffectLogic(cell.card.effect_logic);
+      const production: Partial<Resources> = {};
+      
+      if (parsed?.simple) {
+        for (const effect of parsed.simple) {
+          if (effect.type.startsWith('PRODUCE_')) {
+            const resourceType = effect.type.replace('PRODUCE_', '').toLowerCase() as keyof Resources;
+            production[resourceType] = (production[resourceType] || 0) + effect.amount;
+          }
+        }
+      }
       return {
         coins: total.coins + (production.coins || 0),
         food: total.food + (production.food || 0),
@@ -4492,7 +4851,19 @@ export function useGameState() {
         return total;
       }
       
-      const production = parseProduction(cell.card, game, cell.card.id);
+      // Calcular a produção sem modificar o estado do jogo original
+      // Não usar executeCardEffects diretamente para evitar modificar o estado
+      const parsed = parseEffectLogic(cell.card.effect_logic);
+      const production: Partial<Resources> = {};
+      
+      if (parsed?.simple) {
+        for (const effect of parsed.simple) {
+          if (effect.type.startsWith('PRODUCE_')) {
+            const resourceType = effect.type.replace('PRODUCE_', '').toLowerCase() as keyof Resources;
+            production[resourceType] = (production[resourceType] || 0) + effect.amount;
+          }
+        }
+      }
       return {
         coins: total.coins + (production.coins || 0),
         food: total.food + (production.food || 0),

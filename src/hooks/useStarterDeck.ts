@@ -33,6 +33,15 @@ export const useStarterDeck = () => {
       }
 
       if (data && data.length > 0) {
+        // Verificar se as cartas do starter deck têm effect_logic
+        console.log('[CARDS DEBUG] Verificando effect_logic das cartas do starter deck:', 
+          data.slice(0, 3).map(c => ({ 
+            name: c.name, 
+            id: c.id, 
+            effect_logic: c.effect_logic 
+          }))
+        );
+        
         // Converter cartas do Supabase para formato do jogo
         const supabaseStarterCards: Card[] = data.map((adminCard: any): Card => ({
           id: adminCard.id,
@@ -50,8 +59,18 @@ export const useStarterDeck = () => {
           rarity: adminCard.rarity,
           activation: getActivationDescription(adminCard),
           artworkUrl: adminCard.art_url || undefined,
+          effect_logic: adminCard.effect_logic,
         }));
 
+        // Verificar se as cartas convertidas têm effect_logic
+        console.log('[CARDS DEBUG] Verificando effect_logic das cartas convertidas do starter deck:', 
+          supabaseStarterCards.slice(0, 3).map(c => ({ 
+            name: c.name, 
+            id: c.id, 
+            effect_logic: c.effect_logic 
+          }))
+        );
+        
         setStarterDeck(supabaseStarterCards);
       } else {
         // Se não houver cartas starter no Supabase, usar as locais

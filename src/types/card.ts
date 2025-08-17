@@ -68,8 +68,9 @@ export interface SimpleEffect {
 
 // Interface para efeitos condicionais
 export interface ConditionalEffect {
-  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5' | 'IF_CELESTIAL_FARMS_EXIST' | 'IF_VERTICAL_FARMS_EXIST' | 'IF_HAND_GE_5' | 'IF_HORTA_EXISTS' | 'IF_SACRED_FIELD_EXISTS' | 'IF_SACRED_TAG_EXISTS' | 'IF_CITY_GE_3' | 'IF_POPULATION_GE_2' | 'IF_COINS_GE_10';
+  type: 'IF_CITY_EXISTS' | 'IF_FARMS_GE_3' | 'IF_WORKSHOPS_GE_2' | 'IF_MAGIC_EXISTS' | 'IF_WATER_EXISTS' | 'IF_COINS_GE_5' | 'IF_CELESTIAL_FARMS_EXIST' | 'IF_VERTICAL_FARMS_EXIST' | 'IF_HAND_GE_5' | 'IF_HORTA_EXISTS' | 'IF_SACRED_FIELD_EXISTS' | 'IF_SACRED_TAG_EXISTS' | 'IF_CITY_GE_3' | 'IF_POPULATION_GE_2' | 'IF_COINS_GE_10' | 'FALLBACK';
   effect: SimpleEffect;
+  logicalOperator?: 'AND' | 'OR'; // Indica se as condições são combinadas com AND (;) ou OR (|)
 }
 
 // Interface para efeitos de produção por dado

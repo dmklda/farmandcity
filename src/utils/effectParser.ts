@@ -163,7 +163,19 @@ function determineEffectFrequency(effectType: SimpleEffectType, params: string[]
  */
 export function parseConditionalEffectLogic(effectLogic: string): ConditionalEffect[] {
   const effects: ConditionalEffect[] = [];
-  const statements = effectLogic.split(';');
+  
+  // Primeiro verificamos se há condições com operador AND (;) ou OR (|)
+  let statements: string[];
+  let isOrOperator = false;
+  
+  if (effectLogic.includes('|')) {
+    statements = effectLogic.split('|');
+    isOrOperator = true;
+    console.log('[PARSER DEBUG] Detectado operador OR (|) para condições:', statements);
+  } else {
+    statements = effectLogic.split(';');
+    console.log('[PARSER DEBUG] Detectado operador AND (;) para condições:', statements);
+  }
   
   for (let i = 0; i < statements.length; i++) {
     const statement = statements[i].trim();
@@ -182,10 +194,38 @@ export function parseConditionalEffectLogic(effectLogic: string): ConditionalEff
               type: effectType,
               amount: amount,
               frequency: 'ON_CONDITION'
-            }
+            },
+            // Adicionamos uma propriedade para indicar o tipo de operador lógico
+            logicalOperator: isOrOperator ? 'OR' : 'AND'
           };
           
           effects.push(conditionalEffect);
+        }
+      }
+    } else {
+      // Se não começar com IF_, é um efeito simples após o operador OR
+      // Por exemplo: "IF_CITY_EXISTS:GAIN_COINS:5|GAIN_COINS:3"
+      // Nesse caso, criamos um efeito condicional especial "FALLBACK" que sempre é verdadeiro
+      if (isOrOperator && statement.includes(':')) {
+        const effectParams = statement.split(':');
+        if (effectParams.length >= 2) {
+          const effectType = effectParams[0] as SimpleEffectType;
+          const amount = parseInt(effectParams[1]);
+          
+          if (!isNaN(amount)) {
+            const conditionalEffect: ConditionalEffect = {
+              type: 'FALLBACK' as any, // Tipo especial que sempre retorna true
+              effect: {
+                type: effectType,
+                amount: amount,
+                frequency: 'ON_CONDITION'
+              },
+              logicalOperator: 'OR'
+            };
+            
+            effects.push(conditionalEffect);
+            console.log('[PARSER DEBUG] Adicionado efeito FALLBACK para operador OR:', conditionalEffect);
+          }
         }
       }
     }
@@ -223,6 +263,12 @@ export function parseDiceEffectLogic(effectLogic: string): DiceProductionEffect[
             }
           };
           
+          // Reduzir logs excessivos - só logar em casos específicos
+          // Usando uma variável para controlar os logs de dados
+          const debugDice = false; // Mudar para true para ativar logs de dados
+          if (debugDice) {
+            console.log(`[DICE PARSER] Efeito de dado analisado: ${effectType} ${effectAmount} para dados ${diceNumbers.join(',')}`);
+          }
           effects.push(diceEffect);
         }
       }
@@ -249,7 +295,10 @@ export function parseRandomEffectLogic(effectLogic: string): RandomEffect[] {
       
       if (!isNaN(chance) && effectParts.length > 0) {
         const effectString = effectParts.join(':');
-        const [mainEffect, fallbackEffect] = effectString.split('|');
+        // Usar ';' como separador principal e '|' como alternativa (para compatibilidade)
+        const [mainEffect, fallbackEffect] = effectString.includes(';') 
+          ? effectString.split(';')
+          : effectString.split('|');
         
         const mainEffects = parseSimpleEffectLogic(mainEffect);
         let fallback: SimpleEffect | undefined;
@@ -511,7 +560,7 @@ export function effectLogicToString(effectLogic: CardEffectLogic): string {
   }
   
   if (effectLogic.random) {
-    parts.push(...effectLogic.random.map(e => `RANDOM_CHANCE:${e.chance}:${e.effects.map(ef => `${ef.type}:${ef.amount}`).join('|')}${e.fallbackEffect ? `|${e.fallbackEffect.type}:${e.fallbackEffect.amount}` : ''}`));
+    parts.push(...effectLogic.random.map(e => `RANDOM_CHANCE:${e.chance}:${e.effects.map(ef => `${ef.type}:${ef.amount}`).join(';')}${e.fallbackEffect ? `;${e.fallbackEffect.type}:${e.fallbackEffect.amount}` : ''}`));
   }
   
   if (effectLogic.constructionBoost) {

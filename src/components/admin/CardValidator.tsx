@@ -1,6 +1,9 @@
-import React from 'react';
-import { Card, } from '../ui/card';
+import React, { useState } from 'react';
+import { Card } from '../ui/card';
 import { Badge as BadgeComponent } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { SimpleEffectType } from '../../types/card';
 
 interface ValidationResult {
   isValid: boolean;
@@ -17,9 +20,121 @@ interface ValidationResult {
 interface CardValidatorProps {
   effect: string;
   cardType: string;
+  effect_logic?: string;
 }
 
-export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }) => {
+export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType, effect_logic }) => {
+  const [testGameState, setTestGameState] = useState<any>({
+    resources: { coins: 10, food: 10, materials: 10, population: 5 },
+    cityGrid: Array(3).fill(Array(3).fill({ card: null })),
+    farmGrid: Array(3).fill(Array(3).fill({ card: null })),
+    magicGrid: Array(3).fill(Array(3).fill({ card: null })),
+    hand: [],
+    deck: Array(10).fill({}),
+    turn: 1
+  });
+  const [effectResult, setEffectResult] = useState<any>(null);
+  const [showEffectTester, setShowEffectTester] = useState(false);
+  
+  // Versão simplificada da função checkCondition para o testador
+  const checkConditionForTester = (condition: string, gameState: any): boolean => {
+    console.log('Verificando condição:', condition, gameState.resources);
+    switch(condition) {
+      case 'IF_COINS_GE_5':
+        return (gameState.resources.coins || 0) >= 5;
+      case 'IF_COINS_GE_10':
+        return (gameState.resources.coins || 0) >= 10;
+      case 'IF_POPULATION_GE_2':
+        return (gameState.resources.population || 0) >= 2;
+      case 'IF_CITY_GE_3':
+        const cityCount = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
+        return cityCount >= 3;
+      case 'IF_FARMS_GE_3':
+        const farmCount = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
+        return farmCount >= 3;
+      // Adicione mais condições conforme necessário
+      default:
+        console.warn('Condição não implementada no testador:', condition);
+        return false;
+    }
+  };
+  
+  // Versão simplificada da função executeSimpleEffect para o testador
+  const executeSimpleEffectForTester = (effect: { type: string, amount: number }, changes: any) => {
+    console.log('Executando efeito:', effect.type, effect.amount);
+    switch(effect.type) {
+      case 'GAIN_COINS':
+        changes.coins = (changes.coins || 0) + effect.amount;
+        break;
+      case 'GAIN_FOOD':
+        changes.food = (changes.food || 0) + effect.amount;
+        break;
+      case 'GAIN_MATERIALS':
+        changes.materials = (changes.materials || 0) + effect.amount;
+        break;
+      case 'GAIN_POPULATION':
+        changes.population = (changes.population || 0) + effect.amount;
+        break;
+      case 'COST_COINS':
+        changes.coins = (changes.coins || 0) - effect.amount;
+        break;
+      case 'COST_FOOD':
+        changes.food = (changes.food || 0) - effect.amount;
+        break;
+      case 'COST_MATERIALS':
+        changes.materials = (changes.materials || 0) - effect.amount;
+        break;
+      case 'COST_POPULATION':
+        changes.population = (changes.population || 0) - effect.amount;
+        break;
+      case 'PRODUCE_COINS':
+        changes.coins = (changes.coins || 0) + effect.amount;
+        break;
+      case 'PRODUCE_FOOD':
+        changes.food = (changes.food || 0) + effect.amount;
+        break;
+      case 'PRODUCE_MATERIALS':
+        changes.materials = (changes.materials || 0) + effect.amount;
+        break;
+      case 'PRODUCE_POPULATION':
+        changes.population = (changes.population || 0) + effect.amount;
+        break;
+      case 'TRADE_FOOD_FOR_MATERIALS':
+        changes.food = (changes.food || 0) - effect.amount;
+        changes.materials = (changes.materials || 0) + effect.amount;
+        break;
+      case 'TRADE_MATERIALS_FOR_FOOD':
+        changes.materials = (changes.materials || 0) - effect.amount;
+        changes.food = (changes.food || 0) + effect.amount;
+        break;
+      case 'TRADE_COINS_FOR_MATERIALS':
+        changes.coins = (changes.coins || 0) - effect.amount;
+        changes.materials = (changes.materials || 0) + effect.amount;
+        break;
+      case 'TRADE_MATERIALS_FOR_COINS':
+        changes.materials = (changes.materials || 0) - effect.amount;
+        changes.coins = (changes.coins || 0) + effect.amount;
+        break;
+      case 'TRADE_FOOD_FOR_COINS':
+        changes.food = (changes.food || 0) - effect.amount;
+        changes.coins = (changes.coins || 0) + effect.amount;
+        break;
+      case 'TRADE_COINS_FOR_FOOD':
+        changes.coins = (changes.coins || 0) - effect.amount;
+        changes.food = (changes.food || 0) + effect.amount;
+        break;
+      case 'BOOST_ALL_FARMS_FOOD':
+      case 'BOOST_ALL_CITIES_COINS':
+      case 'BOOST_ALL_CITIES_MATERIALS':
+      case 'BOOST_ALL_CONSTRUCTIONS':
+        changes.boost = `${effect.type}:${effect.amount}`;
+        break;
+      // Outros efeitos podem ser adicionados conforme necessário
+      default:
+        // Para efeitos não implementados no testador, apenas registramos
+        changes[`effect_${effect.type}`] = effect.amount;
+    }
+  };
   const validateEffect = (effectText: string, type: string): ValidationResult => {
     const effect = effectText.toLowerCase();
     const suggestions: string[] = [];
@@ -423,6 +538,122 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
 
   const result = validateEffect(effect, cardType);
 
+  // Função para testar o efeito lógico
+  const testEffectLogic = () => {
+    if (!effect_logic) return;
+    
+    try {
+      // Criar uma cópia do estado do jogo para testar
+      const gameStateCopy = JSON.parse(JSON.stringify(testGameState));
+      const changes: any = {
+        coins: 0,
+        food: 0,
+        materials: 0,
+        population: 0
+      };
+      
+      // Processar cada parte do efeito lógico
+      const effectParts = effect_logic.split(';').filter(part => part.trim());
+      console.log('Partes do efeito:', effectParts);
+      
+      effectParts.forEach(part => {
+        // Verificar se é um efeito condicional (IF_X:EFFECT_Y:Z;EFFECT_W:V ou formato antigo com |)
+        if (part.startsWith('IF_')) {
+          // Primeiro separamos a condição da string de efeitos
+          const conditionSeparatorIndex = part.indexOf(':');
+          const condition = part.substring(0, conditionSeparatorIndex);
+          const restOfString = part.substring(conditionSeparatorIndex + 1);
+          
+          // Agora separamos os efeitos verdadeiro e falso pelo separador (';' ou '|' para compatibilidade)
+          const separator = restOfString.includes(';') ? ';' : '|';
+          const separatorIndex = restOfString.indexOf(separator);
+          const trueEffect = separatorIndex > -1 ? restOfString.substring(0, separatorIndex) : restOfString;
+          const falseEffect = separatorIndex > -1 ? restOfString.substring(separatorIndex + 1) : '';
+          
+          console.log('Condição:', condition, 'Efeito verdadeiro:', trueEffect, 'Efeito falso:', falseEffect);
+          
+          try {
+            const conditionMet = checkConditionForTester(condition, gameStateCopy);
+            // O formato correto é IF_CONDITION:EFFECT_TYPE:AMOUNT;EFFECT_TYPE:AMOUNT
+            // Precisamos extrair o efeito completo
+            let effectToApply = '';
+            if (conditionMet) {
+              effectToApply = trueEffect;
+            } else {
+              effectToApply = falseEffect;
+            }
+            
+            console.log('Condição atendida?', conditionMet, 'Efeito a aplicar completo:', effectToApply);
+            
+            if (effectToApply) {
+              // Extrair tipo e quantidade do efeito
+              // O formato pode ser GAIN_MATERIALS:2
+              const effectParts = effectToApply.split(':');
+              const effectType = effectParts[0];
+              const amount = parseInt(effectParts[1]) || 0;
+              
+              console.log('Effect parts:', effectParts, 'Effect type:', effectType, 'Amount:', amount);
+              
+              console.log('Tipo de efeito:', effectType, 'Quantidade:', amount);
+              
+              if (effectType) {
+                executeSimpleEffectForTester({ 
+                  type: effectType, 
+                  amount: amount 
+                }, changes);
+              }
+            }
+          } catch (err) {
+            console.error('Erro ao processar condição:', condition, err);
+          }
+        } else if (part.includes(':')) {
+          // Efeito simples (EFFECT_X:Y)
+          const [effectType, ...params] = part.split(':');
+          if (effectType) {
+            try {
+              executeSimpleEffectForTester({ 
+                type: effectType, 
+                amount: parseInt(params[0]) || 0 
+              }, changes);
+            } catch (err) {
+              console.error('Erro ao processar efeito simples:', effectType, err);
+            }
+          }
+        }
+      });
+      
+      // Limpar quaisquer chaves de objeto inválidas
+      Object.keys(changes).forEach(key => {
+        if (key.includes('undefined_') || typeof changes[key] === 'object') {
+          delete changes[key];
+        }
+      });
+      
+      // Aplicar as mudanças ao estado de teste
+      const newGameState = {
+        ...gameStateCopy,
+        resources: {
+          ...gameStateCopy.resources,
+          coins: (gameStateCopy.resources.coins || 0) + (changes.coins || 0),
+          food: (gameStateCopy.resources.food || 0) + (changes.food || 0),
+          materials: (gameStateCopy.resources.materials || 0) + (changes.materials || 0),
+          population: (gameStateCopy.resources.population || 0) + (changes.population || 0)
+        }
+      };
+      
+      console.log('Resultado final:', changes, newGameState.resources);
+      setEffectResult({
+        changes,
+        newState: newGameState.resources
+      });
+    } catch (error) {
+      console.error('Erro ao processar efeito:', error);
+      setEffectResult({
+        error: `Erro ao processar efeito: ${error}`
+      });
+    }
+  };
+
   if (!effect.trim()) {
     return null;
   }
@@ -475,6 +706,163 @@ export const CardValidator: React.FC<CardValidatorProps> = ({ effect, cardType }
           </div>
         )}
       </div>
+      
+      {effect_logic && (
+        <div className="mt-4 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold">Teste de Efeito Lógico</h4>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-gray-500 text-gray-600 hover:bg-gray-100"
+              onClick={() => setShowEffectTester(!showEffectTester)}
+            >
+              {showEffectTester ? 'Esconder' : 'Mostrar'} Testador
+            </Button>
+          </div>
+          
+          {showEffectTester && (
+            <div className="mt-3 space-y-4">
+              <div className="p-3 bg-gray-100 border border-gray-200 rounded-md">
+                <div className="text-sm font-medium mb-2 text-gray-700">Código do Efeito:</div>
+                <code className="block p-2 bg-gray-800 text-gray-100 rounded text-sm overflow-x-auto">
+                  {effect_logic}
+                </code>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-sm font-medium mb-1 text-gray-700">Estado Inicial:</div>
+                  <div className="p-2 bg-gray-700 text-gray-100 rounded text-sm border border-gray-600">
+                    <div>Moedas: {testGameState.resources.coins}</div>
+                    <div>Comida: {testGameState.resources.food}</div>
+                    <div>Material: {testGameState.resources.materials}</div>
+                    <div>População: {testGameState.resources.population}</div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-sm font-medium mb-1 text-gray-700">Modificar Estado:</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input 
+                      type="number" 
+                      placeholder="Moedas" 
+                      value={testGameState.resources.coins}
+                      onChange={(e) => setTestGameState({
+                        ...testGameState,
+                        resources: {
+                          ...testGameState.resources,
+                          coins: parseInt(e.target.value) || 0
+                        }
+                      })}
+                    />
+                    <Input 
+                      type="number" 
+                      placeholder="Comida" 
+                      value={testGameState.resources.food}
+                      onChange={(e) => setTestGameState({
+                        ...testGameState,
+                        resources: {
+                          ...testGameState.resources,
+                          food: parseInt(e.target.value) || 0
+                        }
+                      })}
+                    />
+                    <Input 
+                      type="number" 
+                      placeholder="Material" 
+                      value={testGameState.resources.materials}
+                      onChange={(e) => setTestGameState({
+                        ...testGameState,
+                        resources: {
+                          ...testGameState.resources,
+                          materials: parseInt(e.target.value) || 0
+                        }
+                      })}
+                    />
+                    <Input 
+                      type="number" 
+                      placeholder="População" 
+                      value={testGameState.resources.population}
+                      onChange={(e) => setTestGameState({
+                        ...testGameState,
+                        resources: {
+                          ...testGameState.resources,
+                          population: parseInt(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white" 
+                onClick={testEffectLogic}
+              >
+                Testar Efeito
+              </Button>
+              
+              {effectResult && (
+                <div className="p-3 bg-gray-100 border border-gray-200 rounded-md">
+                  <div className="text-sm font-medium mb-2 text-gray-700">Resultado:</div>
+                  
+                  {effectResult.error ? (
+                    <div className="text-red-500">{effectResult.error}</div>
+                  ) : (
+                    <>
+                      <div className="mb-2">
+                        <div className="text-sm font-medium text-gray-700">Mudanças:</div>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {effectResult.changes.coins !== undefined && (
+                            <BadgeComponent variant={effectResult.changes.coins >= 0 ? "default" : "destructive"}>
+                              {effectResult.changes.coins >= 0 ? '+' : ''}{effectResult.changes.coins} moedas
+                            </BadgeComponent>
+                          )}
+                          {effectResult.changes.food !== undefined && (
+                            <BadgeComponent variant={effectResult.changes.food >= 0 ? "default" : "destructive"}>
+                              {effectResult.changes.food >= 0 ? '+' : ''}{effectResult.changes.food} comida
+                            </BadgeComponent>
+                          )}
+                          {effectResult.changes.materials !== undefined && (
+                            <BadgeComponent variant={effectResult.changes.materials >= 0 ? "default" : "destructive"}>
+                              {effectResult.changes.materials >= 0 ? '+' : ''}{effectResult.changes.materials} material
+                            </BadgeComponent>
+                          )}
+                          {effectResult.changes.population !== undefined && (
+                            <BadgeComponent variant={effectResult.changes.population >= 0 ? "default" : "destructive"}>
+                              {effectResult.changes.population >= 0 ? '+' : ''}{effectResult.changes.population} população
+                            </BadgeComponent>
+                          )}
+                          {Object.keys(effectResult.changes).filter(key => 
+                            !['coins', 'food', 'materials', 'population'].includes(key) && 
+                            typeof effectResult.changes[key] !== 'object' && 
+                            effectResult.changes[key] !== undefined
+                          ).map(key => (
+                            <BadgeComponent key={key} variant="outline">
+                              {key}: {String(effectResult.changes[key])}
+                            </BadgeComponent>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-sm font-medium text-gray-700">Estado Final:</div>
+                        <div className="p-2 bg-gray-700 text-gray-100 rounded text-sm mt-1 border border-gray-600">
+                          <div>Moedas: {effectResult.newState.coins}</div>
+                          <div>Comida: {effectResult.newState.food}</div>
+                          <div>Material: {effectResult.newState.materials}</div>
+                          <div>População: {effectResult.newState.population}</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }; 

@@ -123,8 +123,17 @@ export function parseDiceProduction(production?: string): Resources {
 
 export function getInitialState(deck: Card[]): GameState {
   const shuffledDeck = shuffle(deck);
-  const hand = shuffledDeck.slice(0, 5);
-  const remainingDeck = shuffledDeck.slice(5);
+  
+  // Garantir que o campo effect_logic seja preservado
+  const hand = shuffledDeck.slice(0, 5).map(card => ({
+    ...card,
+    effect_logic: card.effect_logic
+  }));
+  
+  const remainingDeck = shuffledDeck.slice(5).map(card => ({
+    ...card,
+    effect_logic: card.effect_logic
+  }));
   
   return {
     turn: 1,

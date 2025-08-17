@@ -69,7 +69,11 @@ export const usePlayerCards = () => {
 
       if (cardsError) throw cardsError;
       
-      //console.log('Dados de cards encontrados:', cardsData);
+      console.log('[CARDS DEBUG] Dados de cards encontrados do banco:', cardsData?.slice(0, 3).map(c => ({
+        id: c.id,
+        name: c.name,
+        effect_logic: c.effect_logic
+      })));
 
       // Converter para formato do jogo, respeitando quantidade
       const gameCards: Card[] = [];
@@ -95,11 +99,19 @@ export const usePlayerCards = () => {
             rarity: adminCard.rarity,
             activation: getActivationDescription(adminCard),
             artworkUrl: adminCard.art_url || undefined,
+            effect_logic: adminCard.effect_logic, // <-- Adicionado aqui
           });
         }
       });
 
-      //console.log(`Carregadas ${gameCards.length} cartas do jogador`);
+      console.log(`[CARDS DEBUG] Carregadas ${gameCards.length} cartas do jogador`);
+      console.log('[CARDS DEBUG] Verificando effect_logic das cartas carregadas:', 
+        gameCards.slice(0, 3).map(c => ({ 
+          name: c.name, 
+          id: c.id, 
+          effect_logic: c.effect_logic 
+        }))
+      );
       setPlayerCards(gameCards);
     } catch (err: any) {
       console.error('Error fetching player cards:', err);
@@ -163,6 +175,7 @@ export const usePlayerCards = () => {
             rarity: adminCard.rarity,
             activation: getActivationDescription(adminCard),
             artworkUrl: adminCard.art_url || undefined,
+            effect_logic: adminCard.effect_logic, // <-- Adicionado aqui
           });
         }
       });

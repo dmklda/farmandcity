@@ -98,8 +98,14 @@ export const usePlayerDecks = () => {
           continue;
         }
 
-        //console.log(`Cartas encontradas para deck ${deck.name}:`, cardsData?.length);
-        //console.log('Dados das cartas:', cardsData);
+        console.log(`[CARDS DEBUG] Cartas encontradas para deck ${deck.name}:`, cardsData?.length);
+        console.log('[CARDS DEBUG] Verificando effect_logic das cartas do deck:', 
+          cardsData?.slice(0, 3).map(c => ({ 
+            name: c.name, 
+            id: c.id, 
+            effect_logic: c.effect_logic 
+          }))
+        );
 
         // Converter cartas para o formato do jogo, respeitando as múltiplas cópias no deck
         const gameCards: Card[] = [];
@@ -123,12 +129,22 @@ export const usePlayerDecks = () => {
               rarity: cardData.rarity,
               activation: getActivationDescription(cardData),
               artworkUrl: cardData.art_url || undefined,
+              effect_logic: cardData.effect_logic,
             };
             gameCards.push(gameCard);
           } else {
             //console.warn(`Carta não encontrada: ${cardId} no deck ${deck.name}`);
           }
         });
+
+        // Verificar se as cartas têm effect_logic
+        console.log('[CARDS DEBUG] Verificando effect_logic das cartas convertidas para o deck:', 
+          gameCards.slice(0, 3).map(c => ({ 
+            name: c.name, 
+            id: c.id, 
+            effect_logic: c.effect_logic 
+          }))
+        );
 
         const deckWithCards: DeckWithCards = {
           ...deck,

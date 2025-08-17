@@ -10,6 +10,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Produz 1 comida por turno.' },
     rarity: 'common',
     activation: 'Produção automática por turno.',
+    effect_logic: 'PRODUCE_FOOD:1',
   },
   {
     id: 'starter-tent',
@@ -19,6 +20,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Fornece 1 população imediatamente.' },
     rarity: 'common',
     activation: 'Efeito imediato ao construir.',
+    effect_logic: 'GAIN_POPULATION:1',
   },
   {
     id: 'starter-harvest',
@@ -28,6 +30,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Ganhe 1 comida instantaneamente.' },
     rarity: 'common',
     activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
+    effect_logic: 'GAIN_FOOD:1',
   },
   {
     id: 'starter-farm',
@@ -37,6 +40,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Produz 1 comida quando ativada por dado.' },
     rarity: 'common',
     activation: 'Ativada por qualquer valor de dado.',
+    effect_logic: 'PRODUCE_FOOD:1:ON_DICE:1,2,3,4,5,6',
   },
   {
     id: 'starter-workshop',
@@ -46,6 +50,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Produz 1 material por turno.' },
     rarity: 'common',
     activation: 'Produção automática por turno.',
+    effect_logic: 'PRODUCE_MATERIALS:1',
   },
   {
     id: 'starter-shop',
@@ -55,6 +60,7 @@ export const starterCards: Card[] = [
     effect: { description: 'Ganhe 1 moeda instantaneamente.' },
     rarity: 'common',
     activation: 'Fase de ação. Pode ser usada múltiplas vezes por turno.',
+    effect_logic: 'GAIN_COINS:1',
   },
 ];
 

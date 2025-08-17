@@ -713,6 +713,7 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                 <CardValidator 
                   effect={formData.effect || ''} 
                   cardType={formData.type || 'farm'} 
+                  effect_logic={formData.effect_logic || ''}
                 />
               </div>
 

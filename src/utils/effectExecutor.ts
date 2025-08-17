@@ -422,6 +422,12 @@ export function executeSimpleEffects(
  * Verifica se uma condição é verdadeira
  */
 export function checkCondition(condition: ConditionalEffect['type'], gameState: GameState): boolean {
+  // Caso especial: FALLBACK é sempre verdadeiro (usado para o operador OR)
+  if (condition === 'FALLBACK') {
+    console.log('[CONDITION DEBUG] Condição FALLBACK é sempre verdadeira');
+    return true;
+  }
+  
   // Extrair todas as cartas dos grids
   const allCards = [
     ...gameState.farmGrid.flat().map(cell => cell.card).filter(Boolean),
@@ -430,58 +436,88 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
     ...gameState.eventGrid.flat().map(cell => cell.card).filter(Boolean)
   ] as Card[];
   
+  console.log('[CONDITION DEBUG] Verificando condição:', condition);
+  console.log('[CONDITION DEBUG] Cartas no tabuleiro:', allCards.map(card => `${card.name} (${card.type}${card.tags ? ', tags: ' + card.tags.join(', ') : ''})`));
+  
+  let result = false;
+  
   switch (condition) {
     case 'IF_CITY_EXISTS':
-      return allCards.some(card => card.type === 'city');
+      result = allCards.some(card => card.type === 'city');
+      break;
       
     case 'IF_FARMS_GE_3':
-      return allCards.filter(card => card.type === 'farm').length >= 3;
+      result = allCards.filter(card => card.type === 'farm').length >= 3;
+      break;
       
     case 'IF_WORKSHOPS_GE_2':
-      return allCards.filter(card => card.type === 'city' && card.name.toLowerCase().includes('oficina')).length >= 2;
+      // Verificar se existem pelo menos 2 cartas do tipo city com 'oficina' no nome ou tag 'workshop'
+      result = allCards.filter(card => 
+        card.type === 'city' && (
+          card.name.toLowerCase().includes('oficina') || 
+          (card.tags && card.tags.includes('workshop'))
+        )
+      ).length >= 2;
+      break;
       
     case 'IF_MAGIC_EXISTS':
-      return allCards.filter(card => card.type === 'magic').length > 0;
+      result = allCards.filter(card => card.type === 'magic').length > 0;
+      break;
       
     case 'IF_WATER_EXISTS':
-      return allCards.some(card =>
+      result = allCards.some(card =>
         (card.name.toLowerCase().includes('poço') || card.name.toLowerCase().includes('agua')) ||
         (card.tags && (card.tags.includes('agua') || card.tags.includes('poco')))
       );
+      break;
       
     case 'IF_COINS_GE_5':
-      return (gameState.resources.coins || 0) >= 5;
+      result = (gameState.resources.coins || 0) >= 5;
+      break;
       
     case 'IF_COINS_GE_10':
-      return (gameState.resources.coins || 0) >= 10;
+      result = (gameState.resources.coins || 0) >= 10;
+      break;
       
     case 'IF_CELESTIAL_FARMS_EXIST':
-      return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
+      result = allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
+      break;
       
     case 'IF_VERTICAL_FARMS_EXIST':
-      return allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('vertical'));
+      result = allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('vertical'));
+      break;
       
     case 'IF_HAND_GE_5':
-      return (gameState.hand?.length || 0) >= 5;
+      result = (gameState.hand?.length || 0) >= 5;
+      break;
       
     case 'IF_HORTA_EXISTS':
-      return allCards.some(card => card.name.toLowerCase().includes('horta'));
+      result = allCards.some(card => card.name.toLowerCase().includes('horta'));
+      break;
       
     case 'IF_SACRED_FIELD_EXISTS':
-      return allCards.some(card => card.name.toLowerCase().includes('sagrado') || card.name.toLowerCase().includes('sagrada') || card.name.toLowerCase().includes('templo') || card.name.toLowerCase().includes('altar'));
+      result = allCards.some(card => card.name.toLowerCase().includes('sagrado') || card.name.toLowerCase().includes('sagrada') || card.name.toLowerCase().includes('templo') || card.name.toLowerCase().includes('altar'));
+      break;
       
     case 'IF_SACRED_TAG_EXISTS':
-      return allCards.some(card => card.tags && card.tags.includes('sagrado'));
+      result = allCards.some(card => card.tags && card.tags.includes('sagrado'));
+      break;
       
     case 'IF_CITY_GE_3':
-      return allCards.filter(card => card.type === 'city').length >= 3;
+      result = allCards.filter(card => card.type === 'city').length >= 3;
+      break;
       
     case 'IF_POPULATION_GE_2':
-      return (gameState.resources.population || 0) >= 2;
+      result = (gameState.resources.population || 0) >= 2;
+      break;
       
     default:
-      return false;
+      result = false;
+      break;
   }
+  
+  console.log('[CONDITION DEBUG] Resultado da condição', condition, ':', result);
+  return result;
 }
 
 /**
@@ -494,9 +530,59 @@ export function executeConditionalEffects(
 ): Partial<Resources> {
   const changes: Partial<Resources> = {};
   
-  for (const conditionalEffect of effects) {
-    if (checkCondition(conditionalEffect.type, gameState)) {
-      const effectChanges = executeSimpleEffect(conditionalEffect.effect, gameState, cardId);
+  // Verificar se estamos usando operador OR ou AND
+  // Se pelo menos um efeito tiver operador OR, tratamos como OR
+  const hasOrOperator = effects.some(effect => effect.logicalOperator === 'OR');
+  console.log('[CONDITION DEBUG] Tipo de operador lógico:', hasOrOperator ? 'OR' : 'AND');
+  
+  // Para operador OR, basta que uma condição seja verdadeira
+  if (hasOrOperator) {
+    let anyConditionMet = false;
+    let effectToApply: ConditionalEffect | null = null;
+    
+    // Verificar todas as condições
+    for (const conditionalEffect of effects) {
+      const conditionMet = checkCondition(conditionalEffect.type, gameState);
+      console.log('[CONDITION DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
+      
+      if (conditionMet) {
+        anyConditionMet = true;
+        effectToApply = conditionalEffect;
+        break; // Com OR, a primeira condição verdadeira já é suficiente
+      }
+    }
+    
+    // Aplicar o efeito se qualquer condição for atendida
+    if (anyConditionMet && effectToApply) {
+      const effectChanges = executeSimpleEffect(effectToApply.effect, gameState, cardId);
+      
+      // Acumular mudanças
+      for (const [resource, amount] of Object.entries(effectChanges)) {
+        if (amount !== undefined) {
+          changes[resource as keyof Resources] = (changes[resource as keyof Resources] || 0) + amount;
+        }
+      }
+    }
+  } 
+  // Para operador AND (padrão), todas as condições devem ser verdadeiras
+  else {
+    let allConditionsMet = true;
+    
+    // Verificar todas as condições
+    for (const conditionalEffect of effects) {
+      const conditionMet = checkCondition(conditionalEffect.type, gameState);
+      console.log('[CONDITION DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
+      
+      if (!conditionMet) {
+        allConditionsMet = false;
+        break; // Com AND, uma condição falsa já é suficiente para falhar
+      }
+    }
+    
+    // Aplicar os efeitos se todas as condições forem atendidas
+    if (allConditionsMet && effects.length > 0) {
+      // No caso de AND, aplicamos o efeito da última condição
+      const effectChanges = executeSimpleEffect(effects[effects.length - 1].effect, gameState, cardId);
       
       // Acumular mudanças
       for (const [resource, amount] of Object.entries(effectChanges)) {
@@ -507,6 +593,7 @@ export function executeConditionalEffects(
     }
   }
   
+  console.log('[CONDITION DEBUG] Resultado final das condições:', Object.keys(changes).length > 0 ? 'Efeito aplicado' : 'Nenhum efeito aplicado');
   return changes;
 }
 
@@ -677,58 +764,85 @@ export function executeCardEffects(
   cardId: string,
   diceNumber?: number
 ): Partial<Resources> {
-  if (!effectLogic) return {};
+  console.log('[EFFECT DEBUG] Valor de effectLogic:', effectLogic);
+  console.log('[EFFECT DEBUG] Tipo de effectLogic:', typeof effectLogic);
+  console.log('[EFFECT DEBUG] É null?', effectLogic === null);
+  console.log('[EFFECT DEBUG] É undefined?', effectLogic === undefined);
+  console.log('[EFFECT DEBUG] É string vazia?', effectLogic === '');
+  console.log('[EFFECT DEBUG] Comprimento (se string):', typeof effectLogic === 'string' ? effectLogic.length : 'N/A');
   
+  if (!effectLogic || effectLogic.trim() === "") {
+    console.log('[EFFECT] Nenhum effectLogic fornecido para a carta', cardId);
+    return {};
+  }
+
   const parsed = parseEffectLogic(effectLogic);
-  if (!parsed) return {};
-  
+  if (!parsed) {
+    console.log('[EFFECT] effectLogic inválido para a carta', cardId, effectLogic);
+    return {};
+  }
+
+  const before = { ...gameState.resources };
   const totalChanges: Partial<Resources> = {};
-  
+
   // Executar efeitos simples
   if (parsed.simple && parsed.simple.length > 0) {
+    console.log('[EFFECT] Executando efeitos simples', parsed.simple, 'para carta', cardId);
     const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId);
     mergeResourceChanges(totalChanges, simpleChanges);
   }
-  
+
   // Executar efeitos condicionais
   if (parsed.conditional && parsed.conditional.length > 0) {
+    console.log('[EFFECT] Executando efeitos condicionais', parsed.conditional, 'para carta', cardId);
     const conditionalChanges = executeConditionalEffects(parsed.conditional, gameState, cardId);
     mergeResourceChanges(totalChanges, conditionalChanges);
   }
-  
+
   // Executar efeitos de dado
   if (parsed.dice && parsed.dice.length > 0 && diceNumber !== undefined) {
+    console.log('[EFFECT] Executando efeitos de dado', parsed.dice, 'para carta', cardId, 'com dado', diceNumber);
     const diceChanges = executeDiceEffects(parsed.dice, diceNumber, gameState, cardId);
     mergeResourceChanges(totalChanges, diceChanges);
   }
-  
+
   // Executar efeitos aleatórios
   if (parsed.random && parsed.random.length > 0) {
+    console.log('[EFFECT] Executando efeitos aleatórios', parsed.random, 'para carta', cardId);
     const randomChanges = executeRandomEffects(parsed.random, gameState, cardId);
     mergeResourceChanges(totalChanges, randomChanges);
   }
-  
+
   // Executar boost de construções
   if (parsed.constructionBoost && parsed.constructionBoost.length > 0) {
+    console.log('[EFFECT] Executando boosts de construção', parsed.constructionBoost, 'para carta', cardId);
     const boostChanges = executeConstructionBoostEffects(parsed.constructionBoost, gameState, cardId);
     mergeResourceChanges(totalChanges, boostChanges);
   }
-  
+
   // Executar efeitos complexos
   if (parsed.complex) {
+    console.log('[EFFECT] Executando efeito complexo', parsed.complex, 'para carta', cardId);
     const complexChanges = executeComplexEffect(parsed.complex, gameState);
     mergeResourceChanges(totalChanges, complexChanges);
   }
-  
+
   // ===== SISTEMA DE RESTRIÇÕES TEMPORÁRIAS =====
-  // Aplicar restrições temporárias se existirem
   if (effectLogic.includes('RESTRICT_CARD_TYPES:')) {
     const restrictions = extractRestrictions(effectLogic);
     if (restrictions.length > 0) {
+      console.log('[EFFECT] Aplicando restrições temporárias', restrictions, 'para carta', cardId);
       applyCardRestrictions(restrictions, cardId, gameState);
     }
   }
+
+  // Aplicar as mudanças ao gameState
+  applyResourceChanges(gameState, totalChanges);
   
+  // Log final de recursos antes/depois
+  const after = { ...gameState.resources };
+  console.log('[EFFECT] Resultado dos efeitos da carta', cardId, '\nRecursos antes:', before, '\nMudanças:', totalChanges, '\nRecursos depois:', after);
+
   return totalChanges;
 }
 
