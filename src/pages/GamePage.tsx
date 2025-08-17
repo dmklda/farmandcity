@@ -396,73 +396,120 @@ const GamePage: React.FC = () => {
     };
   }, [gameState.clearSavedGame]);
 
-  // Sistema de Notificações Medievais - usando refs para evitar loops infinitos
+  // Sistema de Notificações Medievais - usando timestamps para evitar duplicações
   const notificationRefs = useRef({
-    error: '',
-    highlight: '',
-    productionSummary: '',
-    actionSummary: '',
-    diceResult: null as number | null,
-    diceProductionSummary: '',
-    pendingDefense: '',
-    victory: ''
+    error: { value: '', timestamp: 0 },
+    highlight: { value: '', timestamp: 0 },
+    productionSummary: { value: '', timestamp: 0 },
+    actionSummary: { value: '', timestamp: 0 },
+    diceResult: { value: null as number | null, timestamp: 0 },
+    diceProductionSummary: { value: '', timestamp: 0 },
+    pendingDefense: { value: '', timestamp: 0 },
+    victory: { value: '', timestamp: 0 }
   });
 
   useEffect(() => {
-    if (gameState.error && gameState.error !== notificationRefs.current.error) {
-      notificationRefs.current.error = gameState.error;
-      notify('error', 'Erro no Jogo', gameState.error, undefined, 6000);
+    if (gameState.error) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.error;
+      
+      // Enviar notificação se for um novo erro ou se passou tempo suficiente desde a última
+      if (gameState.error !== lastNotification.value || (currentTime - lastNotification.timestamp) > 2000) {
+        notificationRefs.current.error = { value: gameState.error, timestamp: currentTime };
+        notify('error', 'Erro no Jogo', gameState.error, undefined, 6000);
+      }
     }
-  }, [gameState.error]);
+  }, [gameState.error, notify]);
 
   useEffect(() => {
-    if (gameState.highlight && gameState.highlight !== notificationRefs.current.highlight) {
-      notificationRefs.current.highlight = gameState.highlight;
-      notify('info', 'Informação', gameState.highlight, undefined, 4000);
+    if (gameState.highlight) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.highlight;
+      
+      if (gameState.highlight !== lastNotification.value || (currentTime - lastNotification.timestamp) > 1000) {
+        notificationRefs.current.highlight = { value: gameState.highlight, timestamp: currentTime };
+        notify('info', 'Informação', gameState.highlight, undefined, 4000);
+      }
     }
-  }, [gameState.highlight]);
+  }, [gameState.highlight, notify]);
 
   useEffect(() => {
-    if (gameState.productionSummary && gameState.productionSummary !== notificationRefs.current.productionSummary) {
-      notificationRefs.current.productionSummary = gameState.productionSummary;
-      notify('production', 'Produção Ativada', gameState.productionSummary, undefined, 5000);
+    if (gameState.productionSummary) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.productionSummary;
+      
+      if (gameState.productionSummary !== lastNotification.value || (currentTime - lastNotification.timestamp) > 1000) {
+        notificationRefs.current.productionSummary = { value: gameState.productionSummary, timestamp: currentTime };
+        notify('production', 'Produção Ativada', gameState.productionSummary, undefined, 5000);
+      }
     }
-  }, [gameState.productionSummary]);
+  }, [gameState.productionSummary, notify]);
 
   useEffect(() => {
-    if (gameState.actionSummary && gameState.actionSummary !== notificationRefs.current.actionSummary) {
-      notificationRefs.current.actionSummary = gameState.actionSummary;
-      notify('action', 'Ação Executada', gameState.actionSummary, undefined, 4000);
+    if (gameState.actionSummary) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.actionSummary;
+      
+      if (gameState.actionSummary !== lastNotification.value || (currentTime - lastNotification.timestamp) > 1000) {
+        notificationRefs.current.actionSummary = { value: gameState.actionSummary, timestamp: currentTime };
+        notify('action', 'Ação Executada', gameState.actionSummary, undefined, 4000);
+      }
     }
-  }, [gameState.actionSummary]);
+  }, [gameState.actionSummary, notify]);
 
   useEffect(() => {
-    if (gameState.diceResult && gameState.diceResult !== notificationRefs.current.diceResult) {
-      notificationRefs.current.diceResult = gameState.diceResult;
-      notify('dice', 'Dados Lançados', `Você rolou ${gameState.diceResult}!`, { diceValue: gameState.diceResult }, 4000);
+    if (gameState.diceResult !== null) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.diceResult;
+      
+      if (gameState.diceResult !== lastNotification.value || (currentTime - lastNotification.timestamp) > 1000) {
+        notificationRefs.current.diceResult = { value: gameState.diceResult, timestamp: currentTime };
+        notify('dice', 'Dados Lançados', `Você rolou ${gameState.diceResult}!`, 
+               { diceValue: gameState.diceResult }, 4000);
+      }
     }
-  }, [gameState.diceResult]);
+  }, [gameState.diceResult, notify]);
 
   useEffect(() => {
-    if (gameState.diceProductionSummary && gameState.diceProductionSummary !== notificationRefs.current.diceProductionSummary) {
-      notificationRefs.current.diceProductionSummary = gameState.diceProductionSummary;
-      notify('production', 'Produção do Dado', gameState.diceProductionSummary, undefined, 5000);
+    if (gameState.diceProductionSummary) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.diceProductionSummary;
+      
+      if (gameState.diceProductionSummary !== lastNotification.value || (currentTime - lastNotification.timestamp) > 1000) {
+        notificationRefs.current.diceProductionSummary = { value: gameState.diceProductionSummary, timestamp: currentTime };
+        notify('production', 'Produção por Dados', gameState.diceProductionSummary, undefined, 5000);
+      }
     }
-  }, [gameState.diceProductionSummary]);
+  }, [gameState.diceProductionSummary, notify]);
 
   useEffect(() => {
-    if (gameState.pendingDefense && gameState.pendingDefense.name !== notificationRefs.current.pendingDefense) {
-      notificationRefs.current.pendingDefense = gameState.pendingDefense.name;
-      notify('error', 'Crise Detectada!', `Use carta de defesa: ${gameState.pendingDefense.name}`, undefined, 8000);
+    if (gameState.pendingDefense) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.pendingDefense;
+      
+      // Converter pendingDefense para string se for um objeto
+      const defenseText = typeof gameState.pendingDefense === 'string' 
+        ? gameState.pendingDefense 
+        : gameState.pendingDefense?.name || 'Defesa necessária';
+      
+      if (defenseText !== lastNotification.value || (currentTime - lastNotification.timestamp) > 2000) {
+        notificationRefs.current.pendingDefense = { value: defenseText, timestamp: currentTime };
+        notify('info', 'Defesa Necessária', defenseText, undefined, 6000);
+      }
     }
-  }, [gameState.pendingDefense]);
+  }, [gameState.pendingDefense, notify]);
 
   useEffect(() => {
-    if (gameState.victory && gameState.victory !== notificationRefs.current.victory) {
-      notificationRefs.current.victory = gameState.victory;
-      notify('victory', 'Vitória Conquistada!', gameState.victory, undefined, 10000);
+    if (gameState.victory) {
+      const currentTime = Date.now();
+      const lastNotification = notificationRefs.current.victory;
+      
+      if (gameState.victory !== lastNotification.value || (currentTime - lastNotification.timestamp) > 5000) {
+        notificationRefs.current.victory = { value: gameState.victory, timestamp: currentTime };
+        notify('victory', 'Vitória!', gameState.victory, undefined, 10000);
+      }
     }
-  }, [gameState.victory]);
+  }, [gameState.victory, notify]);
 
   // Loading state
   if (loading || gameState.loading || decksLoading) {
@@ -541,7 +588,7 @@ const GamePage: React.FC = () => {
   }
 
   // Verificar se o usuário tem um deck ativo
-  if (!activeDeck || activeDeck.cards.length === 0) {
+  if (!activeDeck) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

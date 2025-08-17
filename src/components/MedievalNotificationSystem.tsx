@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Dice1, 
@@ -524,6 +524,22 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   );
 };
 
+// Notification Context
+interface NotificationContextType {
+  addNotification: (type: NotificationType, title: string, message: string, data?: any, duration?: number) => void;
+}
+
+const NotificationContext = createContext<NotificationContextType | null>(null);
+
+// Notification queue for notifications sent before context is ready
+let notificationQueue: Array<{
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: any;
+  duration?: number;
+}> = [];
+
 // Main Notification System
 export const MedievalNotificationSystem: React.FC<NotificationSystemProps> = ({
   maxNotifications = 5,
@@ -549,6 +565,8 @@ export const MedievalNotificationSystem: React.FC<NotificationSystemProps> = ({
       data
     };
 
+    console.log('🔔 Adicionando notificação:', { type, title, message });
+
     setNotifications(prev => {
       const newNotifications = [notification, ...prev];
       return newNotifications.slice(0, maxNotifications);
@@ -559,6 +577,17 @@ export const MedievalNotificationSystem: React.FC<NotificationSystemProps> = ({
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
+  // Process queued notifications when component mounts
+  useEffect(() => {
+    if (notificationQueue.length > 0) {
+      console.log('🔔 Processando notificações enfileiradas:', notificationQueue.length);
+      notificationQueue.forEach(({ type, title, message, data, duration }) => {
+        addNotification(type, title, message, data, duration);
+      });
+      notificationQueue = [];
+    }
+  }, [addNotification]);
+
   // Position classes
   const positionClasses = {
     'top-right': 'top-20 right-4',
@@ -567,7 +596,7 @@ export const MedievalNotificationSystem: React.FC<NotificationSystemProps> = ({
     'bottom-left': 'bottom-4 left-4'
   };
 
-  // Expose addNotification globally
+  // Expose addNotification globally and provide context
   useEffect(() => {
     (window as any).medievalNotify = addNotification;
     return () => {
@@ -576,24 +605,28 @@ export const MedievalNotificationSystem: React.FC<NotificationSystemProps> = ({
   }, [addNotification]);
 
   return (
-    <div className={cn(
-      "fixed z-50 flex flex-col gap-3 w-80 max-w-sm",
-      positionClasses[position]
-    )}>
-      {notifications.map((notification, index) => (
-        <NotificationItem
-          key={notification.id}
-          notification={notification}
-          onRemove={removeNotification}
-          index={index}
-        />
-      ))}
-    </div>
+    <NotificationContext.Provider value={{ addNotification }}>
+      <div className={cn(
+        "fixed z-50 flex flex-col gap-3 w-80 max-w-sm",
+        positionClasses[position]
+      )}>
+        {notifications.map((notification, index) => (
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+            onRemove={removeNotification}
+            index={index}
+          />
+        ))}
+      </div>
+    </NotificationContext.Provider>
   );
 };
 
 // Hook para usar o sistema de notificações
 export const useMedievalNotifications = () => {
+  const context = useContext(NotificationContext);
+
   const notify = useCallback((
     type: NotificationType,
     title: string,
@@ -601,10 +634,26 @@ export const useMedievalNotifications = () => {
     data?: any,
     duration?: number
   ) => {
-    if ((window as any).medievalNotify) {
-      (window as any).medievalNotify(type, title, message, data, duration);
+    console.log('🔔 Tentando enviar notificação:', { type, title, message });
+    
+    // Try context first (preferred method)
+    if (context?.addNotification) {
+      console.log('🔔 Enviando via context');
+      context.addNotification(type, title, message, data, duration);
+      return;
     }
-  }, []);
+
+    // Fallback to global method
+    if ((window as any).medievalNotify) {
+      console.log('🔔 Enviando via window global');
+      (window as any).medievalNotify(type, title, message, data, duration);
+      return;
+    }
+
+    // Queue notification if neither is available
+    console.log('🔔 Enfileirando notificação para depois');
+    notificationQueue.push({ type, title, message, data, duration });
+  }, [context]);
 
   return { notify };
-}; 
+};
