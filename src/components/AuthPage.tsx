@@ -10,10 +10,10 @@ interface AuthPageProps {
 const RECAPTCHA_SITE_KEY = '6LdofKkrAAAAACtULOtFG35pLZEqc1FPAwSRlzae';
 
 const loadRecaptcha = () => {
-  if (window.grecaptcha) return Promise.resolve();
+  if (window.grecaptcha && window.grecaptcha.enterprise) return Promise.resolve();
   return new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_SITE_KEY}`;
     script.async = true;
     script.onload = resolve;
     document.body.appendChild(script);
@@ -23,8 +23,8 @@ const loadRecaptcha = () => {
 const getRecaptchaToken = async (action: string) => {
   await loadRecaptcha();
   return new Promise<string>((resolve, reject) => {
-    window.grecaptcha.ready(() => {
-      window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(reject);
+    window.grecaptcha.enterprise.ready(() => {
+      window.grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(reject);
     });
   });
 };
