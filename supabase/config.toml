@@ -1,1 +1,4 @@
 project_id = "iaphpsvzwzlpzsjsgsja"
+
+[functions.recaptcha_enterprise_verify]
+verify_jwt = false
