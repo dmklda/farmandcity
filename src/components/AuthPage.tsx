@@ -29,16 +29,24 @@ const getRecaptchaToken = async (action: string) => {
   });
 };
 
-const verifyRecaptchaToken = async (token: string) => {
+const verifyRecaptchaToken = async (token: string, expectedAction: string) => {
   try {
-    const res = await fetch('/functions/v1/recaptcha_v3_verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+    const { data, error } = await supabase.functions.invoke('recaptcha_enterprise_verify', {
+      body: {
+        token,
+        expectedAction,
+        siteKey: RECAPTCHA_SITE_KEY
+      }
     });
-    const data = await res.json();
+    
+    if (error) {
+      console.error('reCAPTCHA verification error:', error);
+      return { success: false, error: 'Falha ao verificar reCAPTCHA' };
+    }
+    
     return data;
   } catch (e) {
+    console.error('reCAPTCHA verification exception:', e);
     return { success: false, error: 'Falha ao verificar reCAPTCHA' };
   }
 };
@@ -73,9 +81,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       setRecaptchaToken(token);
       if (!token) throw new Error('Falha ao validar reCAPTCHA. Tente novamente.');
       // Verificação na Edge Function
-      const recaptchaResult = await verifyRecaptchaToken(token);
-      if (!recaptchaResult.success || recaptchaResult.score < 0.5) {
-        throw new Error('Verificação reCAPTCHA falhou. Tente novamente.');
+      const recaptchaResult = await verifyRecaptchaToken(token, isLogin ? 'login' : 'register');
+      console.log('reCAPTCHA result:', recaptchaResult);
+      
+      if (!recaptchaResult.success) {
+        throw new Error(recaptchaResult.error || 'Verificação reCAPTCHA falhou. Tente novamente.');
       }
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: token } });
