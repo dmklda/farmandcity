@@ -1,10 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Eye, EyeOff, LogIn, UserPlus, Shield, Castle, UserCircle, Facebook, Mail, Sword } from 'lucide-react';
 import { MedievalAnimatedBackground } from './MedievalAnimatedBackground';
 
 interface AuthPageProps {
   onAuthSuccess: () => void;
+}
+
+const RECAPTCHA_SITE_KEY = '6LdofKkrAAAAACtULOtFG35pLZEqc1FPAwSRlzae';
+
+const loadRecaptcha = () => {
+  if (window.grecaptcha) return Promise.resolve();
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    script.onload = resolve;
+    document.body.appendChild(script);
+  });
+};
+
+const getRecaptchaToken = async (action: string) => {
+  await loadRecaptcha();
+  return new Promise<string>((resolve, reject) => {
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(reject);
+    });
+  });
+};
+
+const verifyRecaptchaToken = async (token: string) => {
+  try {
+    const res = await fetch('/functions/v1/recaptcha_v3_verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    return { success: false, error: 'Falha ao verificar reCAPTCHA' };
+  }
+};
+
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
 }
 
 const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
@@ -16,14 +58,27 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState('');
+
+  useEffect(() => {
+    loadRecaptcha();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
+      const token = await getRecaptchaToken(isLogin ? 'login' : 'register');
+      setRecaptchaToken(token);
+      if (!token) throw new Error('Falha ao validar reCAPTCHA. Tente novamente.');
+      // Verificação na Edge Function
+      const recaptchaResult = await verifyRecaptchaToken(token);
+      if (!recaptchaResult.success || recaptchaResult.score < 0.5) {
+        throw new Error('Verificação reCAPTCHA falhou. Tente novamente.');
+      }
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken: token } });
         if (error) throw error;
         onAuthSuccess();
       } else {
@@ -37,7 +92,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               username: username,
               display_name: username,
               avatar_url: avatar || null,
-            }
+            },
+            captchaToken: token,
           }
         });
         if (error) throw error;
