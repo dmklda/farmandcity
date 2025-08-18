@@ -325,7 +325,7 @@ export const useShop = () => {
       }
 
       console.log('Eventos encontrados:', data);
-      const mappedEvents: ShopEvent[] = (data || []).map(event => ({
+      const mappedEvents: ShopEvent[] = (data || []).map((event: any) => ({
         id: event.id,
         name: event.name,
         description: event.description,

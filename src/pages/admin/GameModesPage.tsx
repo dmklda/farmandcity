@@ -823,6 +823,7 @@ export const GameModesPage: React.FC = () => {
                   <Label htmlFor="edit-victory">Modo de Vitória</Label>
                   <select
                     id="edit-victory"
+                    aria-label="Modo de Vitória"
                     value={editingMode?.victoryMode || 'classic'}
                     onChange={(e) => updateEditingMode({ victoryMode: e.target.value as any })}
                     className="w-full p-2 border rounded"
@@ -850,6 +851,7 @@ export const GameModesPage: React.FC = () => {
                   <Label htmlFor="edit-difficulty">Dificuldade</Label>
                   <select
                     id="edit-difficulty"
+                    aria-label="Dificuldade"
                     value={editingMode?.difficulty || 'medium'}
                     onChange={(e) => updateEditingMode({ difficulty: e.target.value as any })}
                     className="w-full p-2 border rounded"
@@ -927,6 +929,7 @@ export const GameModesPage: React.FC = () => {
                   <Label htmlFor="new-victory">Modo de Vitória</Label>
                   <select
                     id="new-victory"
+                    aria-label="Modo de Vitória"
                     value={newMode.victoryMode}
                     onChange={(e) => setNewMode({...newMode, victoryMode: e.target.value as any})}
                     className="w-full p-2 border rounded"
@@ -954,6 +957,7 @@ export const GameModesPage: React.FC = () => {
                   <Label htmlFor="new-difficulty">Dificuldade</Label>
                   <select
                     id="new-difficulty"
+                    aria-label="Dificuldade"
                     value={newMode.difficulty}
                     onChange={(e) => setNewMode({...newMode, difficulty: e.target.value as any})}
                     className="w-full p-2 border rounded"

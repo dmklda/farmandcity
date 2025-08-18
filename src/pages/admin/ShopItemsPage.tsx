@@ -52,11 +52,11 @@ export const ShopItemsPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    item_type: 'pack' as const,
+    item_type: 'pack' as 'pack' | 'booster' | 'currency' | 'customization',
     price_coins: 0,
     price_gems: 0,
     price_dollars: 0,
-    currency_type: 'coins' as const,
+    currency_type: 'coins' as 'coins' | 'gems' | 'both' | 'dollars',
     rarity: 'common',
     is_special: false,
     is_limited: false,

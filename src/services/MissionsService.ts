@@ -527,15 +527,18 @@ export class MissionsService {
         .lt('day_date', today);
 
       // Limpar progresso das missões diárias antigas
-      await supabase
-        .from('player_missions')
-        .delete()
-        .in('mission_id', 
-          supabase
-            .from('active_daily_missions')
-            .select('mission_id')
-            .lt('day_date', today)
-        );
+      const { data: oldMissions } = await supabase
+        .from('active_daily_missions')
+        .select('mission_id')
+        .lt('day_date', today);
+        
+      if (oldMissions && oldMissions.length > 0) {
+        const missionIds = oldMissions.map(m => m.mission_id);
+        await supabase
+          .from('player_missions')
+          .delete()
+          .in('mission_id', missionIds);
+      }
 
       return { success: true };
     } catch (error: any) {

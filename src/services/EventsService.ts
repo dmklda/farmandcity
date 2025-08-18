@@ -154,14 +154,16 @@ export class EventsService {
         return { success: false, error: `Nível mínimo necessário: ${event.min_level}` };
       }
 
-      // Verificar taxa de entrada
+      // Verificar taxa de entrada e salvar referência para playerCurrency
+      let playerCurrency = null;
       if (event.entry_fee_coins > 0 || event.entry_fee_gems > 0) {
-        const { data: playerCurrency } = await supabase
+        const { data: currencyData } = await supabase
           .from('player_currency')
           .select('coins, gems')
           .eq('player_id', user.id)
           .single();
 
+        playerCurrency = currencyData;
         if (playerCurrency) {
           if (event.entry_fee_coins > 0 && playerCurrency.coins < event.entry_fee_coins) {
             return { success: false, error: 'Moedas insuficientes para participar' };
@@ -187,12 +189,12 @@ export class EventsService {
       await supabase.rpc('increment_event_participants', { event_id: eventId });
 
       // Deduzir taxa de entrada se houver
-      if (event.entry_fee_coins > 0 || event.entry_fee_gems > 0) {
+      if ((event.entry_fee_coins > 0 || event.entry_fee_gems > 0) && playerCurrency) {
         await supabase
           .from('player_currency')
           .update({
-            coins: playerCurrency!.coins - event.entry_fee_coins,
-            gems: playerCurrency!.gems - event.entry_fee_gems
+            coins: playerCurrency.coins - event.entry_fee_coins,
+            gems: playerCurrency.gems - event.entry_fee_gems
           })
           .eq('player_id', user.id);
       }

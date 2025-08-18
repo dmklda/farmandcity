@@ -236,10 +236,10 @@ export type Tables<
     | keyof (Database["public"]["Tables"])
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"])
+    ? keyof (Database[PublicTableNameOrOptions["schema"]] & {Tables: any})["Tables"]
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"])[TableName] extends {
+  ? (Database[PublicTableNameOrOptions["schema"]] & {Tables: any})["Tables"][TableName] extends {
       Row: infer R
     }
     ? R

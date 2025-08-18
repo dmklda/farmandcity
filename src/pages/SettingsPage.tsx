@@ -85,18 +85,24 @@ export const SettingsPage: React.FC = () => {
   }, [settings, localSettings]);
 
   const handleInputChange = (field: string, value: any) => {
-    setLocalSettings(prev => ({
+    setLocalSettings((prev: any) => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (settingsToUpdate?: Partial<any>) => {
     if (!localSettings) return;
     
     try {
       setSaving(true);
-      await updateUserSettings(localSettings);
+      if (settingsToUpdate) {
+        const updatedSettings = { ...localSettings, ...settingsToUpdate };
+        await updateUserSettings(updatedSettings);
+        setLocalSettings(updatedSettings);
+      } else {
+        await updateUserSettings(localSettings);
+      }
       showToast('Configurações salvas com sucesso!', 'success');
     } catch (err: any) {
       showToast(`Erro ao salvar: ${err.message}`, 'error');
@@ -586,7 +592,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.theme === 'dark'}
-                      onCheckedChange={(checked) => handleSaveSettings({ theme: checked ? 'dark' : 'light' })}
+                      onCheckedChange={(checked) => handleInputChange('theme', checked ? 'dark' : 'light')}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -601,7 +607,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.sound_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ sound_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('sound_enabled', checked)}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -616,7 +622,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.music_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ music_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('music_enabled', checked)}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -631,7 +637,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.auto_save_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ auto_save_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('auto_save_enabled', checked)}
                     />
                   </div>
                 </div>
@@ -640,7 +646,7 @@ export const SettingsPage: React.FC = () => {
                   <Label htmlFor="language" className="text-gray-300">Idioma</Label>
                   <Select
                     value={settings?.language || 'pt-BR'}
-                    onValueChange={(value) => handleSaveSettings({ language: value })}
+                    onValueChange={(value) => handleInputChange('language', value)}
                   >
                     <SelectTrigger className="bg-slate-700/50 border-yellow-600/30 text-white">
                       <SelectValue placeholder="Selecione o idioma" />
@@ -654,7 +660,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 <Button
-                  onClick={() => handleSaveSettings({})}
+                  onClick={handleSaveSettings}
                   disabled={saving}
                   className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                 >
@@ -955,7 +961,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.notifications_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ notifications_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('notifications_enabled', checked)}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -967,7 +973,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.notifications_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ notifications_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('notifications_enabled', checked)}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -979,7 +985,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.notifications_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ notifications_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('notifications_enabled', checked)}
                     />
                   </div>
                   <Separator className="bg-yellow-600/30" />
@@ -991,13 +997,13 @@ export const SettingsPage: React.FC = () => {
                     </div>
                     <Switch
                       checked={settings?.notifications_enabled ?? true}
-                      onCheckedChange={(checked) => handleSaveSettings({ notifications_enabled: checked })}
+                      onCheckedChange={(checked) => handleInputChange('notifications_enabled', checked)}
                     />
                   </div>
                 </div>
 
                 <Button
-                  onClick={() => handleSaveSettings({})}
+                  onClick={handleSaveSettings}
                   disabled={saving}
                   className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
                 >

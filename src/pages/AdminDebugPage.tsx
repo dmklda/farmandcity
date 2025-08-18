@@ -10,7 +10,7 @@ import { ArrowLeft, Home, RefreshCw, Database, Shield, User, AlertTriangle, Chec
 import { supabase } from '../integrations/supabase/client';
 
 export const AdminDebugPage: React.FC = () => {
-  const { user, loading, isAuthenticated, signIn, signUp } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const { 
     adminRole, 
     loading: permissionsLoading, 
