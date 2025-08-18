@@ -6,7 +6,7 @@ serve(async (req) => {
     if (!token || !siteKey) {
       return new Response(JSON.stringify({ success: false, error: "Token ou siteKey ausente" }), { status: 400 });
     }
-    const apiKey = Deno.env.get("RECAPTCHA_API_KEY");
+    const apiKey = Deno.env.get("RECAPTCHA_SECRET_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ success: false, error: "API_KEY não configurada" }), { status: 500 });
     }
