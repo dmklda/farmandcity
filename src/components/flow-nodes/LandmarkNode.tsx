@@ -3,6 +3,7 @@ import { Handle, Position, NodeResizer } from '@xyflow/react';
 import { Crown, Plus, Trophy } from 'lucide-react';
 import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
+import './landmarkNode.css';
 
 interface LandmarkNodeData {
   landmarkCount: number;
@@ -19,15 +20,7 @@ const LandmarkNode: React.FC<{ data: LandmarkNodeData & {landmarks?: Card[]} }> 
       <div className="surface-elevated border-2 border-secondary w-full h-full flex flex-col relative overflow-hidden">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 opacity-30 pointer-events-none"
-          style={{
-            backgroundImage: `url('/assets/grids_background/Landmark_600x600.png')`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            width: '100%',
-            height: '100%'
-          }}
+          className="absolute inset-0 opacity-30 pointer-events-none bg-contain bg-center bg-no-repeat w-full h-full landmark-background"
         />
         
         <div className="p-1 border-b border-border bg-gradient-to-r from-secondary/10 to-secondary/5 relative z-10">

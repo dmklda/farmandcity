@@ -3,7 +3,6 @@ import { supabase } from '../../integrations/supabase/client';
 import { AdminCard, CardType, CardRarity } from '../../types/admin';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
@@ -13,6 +12,7 @@ import { X, Upload, Eye, Save, Copy, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { CardValidator } from './CardValidator';
 import { cn } from '../../lib/utils';
+import './adminStyles.css';
 
 interface CardEditorProps {
   card?: AdminCard | null;
@@ -447,14 +447,14 @@ export const CardEditor: React.FC<CardEditorProps> = ({
         className="relative"
       >
         <div 
-          className="w-3 h-3" 
-          style={{ color: raritySettings.gemColor }}
+          className="w-3 h-3 gem-text" 
+          data-gem-color={raritySettings.gemColor}
         >
           💎
         </div>
         <div 
-          className="absolute inset-0 w-3 h-3 rounded-full blur-sm opacity-60"
-          style={{ backgroundColor: raritySettings.gemColor }}
+          className="absolute inset-0 w-3 h-3 rounded-full blur-sm opacity-60 gem-glow"
+          data-gem-color={raritySettings.gemColor}
         />
       </div>
     ));
@@ -470,44 +470,44 @@ export const CardEditor: React.FC<CardEditorProps> = ({
         {/* Top corners */}
         <div className="absolute top-2 left-2 w-6 h-6">
           <div 
-            className="absolute inset-0 border-l-2 border-t-2 rounded-tl-lg"
-            style={{ borderColor: typeConfig.accent }}
+            className="absolute inset-0 border-l-2 border-t-2 rounded-tl-lg card-ornate-border"
+            data-accent-color={typeConfig.accent}
           />
           <div 
-            className="absolute top-1 left-1 w-2 h-2 rounded-full"
-            style={{ backgroundColor: typeConfig.accent }}
+            className="absolute top-1 left-1 w-2 h-2 rounded-full card-ornate-dot"
+            data-accent-color={typeConfig.accent}
           />
         </div>
         <div className="absolute top-2 right-2 w-6 h-6">
           <div 
-            className="absolute inset-0 border-r-2 border-t-2 rounded-tr-lg"
-            style={{ borderColor: typeConfig.accent }}
+            className="absolute inset-0 border-r-2 border-t-2 rounded-tr-lg card-ornate-border"
+            data-accent-color={typeConfig.accent}
           />
           <div 
-            className="absolute top-1 right-1 w-2 h-2 rounded-full"
-            style={{ backgroundColor: typeConfig.accent }}
+            className="absolute top-1 right-1 w-2 h-2 rounded-full card-ornate-dot"
+            data-accent-color={typeConfig.accent}
           />
         </div>
 
         {/* Bottom corners */}
         <div className="absolute bottom-2 left-2 w-6 h-6">
           <div 
-            className="absolute inset-0 border-l-2 border-b-2 rounded-bl-lg"
-            style={{ borderColor: typeConfig.accent }}
+            className="absolute inset-0 border-l-2 border-b-2 rounded-bl-lg card-ornate-border"
+            data-accent-color={typeConfig.accent}
           />
           <div 
-            className="absolute bottom-1 left-1 w-2 h-2 rounded-full"
-            style={{ backgroundColor: typeConfig.accent }}
+            className="absolute bottom-1 left-1 w-2 h-2 rounded-full card-ornate-dot"
+            data-accent-color={typeConfig.accent}
           />
         </div>
         <div className="absolute bottom-2 right-2 w-6 h-6">
           <div 
-            className="absolute inset-0 border-r-2 border-b-2 rounded-br-lg"
-            style={{ borderColor: typeConfig.accent }}
+            className="absolute inset-0 border-r-2 border-b-2 rounded-br-lg card-ornate-border"
+            data-accent-color={typeConfig.accent}
           />
           <div 
-            className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
-            style={{ backgroundColor: typeConfig.accent }}
+            className="absolute bottom-1 right-1 w-2 h-2 rounded-full card-ornate-dot"
+            data-accent-color={typeConfig.accent}
           />
         </div>
       </>
@@ -521,10 +521,9 @@ export const CardEditor: React.FC<CardEditorProps> = ({
 
     return (
       <div
-        className="absolute inset-0 rounded-xl pointer-events-none"
-        style={{
-          background: `conic-gradient(from 0deg, ${typeConfig.accent}20, transparent, ${typeConfig.accent}20)`
-        }}
+        className="absolute inset-0 rounded-xl pointer-events-none legendary-effect"
+        data-gradient-color={`${typeConfig.accent}20`}
+        data-type={type}
       />
     );
   };
@@ -775,9 +774,9 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                  <div className="space-y-2">
                    <Label>Arte Atual</Label>
                    <div className="relative w-full h-32 rounded-lg overflow-hidden border-2 border-gray-300">
-                     <img
-                       src={artPreview || formData.art_url}
-                       alt="Current artwork"
+                                           <img
+                        src={(artPreview || formData.art_url) ?? ''}
+                        alt="Current artwork"
                        className="w-full h-full object-cover"
                        onError={(e) => {
                          // Fallback se a imagem falhar ao carregar
@@ -872,15 +871,13 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                   {/* EXACT SAME STRUCTURE AS CollectionPage FullCardComponent */}
                   <div 
                     className={cn(
-                      "relative w-full h-full rounded-xl overflow-hidden cursor-pointer select-none",
+                      "relative w-full h-full rounded-xl overflow-hidden cursor-pointer select-none card-border",
                       "bg-gradient-to-br from-background to-muted",
                       getCardTypeConfig(formData.type || 'magic').border,
                       getRarityConfig(formData.rarity || 'common').borderWidth,
                       getRarityConfig(formData.rarity || 'common').glow
                     )}
-                    style={{
-                      borderColor: getCardTypeConfig(formData.type || 'magic').color
-                    }}
+                    data-card-color={getCardTypeConfig(formData.type || 'magic').color}
                   >
                     {/* Legendary rotating border effect */}
                     {renderLegendaryEffects(formData.type || 'magic', formData.rarity || 'common')}
@@ -897,27 +894,23 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         {/* Type icon and dice activation */}
                         <div className="flex items-center gap-2">
                           <div 
-                            className="p-1.5 rounded-lg border-2"
-                            style={{ 
-                              backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}20`,
-                              borderColor: getCardTypeConfig(formData.type || 'magic').color
-                            }}
+                            className="p-1.5 rounded-lg border-2 card-type-icon"
+                            data-bg-color={`${getCardTypeConfig(formData.type || 'magic').color}20`}
+                            data-border-color={getCardTypeConfig(formData.type || 'magic').color}
                           >
                             <span className="text-lg">{getCardTypeConfig(formData.type || 'magic').icon}</span>
                           </div>
                           <div 
-                            className="p-1.5 rounded-lg border-2"
-                            style={{ 
-                              backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}20`,
-                              borderColor: getCardTypeConfig(formData.type || 'magic').color
-                            }}
+                            className="p-1.5 rounded-lg border-2 card-type-icon"
+                            data-bg-color={`${getCardTypeConfig(formData.type || 'magic').color}20`}
+                            data-border-color={getCardTypeConfig(formData.type || 'magic').color}
                           >
                             <div className="flex items-center gap-1">
                               <div className="w-3 h-3 bg-white rounded-sm flex items-center justify-center">
                                 <div className="w-1.5 h-1.5 bg-gray-800 rounded-sm"></div>
                               </div>
-                              <span className="text-xs font-bold" style={{ color: getCardTypeConfig(formData.type || 'magic').color }}>
-                                {formData.dice_number || 0}
+                              <span className="text-xs font-bold card-text-color" data-text-color={getCardTypeConfig(formData.type || 'magic').color}>
+                                {0} {/* Default dice number */}
                               </span>
                             </div>
                           </div>
@@ -939,8 +932,8 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                         {formData.rarity === "legendary" && <span className="text-yellow-500">👑</span>}
                         {(formData.rarity === "ultra" || formData.rarity === "legendary") && <span className="text-purple-400">⭐</span>}
                         <span 
-                          className="text-xs font-semibold uppercase tracking-wider"
-                          style={{ color: getRarityConfig(formData.rarity || 'common').gemColor }}
+                          className="text-xs font-semibold uppercase tracking-wider card-text-color"
+                          data-text-color={getRarityConfig(formData.rarity || 'common').gemColor}
                         >
                           {formData.rarity}
                         </span>
@@ -950,9 +943,9 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                                          {/* Image section */}
                      <div className="relative mx-4 mb-3 h-40 rounded-lg overflow-hidden border-2 border-border">
                        {(artPreview || formData.art_url) ? (
-                         <img 
-                           src={artPreview || formData.art_url} 
-                           alt={formData.name || 'Card Art'}
+                                                   <img 
+                            src={(artPreview || formData.art_url) ?? ''} 
+                            alt={formData.name || 'Card Art'}
                            className="w-full h-full object-cover"
                            onError={(e) => {
                              // Fallback se a imagem falhar ao carregar
@@ -1006,12 +999,10 @@ export const CardEditor: React.FC<CardEditorProps> = ({
                     {/* Description */}
                     <div className="px-4 pb-3">
                       <div 
-                        className="text-xs leading-relaxed p-3 rounded-lg border-2"
-                        style={{ 
-                          backgroundColor: `${getCardTypeConfig(formData.type || 'magic').color}15`,
-                          borderColor: `${getCardTypeConfig(formData.type || 'magic').color}40`,
-                          boxShadow: `0 0 10px ${getCardTypeConfig(formData.type || 'magic').color}20`
-                        }}
+                        className="text-xs leading-relaxed p-3 rounded-lg border-2 card-description"
+                        data-bg-color={`${getCardTypeConfig(formData.type || 'magic').color}15`}
+                        data-border-color={`${getCardTypeConfig(formData.type || 'magic').color}40`}
+                        data-shadow-color={`${getCardTypeConfig(formData.type || 'magic').color}20`}
                       >
                         {formData.effect || "A magnificent fortress that generates wealth and provides protection for your realm."}
                       </div>

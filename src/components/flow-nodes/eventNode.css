@@ -1,0 +1,12 @@
+.event-background {
+  background-image: url('/assets/grids_background/Events_600x600.png');
+}
+
+.event-cell {
+  width: 70px;
+  height: 70px;
+  max-width: 70px;
+  max-height: 70px;
+  min-width: 70px;
+  min-height: 70px;
+}

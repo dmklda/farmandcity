@@ -4,6 +4,7 @@ import { Calendar, Plus } from 'lucide-react';
 import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
 import { getCardTypeIconPNG } from '../IconComponentsPNG';
+import './eventNode.css';
 
 interface GridCell {
   card?: any;
@@ -26,24 +27,16 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
   const renderGrid = () => {
     const cols = eventGrid[0]?.length || 1;
     return (
-      <div className={`grid gap-0.5 p-0.5 flex-1 justify-center items-center`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className={`grid gap-0.5 p-0.5 flex-1 justify-center items-center grid-cols-${cols}`}>
         {eventGrid.flatMap((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
               className={`
-                grid-cell flex items-center justify-center text-xs font-medium cursor-pointer
+                grid-cell flex items-center justify-center text-xs font-medium cursor-pointer event-cell
                 ${highlight ? 'available' : ''}
                 ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
               `}
-              style={{
-                width: '70px',
-                height: '70px',
-                maxWidth: '70px',
-                maxHeight: '70px',
-                minWidth: '70px',
-                minHeight: '70px'
-              }}
               onClick={() => cell.card ? setShowDetail(cell.card) : onSelectEvent(colIndex, rowIndex)}
             >
               {cell.card ? (
@@ -69,15 +62,7 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
       <div className="surface-elevated border-2 border-magic-color w-full h-full flex flex-col relative overflow-hidden">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 opacity-30 pointer-events-none"
-          style={{
-            backgroundImage: `url('/assets/grids_background/Events_600x600.png')`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            width: '100%',
-            height: '100%'
-          }}
+          className="absolute inset-0 opacity-30 pointer-events-none bg-contain bg-center bg-no-repeat w-full h-full event-background"
         />
         
         <div className="p-1 border-b border-border bg-gradient-to-r from-magic-color/10 to-magic-color/5 relative z-10">
@@ -99,18 +84,10 @@ const EventNode: React.FC<{ data: EventNodeData }> = ({ data }) => {
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   className={`
-                    aspect-square flex items-center justify-center text-xs font-medium cursor-pointer
+                    aspect-square flex items-center justify-center text-xs font-medium cursor-pointer event-cell
                     ${highlight ? 'available' : ''}
                     ${cell.card ? 'bg-surface-hover border-solid' : 'border-2 border-dashed border-border'}
                   `}
-                  style={{
-                    width: '70px',
-                    height: '70px',
-                    maxWidth: '70px',
-                    maxHeight: '70px',
-                    minWidth: '70px',
-                    minHeight: '70px'
-                  }}
                   onClick={() => cell.card ? setShowDetail(cell.card) : onSelectEvent(colIndex, rowIndex)}
                 >
                   {cell.card ? (

@@ -71,6 +71,7 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
 
   const getBackgroundPreview = (background: any) => {
     const animated = isAnimated(background);
+    const isEquippedBg = isEquipped(background.id);
     
     if (animated) {
       // Para backgrounds animados, mostrar uma preview estática com indicador
@@ -95,7 +96,7 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
           </div>
           
           {/* Overlay de equipado */}
-          {equipped && (
+          {isEquippedBg && (
             <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
               <Badge className="bg-yellow-600 text-white">
                 EQUIPADO
@@ -124,7 +125,7 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
           )}
           
           {/* Overlay de equipado */}
-          {equipped && (
+          {isEquippedBg && (
             <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
               <Badge className="bg-yellow-600 text-white">
                 EQUIPADO
@@ -182,7 +183,7 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
   };
 
   const isEquipped = (backgroundId: string) => {
-    return userCustomizations.find(uc => uc.customization_id === backgroundId)?.is_equipped;
+    return userCustomizations.find(uc => uc.customization_id === backgroundId)?.is_equipped || false;
   };
 
   if (loading || currencyLoading) {
@@ -311,9 +312,9 @@ export const PremiumBackgroundsShop: React.FC<PremiumBackgroundsShopProps> = ({ 
                       size="sm"
                       className="flex-1 bg-green-600 hover:bg-green-700"
                       onClick={() => handleEquip(background)}
-                      disabled={equipped}
+                      disabled={isEquipped(background.id)}
                     >
-                      {equipped ? (
+                      {isEquipped(background.id) ? (
                         <>
                           <Sparkles className="w-4 h-4 mr-1" />
                           Equipado

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../integrations/supabase/client';
-import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Shield, Castle, UserCircle, Facebook, Mail, Sword } from 'lucide-react';
 import { MedievalAnimatedBackground } from './MedievalAnimatedBackground';
 
 interface AuthPageProps {
@@ -12,6 +12,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,19 +21,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         onAuthSuccess();
       } else {
         const redirectUrl = `${window.location.origin}/`;
-        
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -41,13 +36,11 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             data: {
               username: username,
               display_name: username,
+              avatar_url: avatar || null,
             }
           }
         });
-        
         if (error) throw error;
-        
-        // Show success message for signup
         setError('');
         alert('Conta criada! Verifique seu email para confirmação.');
       }
@@ -64,24 +57,56 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) throw error;
+    } catch (error: any) {
+      setError('Falha ao abrir o portal mágico do Google. Tente novamente ou use email/senha.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4">
-      {/* Medieval Animated Background */}
       <MedievalAnimatedBackground />
-      
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 backdrop-blur-md border border-slate-600/30 rounded-2xl shadow-2xl p-8">
+        <div className="bg-gradient-to-br from-slate-800/95 to-slate-900/95 backdrop-blur-md border border-yellow-700/40 rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <div className="relative inline-block mb-4">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
-                ⚔️ Farmand
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent flex items-center gap-2">
+                <Shield className="inline-block text-yellow-400 animate-bounce" size={32} />
+                Farmand
+                <Castle className="inline-block text-orange-400 animate-pulse" size={28} />
               </h1>
-              {/* Glow Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 blur-xl opacity-20 -z-10"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 blur-xl opacity-20 -z-10"></div>
             </div>
-            <p className="text-purple-200/90">
-              {isLogin ? 'Entre no reino' : 'Junte-se ao reino'}
+            <p className="text-purple-200/90 text-lg italic">
+              {isLogin ? 'Entre no reino e defenda sua vila!' : 'Junte-se à guilda dos heróis!'}
             </p>
+          </div>
+
+          <div className="flex flex-col gap-3 mb-6">
+            <button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-slate-700/60 border border-slate-600/30 rounded-lg py-2 text-gray-100 font-semibold transition-all duration-200 hover:bg-yellow-800/30 disabled:opacity-60"
+            >
+              <span className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="h-5 w-5" />
+                Entrar com Google
+              </span>
+            </button>
+            <button disabled className="w-full flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 bg-slate-700/60 border border-slate-600/30 rounded-lg py-2 text-gray-400 font-semibold cursor-not-allowed opacity-70">
+              <span className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <Facebook className="h-5 w-5 text-blue-400" />
+                Entrar com Facebook
+              </span>
+              <span className="text-xs text-center w-full sm:w-auto block">(em breve)</span>
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,10 +115,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 {error}
               </div>
             )}
-
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-purple-200 mb-2">
-                Email
+              <label htmlFor="email" className="block text-sm font-medium text-yellow-200 mb-2 flex items-center gap-1">
+                <Mail size={16} /> Email
               </label>
               <input
                 id="email"
@@ -101,15 +125,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
+                className="w-full px-3 py-2 bg-slate-700/50 border border-yellow-700/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400/50 backdrop-blur-sm"
                 placeholder="seu@email.com"
               />
             </div>
-
             {!isLogin && (
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-purple-200 mb-2">
-                  Nome de usuário
+                <label htmlFor="username" className="block text-sm font-medium text-yellow-200 mb-2 flex items-center gap-1">
+                  <UserCircle size={16} /> Nome de usuário
                 </label>
                 <input
                   id="username"
@@ -117,15 +140,29 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-yellow-700/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400/50 backdrop-blur-sm"
                   placeholder="seunome"
                 />
               </div>
             )}
-
+            {!isLogin && (
+              <div>
+                <label htmlFor="avatar" className="block text-sm font-medium text-yellow-200 mb-2 flex items-center gap-1">
+                  <UserCircle size={16} /> Avatar (opcional)
+                </label>
+                <input
+                  id="avatar"
+                  type="url"
+                  value={avatar}
+                  onChange={(e) => setAvatar(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-yellow-700/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400/50 backdrop-blur-sm"
+                  placeholder="URL da imagem do avatar"
+                />
+              </div>
+            )}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-purple-200 mb-2">
-                Senha
+              <label htmlFor="password" className="block text-sm font-medium text-yellow-200 mb-2 flex items-center gap-1">
+                <Sword size={16} /> Senha
               </label>
               <div className="relative">
                 <input
@@ -135,7 +172,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full px-3 py-2 pr-10 bg-slate-700/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 focus:border-amber-400/50 backdrop-blur-sm"
+                  className="w-full px-3 py-2 pr-10 bg-slate-700/50 border border-yellow-700/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400/50 backdrop-blur-sm"
                   placeholder="••••••••"
                 />
                 <button
@@ -147,29 +184,27 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                 </button>
               </div>
             </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
-                  {isLogin ? 'Entrar no Reino' : 'Juntar-se ao Reino'}
+                  {isLogin ? 'Entrar no Reino' : 'Juntar-se à Guilda'}
                 </>
               )}
             </button>
-
             <div className="text-center">
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-purple-200/80 hover:text-purple-200 transition-colors"
+                className="text-sm text-yellow-200/80 hover:text-yellow-200 transition-colors"
               >
-                {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre'}
+                {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já é um herói? Entre no reino'}
               </button>
             </div>
           </form>

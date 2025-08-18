@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../integrations/supabase/client';
+import './adminStyles.css';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -70,7 +71,7 @@ export const AdvancedStatsPanel: React.FC = () => {
       // Receita por pacote
       const revenueByCard = purchaseData.data?.reduce((acc, purchase) => {
         const packName = purchase.booster_packs?.name || 'Pacote Desconhecido';
-        const existing = acc.find(item => item.card_name === packName);
+        const existing = acc.find((item: { card_name: string; revenue: number }) => item.card_name === packName);
         if (existing) {
           existing.revenue += purchase.booster_packs?.price_coins || 0;
         } else {
@@ -274,8 +275,8 @@ export const AdvancedStatsPanel: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{ width: `${(player.wins / player.total_games) * 100}%` }}
+                          className={`bg-green-600 h-2 rounded-full win-rate-bar`}
+                          data-win-rate={Math.round((player.wins / player.total_games) * 100)}
                         />
                       </div>
                       <span className="text-sm text-muted-foreground">

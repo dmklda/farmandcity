@@ -1,0 +1,94 @@
+.win-rate-bar {
+  width: calc(1% * var(--width));
+}
+
+.win-rate-bar[data-win-rate="0"] { --width: 0; }
+.win-rate-bar[data-win-rate="5"] { --width: 5; }
+.win-rate-bar[data-win-rate="10"] { --width: 10; }
+.win-rate-bar[data-win-rate="15"] { --width: 15; }
+.win-rate-bar[data-win-rate="20"] { --width: 20; }
+.win-rate-bar[data-win-rate="25"] { --width: 25; }
+.win-rate-bar[data-win-rate="30"] { --width: 30; }
+.win-rate-bar[data-win-rate="35"] { --width: 35; }
+.win-rate-bar[data-win-rate="40"] { --width: 40; }
+.win-rate-bar[data-win-rate="45"] { --width: 45; }
+.win-rate-bar[data-win-rate="50"] { --width: 50; }
+.win-rate-bar[data-win-rate="55"] { --width: 55; }
+.win-rate-bar[data-win-rate="60"] { --width: 60; }
+.win-rate-bar[data-win-rate="65"] { --width: 65; }
+.win-rate-bar[data-win-rate="70"] { --width: 70; }
+.win-rate-bar[data-win-rate="75"] { --width: 75; }
+.win-rate-bar[data-win-rate="80"] { --width: 80; }
+.win-rate-bar[data-win-rate="85"] { --width: 85; }
+.win-rate-bar[data-win-rate="90"] { --width: 90; }
+.win-rate-bar[data-win-rate="95"] { --width: 95; }
+.win-rate-bar[data-win-rate="100"] { --width: 100; }
+
+/* Handling in-between values by rounding down to nearest 5% */
+.win-rate-bar[data-win-rate^="1"] { --width: 0; }
+.win-rate-bar[data-win-rate^="2"] { --width: 0; }
+.win-rate-bar[data-win-rate^="3"] { --width: 0; }
+.win-rate-bar[data-win-rate^="4"] { --width: 0; }
+.win-rate-bar[data-win-rate^="6"] { --width: 5; }
+.win-rate-bar[data-win-rate^="7"] { --width: 5; }
+.win-rate-bar[data-win-rate^="8"] { --width: 5; }
+.win-rate-bar[data-win-rate^="9"] { --width: 5; }
+
+/* Card Editor styles */
+.card-ornate-border {
+  border-color: attr(data-accent-color);
+}
+
+.card-ornate-border[data-accent-color] {
+  border-color: var(--accent-color);
+}
+
+.card-ornate-dot {
+  background-color: attr(data-accent-color);
+}
+
+.card-ornate-dot[data-accent-color] {
+  background-color: var(--accent-color);
+}
+
+.card-background {
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+}
+
+.card-type-icon[data-bg-color][data-border-color] {
+  background-color: attr(data-bg-color);
+  border-color: attr(data-border-color);
+}
+
+.card-description[data-bg-color][data-border-color][data-shadow-color] {
+  background-color: attr(data-bg-color);
+  border-color: attr(data-border-color);
+  box-shadow: 0 0 10px attr(data-shadow-color);
+}
+
+.legendary-effect {
+  background: conic-gradient(from 0deg, transparent, transparent, transparent);
+}
+
+.legendary-effect[data-gradient-color] {
+  background: conic-gradient(from 0deg, attr(data-gradient-color), transparent, attr(data-gradient-color));
+}
+
+/* Gem styles */
+.gem-text[data-gem-color] {
+  color: attr(data-gem-color);
+}
+
+.gem-glow[data-gem-color] {
+  background-color: attr(data-gem-color);
+}
+
+/* Card preview styles */
+.card-border[data-card-color] {
+  border-color: attr(data-card-color);
+}
+
+.card-text-color[data-text-color] {
+  color: attr(data-text-color);
+}

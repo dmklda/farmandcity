@@ -572,19 +572,19 @@ export const ContainerCustomizationManager: React.FC = () => {
                         </div>
                         <p className="text-gray-300 text-sm">{customization.description}</p>
                         <div className="flex items-center gap-4 mt-2">
-                          {customization.price_coins > 0 && (
+                          {(customization.price_coins ?? 0) > 0 && (
                             <div className="flex items-center gap-1">
                               <Coins className="w-4 h-4 text-yellow-500" />
-                              <span className="text-yellow-400 text-sm">{customization.price_coins}</span>
+                              <span className="text-yellow-400 text-sm">{customization.price_coins ?? 0}</span>
                             </div>
                           )}
-                          {customization.price_gems > 0 && (
+                          {(customization.price_gems ?? 0) > 0 && (
                             <div className="flex items-center gap-1">
                               <Gem className="w-4 h-4 text-purple-500" />
-                              <span className="text-purple-400 text-sm">{customization.price_gems}</span>
+                              <span className="text-purple-400 text-sm">{customization.price_gems ?? 0}</span>
                             </div>
                           )}
-                          {(customization.price_coins === 0 && customization.price_gems === 0) && (
+                          {((customization.price_coins ?? 0) === 0 && (customization.price_gems ?? 0) === 0) && (
                             <Badge className="bg-green-600 text-white">GRÁTIS</Badge>
                           )}
                         </div>

@@ -6,7 +6,7 @@ import { usePlayerCards } from '../hooks/usePlayerCards';
 export const StarterPackDisplay: React.FC = () => {
   const { packInfo, loading, error, purchaseStarterPack } = useStarterPack();
   const { showAlert, showConfirm } = useDialog();
-  const { refreshCards } = usePlayerCards();
+  const { refresh } = usePlayerCards();
 
   const handlePurchase = async () => {
     if (!packInfo?.can_purchase) {
@@ -29,7 +29,7 @@ export const StarterPackDisplay: React.FC = () => {
         `Parabéns! Você recebeu ${result.cards_added} cartas no seu pacote iniciante.`
       );
       
-      await refreshCards();
+      await refresh();
     } else {
       showAlert('Erro na Compra', result.message);
     }

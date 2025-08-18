@@ -289,7 +289,7 @@ const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ isOpen, onClose }) 
   };
 
   const achievements = [
-    { id: 'first_game', title: 'Primeiro Jogo', description: 'Complete seu primeiro jogo', icon: Trophy, unlocked: playerStats?.totalGames > 0 },
+    { id: 'first_game', title: 'Primeiro Jogo', description: 'Complete seu primeiro jogo', icon: Trophy, unlocked: (playerStats?.totalGames ?? 0) > 0 },
     { id: 'builder', title: 'Construtor', description: 'Construa 10 edifícios', icon: Building2, unlocked: (playerStats?.totalBuildings || 0) >= 10 },
     { id: 'architect', title: 'Arquiteto', description: 'Construa 5 marcos', icon: Landmark, unlocked: (playerStats?.totalLandmarks || 0) >= 5 },
     { id: 'veteran', title: 'Veterano', description: 'Jogue 20 jogos', icon: Shield, unlocked: (playerStats?.totalGames || 0) >= 20 },

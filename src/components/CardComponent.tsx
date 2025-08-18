@@ -1,4 +1,5 @@
 import React from 'react';
+import './cardComponent.css';
 import { Card } from '../types/card';
 import pequenoJardimImage from '../assets/cards/pequeno_jardim.png';
 import { getCardTypeIconPNG, getRarityIconPNG } from './IconComponentsPNG';
@@ -18,10 +19,10 @@ const CardComponent: React.FC<CardComponentProps> = ({
   playable = true,
   size = 'medium' 
 }) => {
-  const sizeStyles = {
-    small: { width: 90, height: 120 },
-    medium: { width: 135, height: 180 },
-    large: { width: 180, height: 240 }
+  const sizeClasses = {
+    small: 'card-size-small',
+    medium: 'card-size-medium',
+    large: 'card-size-large'
   };
 
   const getRarityColor = (rarity: string) => {
@@ -104,12 +105,10 @@ const CardComponent: React.FC<CardComponentProps> = ({
 
   return (
     <div
-      className={`
-        relative group cursor-pointer transition-all duration-300 transform
+      className={`card-container group ${sizeClasses[size]}
         ${selected ? 'scale-105 z-20' : 'hover:scale-105 z-10'}
         ${!playable ? 'opacity-60 cursor-not-allowed' : 'opacity-100'}
       `}
-      style={sizeStyles[size]}
       onClick={onClick}
       title={card.name}
     >

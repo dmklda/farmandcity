@@ -57,6 +57,7 @@ export class CommunityService {
       const { data: topics, error } = await supabase
         .from('community_topics')
         .select('*')
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -361,6 +362,19 @@ export class CommunityService {
       return { success: true }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  }
+
+  static async getUserLikes(userId: string): Promise<{ success: boolean; likes?: any[]; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('community_likes')
+        .select('*')
+        .eq('user_id', userId);
+      if (error) throw error;
+      return { success: true, likes: data };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 

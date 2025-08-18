@@ -19,7 +19,7 @@ interface DeckWithCards extends PlayerDeck {
 }
 
 export const usePlayerDecks = () => {
-  const [decks, setDecks] = useState<PlayerDeck[]>([]);
+  const [decks, setDecks] = useState<DeckWithCards[]>([]);
   const [activeDeck, setActiveDeck] = useState<DeckWithCards | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -278,7 +278,7 @@ export const usePlayerDecks = () => {
     }
   };
 
-  const updateDeck = async (deckId: string, updates: Partial<Pick<PlayerDeck, 'name' | 'card_ids'>>) => {
+  const updateDeck = async (deckId: string, updates: Partial<Pick<DeckWithCards, 'name' | 'card_ids'>>) => {
     try {
       // Buscar deck atual para verificar se é starter deck
       const currentDeck = decks.find(d => d.id === deckId);

@@ -10,10 +10,7 @@ export const AnimatedBackground: React.FC = () => {
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{
-          filter: 'brightness(0.3) contrast(1.2) saturate(0.8)',
-        }}
+        className="absolute inset-0 w-full h-full object-cover brightness-[0.3] contrast-[1.2] saturate-[0.8]"
       >
         <source src={videoBackground} type="video/mp4" />
         Your browser does not support the video tag.

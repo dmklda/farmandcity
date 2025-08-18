@@ -34,10 +34,17 @@ export default function CommunityTab({ className }: CommunityTabProps) {
     content: ''
   });
   const [showNewTopicForm, setShowNewTopicForm] = useState(false);
+  const [userLikes, setUserLikes] = useState<{ [key: string]: boolean }>({});
+  const [replySort, setReplySort] = useState<'recent' | 'oldest' | 'votes'>('recent');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyForms, setReplyForms] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     loadCommunityData();
-  }, []);
+    if (user) {
+      loadUserLikes();
+    }
+  }, [user]);
 
   const loadCommunityData = async () => {
     setLoading(true);
@@ -65,6 +72,22 @@ export default function CommunityTab({ className }: CommunityTabProps) {
     }
   };
 
+  const loadUserLikes = async () => {
+    if (!user) return;
+    try {
+      const result = await CommunityService.getUserLikes(user.id);
+      if (result.success && result.likes) {
+        const likesMap: { [key: string]: boolean } = {};
+        result.likes.forEach((like: any) => {
+          likesMap[`${like.target_type}_${like.target_id}`] = true;
+        });
+        setUserLikes(likesMap);
+      }
+    } catch (error) {
+      // Silenciar erro
+    }
+  };
+
   const handleCreateTopic = async () => {
     if (!user) {
       alert('Você precisa estar logado para criar um tópico');
@@ -77,48 +100,39 @@ export default function CommunityTab({ className }: CommunityTabProps) {
     }
 
     try {
-      console.log('User object:', user);
-      console.log('User ID:', user.id);
-      console.log('Creating topic from CommunityTab with user ID:', user.id);
-      
       const topicData = {
         title: newTopicForm.title.trim(),
         content: newTopicForm.content.trim(),
         author_id: user.id,
         category: newTopicForm.category,
-        tags: newTopicForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: newTopicForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        is_pinned: false,
+        is_locked: false
       };
-      
-      console.log('Topic data being sent:', topicData);
-      
       const result = await CommunityService.createTopic(topicData);
-
-      console.log('Create topic result from CommunityTab:', result);
-
       if (result.success) {
         setNewTopicForm({ title: '', content: '', category: 'general', tags: '' });
         setShowNewTopicForm(false);
         loadCommunityData();
       } else {
-        console.error('Failed to create topic from CommunityTab:', result.error);
         alert(`Erro ao criar tópico: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error in CommunityTab handleCreateTopic:', error);
       alert(`Erro inesperado: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleCreateReply = async () => {
     if (!user || !selectedTopic) return;
-
     try {
-      const result = await CommunityService.createReply({
+      const replyData = {
         topic_id: selectedTopic.id,
         author_id: user.id,
-        content: newReplyForm.content
-      });
-
+        content: newReplyForm.content,
+        likes_count: 0,
+        is_solution: false
+      };
+      const result = await CommunityService.createReply(replyData);
       if (result.success) {
         setNewReplyForm({ content: '' });
         loadTopicReplies(selectedTopic.id);
@@ -126,7 +140,27 @@ export default function CommunityTab({ className }: CommunityTabProps) {
         alert(result.error || 'Erro ao criar resposta');
       }
     } catch (error) {
-      console.error('Erro ao criar resposta:', error);
+      alert('Erro ao criar resposta');
+    }
+  };
+
+  const handleReplyToReply = async (parentReplyId: string) => {
+    if (!user || !selectedTopic) return;
+    const content = replyForms[parentReplyId]?.trim();
+    if (!content) return;
+    const replyData = {
+      topic_id: selectedTopic.id,
+      author_id: user.id,
+      content,
+      parent_reply_id: parentReplyId,
+      likes_count: 0,
+      is_solution: false
+    };
+    const result = await CommunityService.createReply(replyData);
+    if (result.success) {
+      setReplyForms((prev) => ({ ...prev, [parentReplyId]: '' }));
+      setReplyingTo(null);
+      loadTopicReplies(selectedTopic.id);
     }
   };
 
@@ -143,37 +177,52 @@ export default function CommunityTab({ className }: CommunityTabProps) {
 
   const handleTopicClick = async (topic: CommunityTopic) => {
     setSelectedTopic(topic);
+    if (user) {
+      await CommunityService.viewTopic(topic.id, user.id);
+    } else {
+      await CommunityService.viewTopic(topic.id);
+    }
     await loadTopicReplies(topic.id);
   };
 
   const handleLikeTopic = async (topicId: string) => {
     if (!user) return;
-
+    const likeKey = `topic_${topicId}`;
     try {
-      const result = await CommunityService.likeContent(topicId, 'topic', user.id);
-      if (result.success) {
-        loadCommunityData();
+      if (userLikes[likeKey]) {
+        const result = await CommunityService.unlikeContent(topicId, 'topic', user.id);
+        if (result.success) {
+          setUserLikes((prev) => ({ ...prev, [likeKey]: false }));
+          loadCommunityData();
+        }
       } else {
-        alert(result.error || 'Erro ao curtir tópico');
+        const result = await CommunityService.likeContent(topicId, 'topic', user.id);
+        if (result.success) {
+          setUserLikes((prev) => ({ ...prev, [likeKey]: true }));
+          loadCommunityData();
+        }
       }
-    } catch (error) {
-      console.error('Erro ao curtir tópico:', error);
-    }
+    } catch (error) {}
   };
 
   const handleLikeReply = async (replyId: string) => {
     if (!user) return;
-
+    const likeKey = `reply_${replyId}`;
     try {
-      const result = await CommunityService.likeContent(replyId, 'reply', user.id);
-      if (result.success) {
-        loadTopicReplies(selectedTopic!.id);
+      if (userLikes[likeKey]) {
+        const result = await CommunityService.unlikeContent(replyId, 'reply', user.id);
+        if (result.success) {
+          setUserLikes((prev) => ({ ...prev, [likeKey]: false }));
+          loadTopicReplies(selectedTopic!.id);
+        }
       } else {
-        alert(result.error || 'Erro ao curtir resposta');
+        const result = await CommunityService.likeContent(replyId, 'reply', user.id);
+        if (result.success) {
+          setUserLikes((prev) => ({ ...prev, [likeKey]: true }));
+          loadTopicReplies(selectedTopic!.id);
+        }
       }
-    } catch (error) {
-      console.error('Erro ao curtir resposta:', error);
-    }
+    } catch (error) {}
   };
 
   const getCategoryColor = (category: string) => {
@@ -211,9 +260,85 @@ export default function CommunityTab({ className }: CommunityTabProps) {
     );
   }
 
+  const renderReplies = (parentId: string | null = null, level = 0) =>
+    [...replies]
+      .filter(r => (r.parent_reply_id || null) === parentId)
+      .sort((a, b) => {
+        if (replySort === 'recent') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (replySort === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        if (replySort === 'votes') return b.likes_count - a.likes_count;
+        return 0;
+      })
+      .map((reply) => (
+        <div key={reply.id} className={`p-5 border-2 border-gray-600 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 ml-${level * 6}`}> {/* indent */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 ring-2 ring-blue-500/30">
+                <AvatarImage src={reply.author_avatar} />
+                <AvatarFallback className="bg-gray-600 text-gray-200 font-semibold">
+                  {reply.author_name?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-gray-200">{reply.author_name}</p>
+                <p className="text-sm text-gray-400">
+                  {formatDistanceToNow(new Date(reply.created_at), { locale: ptBR, addSuffix: true })}
+                </p>
+              </div>
+            </div>
+            {reply.is_solution && (
+              <Badge className="bg-green-600/20 text-green-400 border-green-500/30 font-medium">
+                ✅ Solução
+              </Badge>
+            )}
+          </div>
+          
+          <p className="text-gray-300 mb-4 leading-relaxed">{reply.content}</p>
+
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => handleLikeReply(reply.id)}
+              className={`flex items-center gap-2 text-sm transition-colors duration-200 ${userLikes[`reply_${reply.id}`] ? 'text-blue-400' : 'hover:text-blue-400 text-gray-400'}`}
+              disabled={!user}
+            >
+              <ThumbsUp className="h-4 w-4" />
+              <span className="font-medium">{reply.likes_count}</span>
+            </button>
+            {/* Só mostrar botão Responder para comentários de primeiro nível */}
+            {level === 0 && (
+              <button
+                onClick={() => setReplyingTo(reply.id)}
+                className="ml-4 text-xs text-blue-300 hover:underline"
+                disabled={!user}
+              >Responder</button>
+            )}
+          </div>
+          {/* Só mostrar campo de resposta para comentários de primeiro nível */}
+          {level === 0 && replyingTo === reply.id && (
+            <div className="mt-2 flex gap-2">
+              <Textarea
+                value={replyForms[reply.id] || ''}
+                onChange={e => setReplyForms(prev => ({ ...prev, [reply.id]: e.target.value }))}
+                placeholder="Digite sua resposta..."
+                className="flex-1 min-h-[60px] bg-gray-800 text-gray-200 border-gray-600 rounded-lg"
+              />
+              <Button
+                onClick={() => handleReplyToReply(reply.id)}
+                disabled={!replyForms[reply.id]?.trim()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              >Enviar</Button>
+              <Button variant="ghost" onClick={() => setReplyingTo(null)} className="text-gray-400">Cancelar</Button>
+            </div>
+          )}
+          {/* Não renderizar sub-respostas de subcomentários */}
+          {level === 0 && renderReplies(reply.id, level + 1)}
+        </div>
+      ));
+
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Rankings */}
+      {/* Rankings removidos temporariamente para futuras atualizações */}
+      {/*
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-gray-800/50 border-gray-700 shadow-xl">
           <CardHeader className="pb-3 border-b border-gray-700">
@@ -289,6 +414,7 @@ export default function CommunityTab({ className }: CommunityTabProps) {
           </CardContent>
         </Card>
       </div>
+      */}
 
       {/* Tópicos e Discussões */}
       <Card className="shadow-xl border-gray-700 bg-gray-800/50">
@@ -397,7 +523,9 @@ export default function CommunityTab({ className }: CommunityTabProps) {
                 className={`p-6 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
                   selectedTopic?.id === topic.id 
                     ? 'border-purple-500 bg-purple-900/20 shadow-lg' 
-                    : 'border-gray-600 bg-gray-700/50 hover:border-purple-500/50'
+                    : topic.is_pinned
+                      ? 'border-yellow-500/50 bg-yellow-900/10 shadow-md'
+                      : 'border-gray-600 bg-gray-700/50 hover:border-purple-500/50'
                 }`}
                 onClick={() => handleTopicClick(topic)}
               >
@@ -432,7 +560,8 @@ export default function CommunityTab({ className }: CommunityTabProps) {
                         e.stopPropagation();
                         handleLikeTopic(topic.id);
                       }}
-                      className="flex items-center gap-2 hover:text-purple-400 transition-colors duration-200"
+                      className={`flex items-center gap-2 transition-colors duration-200 ${userLikes[`topic_${topic.id}`] ? 'text-purple-400' : 'hover:text-purple-400 text-gray-400'}`}
+                      disabled={!user}
                     >
                       <ThumbsUp className="h-4 w-4" />
                       <span className="font-medium">{topic.likes_count}</span>
@@ -447,8 +576,12 @@ export default function CommunityTab({ className }: CommunityTabProps) {
                     </div>
                   </div>
                   {topic.is_pinned && (
-                    <Badge variant="secondary" className="bg-yellow-600/20 text-yellow-400 border-yellow-500/30">
-                      📌 Fixado
+                    <Badge variant="secondary" className="bg-yellow-600/20 text-yellow-400 border-yellow-500/30 flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="17" x2="12" y2="22"></line>
+                        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+                      </svg>
+                      Fixado
                     </Badge>
                   )}
                 </div>
@@ -503,52 +636,21 @@ export default function CommunityTab({ className }: CommunityTabProps) {
               </div>
             )}
 
-            <div className="space-y-4">
-              {replies.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-500" />
-                  <p>Nenhuma resposta ainda. Seja o primeiro a responder!</p>
-                </div>
-              ) : (
-                replies.map((reply) => (
-                  <div key={reply.id} className="p-5 border-2 border-gray-600 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-all duration-200">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-blue-500/30">
-                          <AvatarImage src={reply.author_avatar} />
-                          <AvatarFallback className="bg-gray-600 text-gray-200 font-semibold">
-                            {reply.author_name?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-gray-200">{reply.author_name}</p>
-                          <p className="text-sm text-gray-400">
-                            {formatDistanceToNow(new Date(reply.created_at), { locale: ptBR, addSuffix: true })}
-                          </p>
-                        </div>
-                      </div>
-                      {reply.is_solution && (
-                        <Badge className="bg-green-600/20 text-green-400 border-green-500/30 font-medium">
-                          ✅ Solução
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <p className="text-gray-300 mb-4 leading-relaxed">{reply.content}</p>
-
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => handleLikeReply(reply.id)}
-                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-blue-400 transition-colors duration-200"
-                      >
-                        <ThumbsUp className="h-4 w-4" />
-                        <span className="font-medium">{reply.likes_count}</span>
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="flex items-center gap-4 mb-4">
+              <label className="text-gray-300 font-medium">Ordenar por:</label>
+              <Select value={replySort} onValueChange={v => setReplySort(v as 'recent' | 'oldest' | 'votes')}>
+                <SelectTrigger className="w-40 bg-gray-700 border-gray-600 text-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  <SelectItem value="recent">Mais recente</SelectItem>
+                  <SelectItem value="oldest">Mais antigo</SelectItem>
+                  <SelectItem value="votes">Mais votado</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            <div className="space-y-4">{renderReplies()}</div>
           </CardContent>
         </Card>
       )}

@@ -52,8 +52,8 @@ export const NewsManager: React.FC = () => {
 
       if (categoriesResult.success && categoriesResult.categories) {
         setCategories(categoriesResult.categories);
-        if (categoriesResult.categories.length > 0) {
-          setNewPost(prev => ({ ...prev, category: categoriesResult.categories[0].slug }));
+        if (categoriesResult.categories?.length > 0) {
+          setNewPost(prev => ({ ...prev, category: categoriesResult.categories?.[0]?.slug || '' }));
         }
       } else {
         console.error('Erro ao carregar categorias:', categoriesResult.error);
@@ -76,7 +76,7 @@ export const NewsManager: React.FC = () => {
         status: newPost.status as 'draft' | 'published' | 'archived',
         featured_image_url: newPost.featured_image_url,
         read_time_minutes: newPost.read_time_minutes
-      });
+      } as any);
 
       if (result.success) {
         setNewPost({
@@ -128,7 +128,7 @@ export const NewsManager: React.FC = () => {
         status: newPost.status as 'draft' | 'published' | 'archived',
         featured_image_url: newPost.featured_image_url,
         read_time_minutes: newPost.read_time_minutes
-      });
+      } as any);
 
       if (result.success) {
         setEditingPost(null);
@@ -505,7 +505,7 @@ export const NewsManager: React.FC = () => {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Select value={post.status} onValueChange={(value) => handleUpdatePostStatus(post.id, value)} className="bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20">
+                    <Select value={post.status} onValueChange={(value) => handleUpdatePostStatus(post.id, value)}>
                       <SelectTrigger className="w-32 bg-gray-700 border-gray-600 text-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20">
                         <SelectValue />
                       </SelectTrigger>

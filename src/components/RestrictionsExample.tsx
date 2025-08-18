@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameState } from '../hooks/useGameState';
+import './restrictionsExample.css';
 
 /**
  * Exemplo de como usar o componente de restrições na interface
@@ -23,30 +24,7 @@ export const RestrictionsExample: React.FC = () => {
         </ul>
       </div>
       
-      <style jsx>{`
-        .restrictions-example {
-          padding: 16px;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          margin: 16px 0;
-        }
-        
-        .restrictions-info {
-          margin-top: 16px;
-          padding: 12px;
-          background: #f5f5f5;
-          border-radius: 6px;
-        }
-        
-        .restrictions-info ul {
-          margin: 8px 0;
-          padding-left: 20px;
-        }
-        
-        .restrictions-info li {
-          margin: 4px 0;
-        }
-      `}</style>
+
     </div>
   );
 };

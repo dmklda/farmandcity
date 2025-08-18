@@ -74,7 +74,7 @@ const Grid: React.FC<GridProps> = ({ grid, title, onSelectCell, highlight }) => 
                 <CardMiniature
                   card={cell.card}
                   size="small"
-                  onClick={() => setShowDetail(cell.card)}
+                  onShowDetail={() => setShowDetail(cell.card)}
                 />
               ) : (
                 <div style={{ 

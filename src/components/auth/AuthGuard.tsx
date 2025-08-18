@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { LoginForm } from './LoginForm';
+import AuthPage from '../AuthPage';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -22,7 +22,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <LoginForm onLoginSuccess={() => {}} />;
+    return <AuthPage onAuthSuccess={() => window.location.reload()} />;
   }
 
   return <>{children}</>;

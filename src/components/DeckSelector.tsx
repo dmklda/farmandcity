@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { usePlayerDecks } from '../hooks/usePlayerDecks';
+import { Card as GameCard } from '../types/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';

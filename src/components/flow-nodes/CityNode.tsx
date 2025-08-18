@@ -4,6 +4,7 @@ import { Building, Plus } from 'lucide-react';
 import { CardDetailModal } from '../EnhancedHand';
 import { Card } from '../../types/card';
 import { getCardTypeIconPNG } from '../IconComponentsPNG';
+import './cityNode.css';
 
 import { GridCell } from '../../types/gameState';
 
@@ -22,7 +23,7 @@ const CityNode: React.FC<{ data: CityNodeData }> = ({ data }) => {
   const renderGrid = () => {
     const cols = grid[0]?.length || 2;
     return (
-      <div className={`grid gap-0.5 p-1 flex-1`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className={`grid gap-0.5 p-1 flex-1 grid-cols-${cols}`}>
         {grid.flatMap((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
@@ -60,15 +61,7 @@ const CityNode: React.FC<{ data: CityNodeData }> = ({ data }) => {
       `}>
         {/* Background Image */}
         <div 
-          className="absolute inset-0 opacity-30 pointer-events-none"
-          style={{
-            backgroundImage: `url('/assets/grids_background/City_600x600.png')`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            width: '100%',
-            height: '100%'
-          }}
+          className="absolute inset-0 opacity-30 pointer-events-none bg-contain bg-center bg-no-repeat w-full h-full city-background"
         />
         
         {/* Header */}

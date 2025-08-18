@@ -173,6 +173,7 @@ export const ShopManager: React.FC = () => {
       sold_quantity: 0,
       is_active: true,
       discount_percentage: 0,
+      real_discount_percentage: 0,
       is_daily_rotation: false,
       rotation_date: '',
       event_id: '',

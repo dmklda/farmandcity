@@ -44,9 +44,9 @@ const Hand: React.FC<HandProps> = ({ hand, onSelectCard, selectedCardId, canPlay
             >
               <CardMiniature
                 card={card}
-                onClick={() => playInfo.playable && onSelectCard(card)}
-                selected={card.id === selectedCardId}
-                playable={playInfo.playable}
+                onSelect={() => playInfo.playable && onSelectCard(card)}
+                isSelected={card.id === selectedCardId}
+                isPlayable={playInfo.playable}
                 size="small"
               />
               

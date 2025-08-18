@@ -195,8 +195,7 @@ export class NewsService {
           ...updates,
           updated_at: new Date().toISOString()
         })
-        .eq('id', postId)
-        .eq('author_id', user.id); // Apenas o autor pode editar
+        .eq('id', postId); // Removido o filtro de author_id
 
       if (error) throw error;
 

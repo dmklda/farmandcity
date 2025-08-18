@@ -1,0 +1,22 @@
+.card-container {
+  position: relative;
+  cursor: pointer;
+  transition-property: all;
+  transition-duration: 300ms;
+  transform: translateZ(0);
+}
+
+.card-size-small {
+  width: 90px;
+  height: 120px;
+}
+
+.card-size-medium {
+  width: 135px;
+  height: 180px;
+}
+
+.card-size-large {
+  width: 180px;
+  height: 240px;
+}

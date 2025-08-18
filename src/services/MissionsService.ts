@@ -9,6 +9,7 @@ export interface Mission {
   requirements: any;
   rewards: any;
   difficulty: 'easy' | 'medium' | 'hard' | 'legendary';
+  difficulty_level?: 'easy' | 'medium' | 'hard' | 'legendary';
   is_active: boolean;
   expires_at?: string;
   category: string;
@@ -27,6 +28,8 @@ export interface Mission {
   target_audience: string;
   audience_criteria: any;
   created_at: string;
+  rewards_claimed?: boolean;
+  progress?: number; // For joined results
 }
 
 export interface PlayerMission {
@@ -49,6 +52,13 @@ export interface ActiveDailyMission {
   day_date: string;
   is_active: boolean;
   created_at: string;
+  missions?: Mission;
+  name?: string;
+  mission_name?: string;
+  description?: string;
+  progress?: number;
+  requirement_value?: number;
+  reward_coins?: number;
 }
 
 export interface ActiveWeeklyMission {
@@ -58,6 +68,13 @@ export interface ActiveWeeklyMission {
   week_end: string;
   is_active: boolean;
   created_at: string;
+  missions?: Mission;
+  name?: string;
+  mission_name?: string;
+  description?: string;
+  progress?: number;
+  requirement_value?: number;
+  reward_coins?: number;
 }
 
 export class MissionsService {

@@ -61,7 +61,9 @@ export const CommunityManager: React.FC = () => {
         content: newTopic.content,
         author_id: user.id,
         category: newTopic.category,
-        tags: newTopic.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: newTopic.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        is_pinned: false,
+        is_locked: false
       };
       
       console.log('Topic data being sent:', topicData);
