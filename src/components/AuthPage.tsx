@@ -7,13 +7,28 @@ interface AuthPageProps {
   onAuthSuccess: () => void;
 }
 
-const RECAPTCHA_SITE_KEY = '6LdofKkrAAAAACtULOtFG35pLZEqc1FPAwSRlzae';
+const RECAPTCHA_SITE_KEY = '6LdofKAkrAAAAACtULOtFG35pLZEqc1FPAwSRlzae';
 
-const loadRecaptcha = () => {
+const loadRecaptchaSiteKey = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('get_recaptcha_site_key');
+    if (error) throw error;
+    return data.siteKey;
+  } catch (e) {
+    console.error('Erro ao buscar site key:', e);
+    // Fallback para desenvolvimento
+    return RECAPTCHA_SITE_KEY;
+  }
+};
+
+const loadRecaptcha = async () => {
   if (window.grecaptcha && window.grecaptcha.enterprise) return Promise.resolve();
+  
+  const siteKey = await loadRecaptchaSiteKey();
+  
   return new Promise((resolve) => {
     const script = document.createElement('script');
-    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.src = `https://www.google.com/recaptcha/enterprise.js?render=${siteKey}`;
     script.async = true;
     script.onload = resolve;
     document.body.appendChild(script);
@@ -22,20 +37,24 @@ const loadRecaptcha = () => {
 
 const getRecaptchaToken = async (action: string) => {
   await loadRecaptcha();
+  const siteKey = await loadRecaptchaSiteKey();
+  
   return new Promise<string>((resolve, reject) => {
     window.grecaptcha.enterprise.ready(() => {
-      window.grecaptcha.enterprise.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(reject);
+      window.grecaptcha.enterprise.execute(siteKey, { action }).then(resolve).catch(reject);
     });
   });
 };
 
 const verifyRecaptchaToken = async (token: string, expectedAction: string) => {
   try {
+    const siteKey = await loadRecaptchaSiteKey();
+    
     const { data, error } = await supabase.functions.invoke('recaptcha_enterprise_verify', {
       body: {
         token,
         expectedAction,
-        siteKey: RECAPTCHA_SITE_KEY
+        siteKey
       }
     });
     

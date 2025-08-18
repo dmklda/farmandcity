@@ -2,3 +2,6 @@ project_id = "iaphpsvzwzlpzsjsgsja"
 
 [functions.recaptcha_enterprise_verify]
 verify_jwt = false
+
+[functions.get_recaptcha_site_key]
+verify_jwt = false
