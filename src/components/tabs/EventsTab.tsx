@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function EventsTab() {
-  return (
+    return (
     <div className="flex flex-col items-center justify-center h-64 text-center">
       <div className="text-3xl font-bold text-yellow-400 mb-4">⚔️ Em breve!</div>
       <div className="text-lg text-gray-300 max-w-xl">

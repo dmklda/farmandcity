@@ -1,5 +1,21 @@
 import { serve } from "jsr:@supabase/functions-js";
 
+/**
+ * Nomes de ação recomendados pelo Google para o reCAPTCHA Enterprise:
+ * - signup: Inscreva-se no site
+ * - login: Faça login no site
+ * - password_reset: Solicitação para redefinir a senha
+ * - get_price: Busca o preço de um item
+ * - cart_add: Adicione itens ao carrinho
+ * - cart_view: Confira o conteúdo do carrinho
+ * - payment_add: Adicionar ou atualizar informações de pagamento
+ * - checkout: Fazer o check-out no site
+ * - transaction_confirmed: Confirmação de que uma transação foi processada
+ * - play_song: Tocar uma música de uma lista
+ * 
+ * Fonte: https://cloud.google.com/recaptcha/docs/actions-website
+ */
+
 serve(async (req) => {
   // Suporte a preflight CORS
   if (req.method === "OPTIONS") {
@@ -26,6 +42,17 @@ serve(async (req) => {
         },
       });
     }
+    
+    // Validar se a ação esperada é uma das recomendadas
+    const recommendedActions = [
+      "signup", "login", "password_reset", "get_price", 
+      "cart_add", "cart_view", "payment_add", "checkout", 
+      "transaction_confirmed", "play_song"
+    ];
+    
+    const action = expectedAction || "login";
+    console.log(`Ação recebida: ${action}, é recomendada: ${recommendedActions.includes(action)}`);
+    
     const apiKey = Deno.env.get("RECAPTCHA_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ success: false, error: "API_KEY não configurada" }), {
@@ -43,7 +70,7 @@ serve(async (req) => {
     const body = {
       event: {
         token,
-        expectedAction: expectedAction || "login",
+        expectedAction: action,
         siteKey
       }
     };
