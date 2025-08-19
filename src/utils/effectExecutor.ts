@@ -211,12 +211,26 @@ export function executeSimpleEffect(
     case 'GAIN_LANDMARK':
       // Implementar sistema de landmarks
       break;
-    case 'GAIN_REPUTATION':
-      // Implementar sistema de reputação
+    case 'PRODUCE_REPUTATION': {
+      // Produzir reputação
+      (changes as any).reputation = (changes as any).reputation || 0;
+      (changes as any).reputation += effect.amount;
       break;
-    case 'BOOST_ALL_FARMS_FOOD':
-      // Implementar boost para todas as fazendas
+    }
+    case 'BOOST_ALL_FARMS_FOOD': {
+      // Boost para todas as fazendas
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      (changes as any).farmsBoost = (changes as any).farmsBoost || 0;
+      (changes as any).farmsBoost += effect.amount * farmCount;
       break;
+    }
+    case 'BOOST_ALL_CITIES_COINS': {
+      // Boost para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      (changes as any).citiesBoost = (changes as any).citiesBoost || 0;
+      (changes as any).citiesBoost += effect.amount * cityCount;
+      break;
+    }
     case 'OPTIONAL_DISCARD_BOOST_FARM':
       // Implementar boost opcional de fazenda (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
@@ -235,19 +249,31 @@ export function executeSimpleEffect(
       // Implementar compra opcional de carta mágica (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
       break;
-    case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
-      // Implementar boost duplo para todas as construções
-      // Este efeito será tratado pelo sistema de boost
+    case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE': {
+      // Boost duplo para todas as construções
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      const landmarkCount = gameState.landmarksGrid.flat().filter(cell => cell.card).length;
+      const totalBoost = (farmCount + cityCount + landmarkCount) * effect.amount * 2;
+      
+      changes.food = (changes.food || 0) + Math.floor(totalBoost / 3);
+      changes.coins = (changes.coins || 0) + Math.floor(totalBoost / 3);
+      changes.materials = (changes.materials || 0) + Math.ceil(totalBoost / 3);
       break;
-    case 'BOOST_ALL_CITIES_COINS':
-      // Implementar boost para todas as cidades
+    }
+    case 'BOOST_ALL_CITIES': {
+      // Boost geral para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      changes.coins = (changes.coins || 0) + effect.amount * cityCount;
+      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
       break;
-    case 'BOOST_ALL_CITIES':
-      // Implementar boost para todas as cidades
+    }
+    case 'BOOST_ALL_FARMS': {
+      // Boost para todas as fazendas
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      changes.food = (changes.food || 0) + effect.amount * farmCount;
       break;
-    case 'BOOST_ALL_FARMS':
-      // Implementar boost para todas as fazendas
-      break;
+    }
     case 'TRADE_MATERIALS_FOR_FOOD': {
       const materialsToTrade = effect.amount;
       const foodToGain = (effect as any).extraAmount || effect.amount;
@@ -279,24 +305,36 @@ export function executeSimpleEffect(
       // Este efeito será tratado pelo sistema de estado do jogo
       // para permitir jogar cartas adicionais
       break;
-    case 'CANCEL_EVENT':
-      // Implementar cancelamento de eventos
+    case 'CANCEL_EVENT': {
+      // Cancelar último evento aplicado
+      (changes as any).cancelEvent = true;
       break;
-    case 'BLOCK_NEXT_NEGATIVE_EVENT':
-      // Implementar bloqueio de eventos negativos
+    }
+    case 'BLOCK_NEXT_NEGATIVE_EVENT': {
+      // Bloquear próximo evento negativo
+      (changes as any).blockNegativeEvent = true;
       break;
-    case 'DESTROY_CARD':
-      // Implementar destruição de cartas
+    }
+    case 'DESTROY_CARD': {
+      // Destruir uma carta do tabuleiro
+      (changes as any).destroyCard = effect.amount;
       break;
-    case 'STEAL_CARD':
-      // Implementar roubo de cartas
+    }
+    case 'STEAL_CARD': {
+      // Roubar uma carta (implementação futura)
+      (changes as any).stealCard = effect.amount;
       break;
-    case 'PROTECT_AGAINST_EVENTS':
-      // Implementar proteção contra eventos
+    }
+    case 'PROTECT_AGAINST_EVENTS': {
+      // Proteção contínua contra eventos
+      (changes as any).eventProtection = effect.amount;
       break;
-    case 'ABSORB_NEGATIVE_EFFECTS':
-      // Implementar absorção de efeitos negativos
+    }
+    case 'ABSORB_NEGATIVE_EFFECTS': {
+      // Absorver efeitos negativos
+      (changes as any).absorbNegative = effect.amount;
       break;
+    }
     case 'OPTIONAL_DISCARD_GAIN_MATERIALS':
       // Efeito opcional: descartar uma carta para ganhar materiais
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
@@ -366,8 +404,9 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_CITIES_MATERIALS': {
-      // Aplica boost contínuo de materiais para todas as cidades
-      // Este efeito é tratado pelo sistema de boosts contínuos
+      // Boost de materiais para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
       break;
     }
     case 'OPTIONAL_PAY_COINS': {
@@ -865,8 +904,39 @@ function mergeResourceChanges(target: Partial<Resources>, source: Partial<Resour
 export function applyResourceChanges(gameState: GameState, changes: Partial<Resources>): void {
   for (const [resource, amount] of Object.entries(changes)) {
     if (amount !== undefined && amount !== 0) {
-      const currentValue = gameState.resources[resource as keyof Resources] || 0;
-      gameState.resources[resource as keyof Resources] = Math.max(0, currentValue + amount);
+      if (resource === 'reputation') {
+        // Aplicar mudanças de reputação ao playerStats
+        gameState.playerStats.reputation = Math.max(0, (gameState.playerStats.reputation || 0) + amount);
+      } else if (resource in gameState.resources) {
+        // Aplicar mudanças de recursos normais
+        const currentValue = gameState.resources[resource as keyof Resources] || 0;
+        gameState.resources[resource as keyof Resources] = Math.max(0, currentValue + amount);
+      } else {
+        // Aplicar outros efeitos especiais ao gameState
+        switch (resource) {
+          case 'drawCards':
+            gameState.drawCards = (gameState.drawCards || 0) + amount;
+            break;
+          case 'drawCityCards':
+            gameState.drawCityCards = (gameState.drawCityCards || 0) + amount;
+            break;
+          case 'duplicateMagicEffects':
+            gameState.duplicateMagicEffects = true;
+            break;
+          case 'duplicateMagicEffectsDuration':
+            gameState.duplicateMagicEffectsDuration = amount;
+            break;
+          case 'citiesMaterialsBoostTemp':
+            gameState.citiesMaterialsBoostTemp = (gameState.citiesMaterialsBoostTemp || 0) + amount;
+            break;
+          case 'restrictFarmActivation':
+            gameState.restrictFarmActivation = true;
+            break;
+          case 'restrictFarmActivationDuration':
+            gameState.restrictFarmActivationDuration = amount;
+            break;
+        }
+      }
     }
   }
 }
