@@ -23,7 +23,8 @@ import {
   Trophy,
   Target,
   ShoppingCart,
-  Gamepad2
+  Gamepad2,
+  TestTube
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -57,6 +58,7 @@ const menuItems = [
   { id: 'settings', label: 'Configurações', description: 'Configurações gerenciais', icon: Settings },
   { id: 'security', label: 'Segurança', description: 'Controle de acesso', icon: Shield },
   { id: 'game-modes', label: 'Modos de Jogo', description: 'Gerenciar modos de jogo', icon: Gamepad2 },
+  { id: 'effect-tester', label: 'Testador de Efeitos', description: 'Testar effect_logic das cartas', icon: TestTube },
 ];
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, activeTab, onTabChange }) => {

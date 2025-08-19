@@ -24,6 +24,7 @@ import { AchievementsManager } from '../components/admin/AchievementsManager';
 import { MissionsManager } from '../components/admin/MissionsManager';
 import { ShopManager } from '../components/admin/ShopManager';
 import { GameModesPage } from './admin/GameModesPage';
+import EffectTestPage from '../components/EffectTestPage';
 
 export const AdminPage: React.FC = () => {
   // Persistir a aba ativa no localStorage
@@ -86,6 +87,8 @@ export const AdminPage: React.FC = () => {
         return <SecurityPage />;
       case 'game-modes':
         return <GameModesPage />;
+      case 'effect-tester':
+        return <EffectTestPage />;
       default:
         return <AdminDashboard />;
     }
