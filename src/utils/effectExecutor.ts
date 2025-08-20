@@ -206,10 +206,14 @@ export function executeSimpleEffect(
       changes.population = (changes.population || 0) + effect.amount;
       break;
     case 'GAIN_DEFENSE':
-      // Implementar sistema de defesa
+      // Sistema de defesa - adiciona proteção
+      (changes as any).defense = (changes as any).defense || 0;
+      (changes as any).defense += effect.amount;
       break;
     case 'GAIN_LANDMARK':
-      // Implementar sistema de landmarks
+      // Sistema de landmarks - adiciona landmark
+      (changes as any).landmarks = (changes as any).landmarks || 0;
+      (changes as any).landmarks += effect.amount;
       break;
     case 'PRODUCE_REPUTATION': {
       // Produzir reputação
@@ -234,20 +238,24 @@ export function executeSimpleEffect(
     case 'OPTIONAL_DISCARD_BOOST_FARM':
       // Implementar boost opcional de fazenda (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      (changes as any).optionalFarmBoost = effect.amount;
       break;
     case 'OPTIONAL_DISCARD_ELEMENTAL':
       // Sistema de descarte opcional para invocar elemental
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
       // O elemental será adicionado à mão do jogador quando ele escolher descartar
+      (changes as any).optionalElemental = effect.amount;
       break;
       
     case 'INVOKE_RANDOM_ELEMENTAL':
       // Sistema de invocação aleatória de elemental
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      (changes as any).randomElemental = effect.amount;
       break;
     case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
       // Implementar compra opcional de carta mágica (requer descarte de carta)
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      (changes as any).optionalMagicCard = effect.amount;
       break;
     case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE': {
       // Boost duplo para todas as construções
@@ -304,6 +312,7 @@ export function executeSimpleEffect(
     case 'EXTRA_CARD_PLAY':
       // Este efeito será tratado pelo sistema de estado do jogo
       // para permitir jogar cartas adicionais
+      (changes as any).extraCardPlay = effect.amount;
       break;
     case 'CANCEL_EVENT': {
       // Cancelar último evento aplicado
@@ -338,9 +347,11 @@ export function executeSimpleEffect(
     case 'OPTIONAL_DISCARD_GAIN_MATERIALS':
       // Efeito opcional: descartar uma carta para ganhar materiais
       // Este efeito será tratado pelo sistema de UI para escolha do jogador
+      (changes as any).optionalGainMaterials = effect.amount;
       break;
     case 'INDESTRUCTIBLE':
       // Efeito de indestrutibilidade: lógica implementada no useGameState
+      (changes as any).indestructible = effect.duration || 1;
       break;
     case 'BOOST_ALL_CITIES_TEMP': {
       // Aplica boost temporário para todas as cidades
@@ -364,11 +375,13 @@ export function executeSimpleEffect(
     case 'ON_PLAY_FARM': {
       // Este efeito é tratado pelo sistema de eventos do jogo
       // Será acionado quando uma carta de farm for jogada
+      (changes as any).onPlayFarm = effect.amount;
       break;
     }
     case 'ON_PLAY_CITY': {
       // Este efeito é tratado pelo sistema de eventos do jogo
       // Será acionado quando uma carta de city for jogada
+      (changes as any).onPlayCity = effect.amount;
       break;
     }
     case 'DRAW_CARD': {
@@ -395,6 +408,7 @@ export function executeSimpleEffect(
     case 'ON_PLAY_MAGIC': {
       // Este efeito é tratado pelo sistema de eventos do jogo
       // Será acionado quando uma carta de magia for jogada
+      (changes as any).onPlayMagic = effect.amount;
       break;
     }
     case 'BOOST_ALL_CITIES_MATERIALS_TEMP': {
@@ -412,6 +426,7 @@ export function executeSimpleEffect(
     case 'OPTIONAL_PAY_COINS': {
       // Este efeito é tratado pelo sistema de UI para escolha do jogador
       // Permite pagar moedas para obter um efeito opcional
+      (changes as any).optionalPayCoins = effect.amount;
       break;
     }
     case 'RESTRICT_FARM_ACTIVATION': {
@@ -419,6 +434,39 @@ export function executeSimpleEffect(
       // para restringir a ativação de fazendas
       (changes as any).restrictFarmActivation = true;
       (changes as any).restrictFarmActivationDuration = effect.duration || 1;
+      break;
+    }
+    // Novos efeitos implementados
+    case 'REDUCE_CITY_COST': {
+      // Reduz custo de construção de cidades
+      (changes as any).reduceCityCost = effect.amount;
+      break;
+    }
+    case 'DISCARD_CARD': {
+      // Força descarte de cartas
+      (changes as any).discardCards = effect.amount;
+      break;
+    }
+    case 'CREATE_CITY_CARD': {
+      // Cria uma carta de cidade
+      (changes as any).createCityCard = effect.amount;
+      break;
+    }
+    case 'BOOST_CONSTRUCTION_COST_REDUCTION': {
+      // Reduz custo de todas as construções
+      (changes as any).constructionCostReduction = effect.amount;
+      break;
+    }
+    case 'EXTRA_BUILD_CITY': {
+      // Permite construir cidade extra
+      (changes as any).extraBuildCity = effect.amount;
+      break;
+    }
+    case 'REDUCE_PRODUCTION': {
+      // Reduz produção geral
+      changes.food = (changes.food || 0) - effect.amount;
+      changes.coins = (changes.coins || 0) - effect.amount;
+      changes.materials = (changes.materials || 0) - effect.amount;
       break;
     }
   }
@@ -550,8 +598,13 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
       result = (gameState.resources.population || 0) >= 2;
       break;
       
-    default:
-      result = false;
+    case 'IF_TEMPLE_EXISTS':
+      result = allCards.some(card => 
+        card.name.toLowerCase().includes('templo') || 
+        card.name.toLowerCase().includes('altar') ||
+        card.name.toLowerCase().includes('santuario') ||
+        (card.tags && card.tags.includes('templo'))
+      );
       break;
   }
   
@@ -934,6 +987,55 @@ export function applyResourceChanges(gameState: GameState, changes: Partial<Reso
             break;
           case 'restrictFarmActivationDuration':
             gameState.restrictFarmActivationDuration = amount;
+            break;
+          // Novos campos especiais
+          case 'defense':
+            (gameState as any).defense = ((gameState as any).defense || 0) + amount;
+            break;
+          case 'landmarks':
+            (gameState as any).landmarks = ((gameState as any).landmarks || 0) + amount;
+            break;
+          case 'optionalFarmBoost':
+          case 'optionalElemental':
+          case 'randomElemental':
+          case 'optionalMagicCard':
+          case 'extraCardPlay':
+          case 'optionalGainMaterials':
+          case 'indestructible':
+          case 'onPlayFarm':
+          case 'onPlayCity':
+          case 'onPlayMagic':
+          case 'optionalPayCoins':
+            // Estes efeitos especiais são aplicados mas não alteram recursos diretamente
+            (gameState as any)[resource] = amount;
+            break;
+          case 'eventProtection':
+            (gameState as any).eventProtection = ((gameState as any).eventProtection || 0) + amount;
+            break;
+          case 'farmsBoost':
+          case 'citiesBoost':
+          case 'farmsBoostTemp':
+          case 'citiesBoostTemp':
+          case 'constructionsBoost':
+            // Boosts temporários e permanentes
+            (gameState as any)[resource] = ((gameState as any)[resource] || 0) + amount;
+            break;
+          case 'blockNegativeEvent':
+          case 'cancelEvent':
+          case 'destroyCard':
+          case 'stealCard':
+          case 'absorbNegative':
+            // Efeitos de sistema
+            (gameState as any)[resource] = amount;
+            break;
+          // Novos efeitos especiais
+          case 'reduceCityCost':
+          case 'discardCards':
+          case 'createCityCard':
+          case 'constructionCostReduction':
+          case 'extraBuildCity':
+            // Efeitos de construção e cartas
+            (gameState as any)[resource] = amount;
             break;
         }
       }
