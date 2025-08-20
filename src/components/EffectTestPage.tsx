@@ -92,13 +92,13 @@ export default function EffectTestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+        <div className="surface-elevated p-6 mb-6">
+          <h1 className="text-3xl font-bold text-text-primary mb-4">
             🧪 Sistema de Teste de Efeitos de Cartas
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-text-secondary mb-6">
             Teste individual ou em lote o sistema de effect_logic das cartas do jogo.
           </p>
           
@@ -106,7 +106,7 @@ export default function EffectTestPage() {
             <Button 
               onClick={runFullTest} 
               disabled={isRunning}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-primary"
             >
               {isRunning ? 'Testando...' : `Testar Todas as ${cards.length} Cartas`}
             </Button>
@@ -114,6 +114,7 @@ export default function EffectTestPage() {
             <Button 
               onClick={() => setTestResults([])}
               variant="outline"
+              className="border-border text-text-secondary hover:bg-surface-hover"
             >
               Limpar Resultados
             </Button>
@@ -122,23 +123,23 @@ export default function EffectTestPage() {
           {/* Resumo */}
           {testResults.length > 0 && (
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div className="text-2xl font-bold text-green-700">
+              <div className="bg-accent/10 p-4 rounded-lg border border-accent/30">
+                <div className="text-2xl font-bold text-accent">
                   {testResults.filter(r => r.status === 'success').length}
                 </div>
-                <div className="text-green-600">Sucessos</div>
+                <div className="text-text-secondary">Sucessos</div>
               </div>
-              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                <div className="text-2xl font-bold text-red-700">
+              <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/30">
+                <div className="text-2xl font-bold text-destructive">
                   {testResults.filter(r => r.status === 'failed').length}
                 </div>
-                <div className="text-red-600">Falhas</div>
+                <div className="text-text-secondary">Falhas</div>
               </div>
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <div className="text-2xl font-bold text-yellow-700">
+              <div className="bg-secondary/10 p-4 rounded-lg border border-secondary/30">
+                <div className="text-2xl font-bold text-secondary">
                   {testResults.filter(r => r.status === 'warning').length}
                 </div>
-                <div className="text-yellow-600">Avisos</div>
+                <div className="text-text-secondary">Avisos</div>
               </div>
             </div>
           )}
@@ -146,27 +147,27 @@ export default function EffectTestPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Lista de Cartas por Tipo */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="surface-elevated p-6">
+            <h2 className="text-xl font-bold text-text-primary mb-4">
               Cartas por Tipo
             </h2>
             
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {Object.entries(cardsByType).map(([type, typeCards]) => (
-                <div key={type} className="border rounded-lg p-3">
-                  <h3 className="font-semibold text-gray-700 mb-2 capitalize">
+                <div key={type} className="border border-border rounded-lg p-3 bg-surface">
+                  <h3 className="font-semibold text-text-primary mb-2 capitalize">
                     {type} ({typeCards.length})
                   </h3>
                   <div className="space-y-1">
                     {typeCards.slice(0, 10).map(card => (
                       <div key={card.id} className="flex items-center justify-between text-sm">
-                        <span className="truncate">{card.name}</span>
+                        <span className="truncate text-text-secondary">{card.name}</span>
                         <div className="flex gap-1">
                           <Button
                             size="sm"
                             variant="outline" 
                             onClick={() => testSingleCard(card)}
-                            className="text-xs"
+                            className="text-xs border-border text-text-secondary hover:bg-surface-hover"
                           >
                             Testar
                           </Button>
@@ -178,7 +179,7 @@ export default function EffectTestPage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => testDiceForCard(card, dice)}
-                                  className="text-xs w-6 h-6 p-0"
+                                  className="text-xs w-6 h-6 p-0 text-text-muted hover:bg-surface-hover hover:text-text-primary"
                                 >
                                   {dice}
                                 </Button>
@@ -190,7 +191,7 @@ export default function EffectTestPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => testConditionalForCard(card)}
-                              className="text-xs"
+                              className="text-xs border-border text-text-secondary hover:bg-surface-hover"
                             >
                               Cond
                             </Button>
@@ -199,7 +200,7 @@ export default function EffectTestPage() {
                       </div>
                     ))}
                     {typeCards.length > 10 && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-text-muted">
                         ... e mais {typeCards.length - 10} cartas
                       </div>
                     )}
@@ -210,14 +211,14 @@ export default function EffectTestPage() {
           </div>
 
           {/* Resultados dos Testes */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="surface-elevated p-6">
+            <h2 className="text-xl font-bold text-text-primary mb-4">
               Resultados dos Testes
             </h2>
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {testResults.length === 0 ? (
-                <div className="text-gray-500 text-center py-8">
+                <div className="text-text-muted text-center py-8">
                   Nenhum teste executado ainda.
                   <br />
                   Clique em "Testar" em uma carta ou execute o teste completo.
@@ -228,20 +229,20 @@ export default function EffectTestPage() {
                     key={index}
                     className={`p-3 rounded-lg border-l-4 ${
                       result.status === 'success' 
-                        ? 'bg-green-50 border-green-500' 
+                        ? 'bg-accent/10 border-accent' 
                         : result.status === 'failed'
-                        ? 'bg-red-50 border-red-500'
-                        : 'bg-yellow-50 border-yellow-500'
+                        ? 'bg-destructive/10 border-destructive'
+                        : 'bg-secondary/10 border-secondary'
                     }`}
                   >
-                    <div className="font-semibold text-sm">
+                    <div className="font-semibold text-sm text-text-primary">
                       {result.name}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
+                    <div className="text-xs text-text-secondary mt-1">
                       {result.message}
                     </div>
                     {result.details && typeof result.details === 'string' && (
-                      <div className="text-xs text-gray-500 mt-2 whitespace-pre-line">
+                      <div className="text-xs text-text-muted mt-2 whitespace-pre-line">
                         {result.details}
                       </div>
                     )}
@@ -253,33 +254,33 @@ export default function EffectTestPage() {
         </div>
 
         {/* Estatísticas do Sistema */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="surface-elevated p-6 mt-6">
+          <h2 className="text-xl font-bold text-text-primary mb-4">
             📊 Estatísticas do Sistema
           </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{cards.length}</div>
-              <div className="text-sm text-gray-600">Total de Cartas</div>
+              <div className="text-2xl font-bold text-city-color">{cards.length}</div>
+              <div className="text-sm text-text-secondary">Total de Cartas</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-accent">
                 {cards.filter(c => c.effect_logic).length}
               </div>
-              <div className="text-sm text-gray-600">Com effect_logic</div>
+              <div className="text-sm text-text-secondary">Com effect_logic</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-magic-color">
                 {cards.filter(c => c.effect_logic?.includes('ON_DICE')).length}
               </div>
-              <div className="text-sm text-gray-600">Efeitos de Dado</div>
+              <div className="text-sm text-text-secondary">Efeitos de Dado</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-event-color">
                 {cards.filter(c => c.effect_logic?.includes('IF_')).length}
               </div>
-              <div className="text-sm text-gray-600">Efeitos Condicionais</div>
+              <div className="text-sm text-text-secondary">Efeitos Condicionais</div>
             </div>
           </div>
         </div>
