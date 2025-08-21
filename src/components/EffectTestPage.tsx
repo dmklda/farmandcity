@@ -213,49 +213,48 @@ export default function EffectTestPage() {
 
           {/* Resultados dos Testes */}
           <div className="surface-elevated p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-text-primary">
-                Resultados dos Testes
-              </h2>
-              
-              {/* Filtros de Status */}
-              {testResults.length > 0 && (
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'all' ? 'default' : 'outline'}
-                    onClick={() => setStatusFilter('all')}
-                    className="text-xs"
-                  >
-                    Todos
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'success' ? 'default' : 'outline'}
-                    onClick={() => setStatusFilter('success')}
-                    className="text-xs border-accent/50 text-accent hover:bg-accent/10"
-                  >
-                    Sucessos
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'failed' ? 'default' : 'outline'}
-                    onClick={() => setStatusFilter('failed')}
-                    className="text-xs border-destructive/50 text-destructive hover:bg-destructive/10"
-                  >
-                    Erros
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'warning' ? 'default' : 'outline'}
-                    onClick={() => setStatusFilter('warning')}
-                    className="text-xs border-secondary/50 text-secondary hover:bg-secondary/10"
-                  >
-                    Avisos
-                  </Button>
-                </div>
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-text-primary mb-4">
+              Resultados dos Testes
+            </h2>
+            
+            {/* Filtros de Status */}
+            {testResults.length > 0 && (
+              <div className="flex gap-2 mb-4 p-3 bg-surface rounded-lg">
+                <span className="text-sm text-text-secondary mr-2">Filtrar:</span>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('all')}
+                  className="text-xs h-8"
+                >
+                  Todos ({testResults.length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'success' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('success')}
+                  className="text-xs h-8 bg-accent/20 border-accent text-accent hover:bg-accent hover:text-white"
+                >
+                  ✅ Sucessos ({testResults.filter(r => r.status === 'success').length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'failed' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('failed')}
+                  className="text-xs h-8 bg-destructive/20 border-destructive text-destructive hover:bg-destructive hover:text-white"
+                >
+                  ❌ Erros ({testResults.filter(r => r.status === 'failed').length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={statusFilter === 'warning' ? 'default' : 'outline'}
+                  onClick={() => setStatusFilter('warning')}
+                  className="text-xs h-8 bg-secondary/20 border-secondary text-secondary hover:bg-secondary hover:text-white"
+                >
+                  ⚠️ Avisos ({testResults.filter(r => r.status === 'warning').length})
+                </Button>
+              </div>
+            )}
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {testResults.length === 0 ? (
