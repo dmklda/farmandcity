@@ -17,6 +17,7 @@ export default function EffectTestPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [diceNumber, setDiceNumber] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed' | 'warning'>('all');
 
   const runFullTest = async () => {
     setIsRunning(true);
@@ -212,9 +213,49 @@ export default function EffectTestPage() {
 
           {/* Resultados dos Testes */}
           <div className="surface-elevated p-6">
-            <h2 className="text-xl font-bold text-text-primary mb-4">
-              Resultados dos Testes
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-text-primary">
+                Resultados dos Testes
+              </h2>
+              
+              {/* Filtros de Status */}
+              {testResults.length > 0 && (
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={statusFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter('all')}
+                    className="text-xs"
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={statusFilter === 'success' ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter('success')}
+                    className="text-xs border-accent/50 text-accent hover:bg-accent/10"
+                  >
+                    Sucessos
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={statusFilter === 'failed' ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter('failed')}
+                    className="text-xs border-destructive/50 text-destructive hover:bg-destructive/10"
+                  >
+                    Erros
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={statusFilter === 'warning' ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter('warning')}
+                    className="text-xs border-secondary/50 text-secondary hover:bg-secondary/10"
+                  >
+                    Avisos
+                  </Button>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {testResults.length === 0 ? (
@@ -224,7 +265,9 @@ export default function EffectTestPage() {
                   Clique em "Testar" em uma carta ou execute o teste completo.
                 </div>
               ) : (
-                testResults.map((result, index) => (
+                testResults
+                  .filter(result => statusFilter === 'all' || result.status === statusFilter)
+                  .map((result, index) => (
                   <div 
                     key={index}
                     className={`p-3 rounded-lg border-l-4 ${
