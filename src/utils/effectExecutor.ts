@@ -469,6 +469,35 @@ export function executeSimpleEffect(
       changes.materials = (changes.materials || 0) - effect.amount;
       break;
     }
+    case 'BOOST_ALL_CITIES_COINS_TEMP': {
+      // Boost temporário para todas as cidades (coins)
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      const duration = effect.duration || 1;
+      (changes as any).citiesCoinsBoostTemp = (changes as any).citiesCoinsBoostTemp || 0;
+      (changes as any).citiesCoinsBoostTemp += effect.amount * cityCount;
+      (changes as any).citiesCoinsBoostTempDuration = duration;
+      break;
+    }
+    case 'BOOST_MAGIC_COST_REDUCTION': {
+      // Redução permanente de custo de magia
+      (changes as any).magicCostReduction = (changes as any).magicCostReduction || 0;
+      (changes as any).magicCostReduction += effect.amount;
+      break;
+    }
+    case 'BOOST_MAGIC_COST_REDUCTION_TEMP': {
+      // Redução temporária de custo de magia
+      const duration = effect.duration || 1;
+      (changes as any).magicCostReductionTemp = (changes as any).magicCostReductionTemp || 0;
+      (changes as any).magicCostReductionTemp += effect.amount;
+      (changes as any).magicCostReductionTempDuration = duration;
+      break;
+    }
+    case 'PROTECT_FARMS': {
+      // Proteção para fazendas contra eventos negativos
+      (changes as any).farmProtection = (changes as any).farmProtection || 0;
+      (changes as any).farmProtection += effect.amount;
+      break;
+    }
   }
   
   // Atualizar tracking se o efeito foi executado
@@ -877,10 +906,14 @@ export function executeCardEffects(
   const before = { ...gameState.resources };
   const totalChanges: Partial<Resources> = {};
 
+  console.log(`[EFFECT DEBUG] Executando carta ${cardId} com effect_logic:`, effectLogic);
+  console.log(`[EFFECT DEBUG] Parsed result:`, JSON.stringify(parsed, null, 2));
+
   // Executar efeitos simples
   if (parsed.simple && parsed.simple.length > 0) {
     console.log('[EFFECT] Executando efeitos simples', parsed.simple, 'para carta', cardId);
     const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId);
+    console.log('[EFFECT DEBUG] Mudanças dos efeitos simples:', simpleChanges);
     mergeResourceChanges(totalChanges, simpleChanges);
   }
 
@@ -1034,6 +1067,12 @@ export function applyResourceChanges(gameState: GameState, changes: Partial<Reso
           case 'createCityCard':
           case 'constructionCostReduction':
           case 'extraBuildCity':
+          case 'citiesCoinsBoostTemp':
+          case 'citiesCoinsBoostTempDuration':
+          case 'magicCostReduction':
+          case 'magicCostReductionTemp':
+          case 'magicCostReductionTempDuration':
+          case 'farmProtection':
             // Efeitos de construção e cartas
             (gameState as any)[resource] = amount;
             break;

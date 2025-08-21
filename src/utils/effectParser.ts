@@ -295,10 +295,8 @@ export function parseRandomEffectLogic(effectLogic: string): RandomEffect[] {
       
       if (!isNaN(chance) && effectParts.length > 0) {
         const effectString = effectParts.join(':');
-        // Usar ';' como separador principal e '|' como alternativa (para compatibilidade)
-        const [mainEffect, fallbackEffect] = effectString.includes(';') 
-          ? effectString.split(';')
-          : effectString.split('|');
+        // Usar '|' como separador para efeitos alternativos
+        const [mainEffect, fallbackEffect] = effectString.split('|');
         
         const mainEffects = parseSimpleEffectLogic(mainEffect);
         let fallback: SimpleEffect | undefined;
@@ -317,6 +315,44 @@ export function parseRandomEffectLogic(effectLogic: string): RandomEffect[] {
           };
           
           effects.push(randomEffect);
+        }
+      }
+    }
+  }
+  
+  return effects;
+}
+
+/**
+ * Parser para efeitos ON_PLAY_* 
+ * Formato: "ON_PLAY_FARM:GAIN_MATERIALS:1"
+ */
+export function parseOnPlayEffects(effectLogic: string): SimpleEffect[] {
+  const effects: SimpleEffect[] = [];
+  const statements = effectLogic.split(';');
+  
+  for (const statement of statements) {
+    if (statement.includes('ON_PLAY_')) {
+      const [triggerPart, ...effectParts] = statement.split(':');
+      
+      if (effectParts.length >= 2) {
+        const effectType = effectParts[0] as SimpleEffectType;
+        const amount = parseInt(effectParts[1]);
+        
+        if (!isNaN(amount)) {
+          effects.push({
+            type: triggerPart as SimpleEffectType, // ON_PLAY_FARM, ON_PLAY_CITY, etc.
+            amount: 0, // O trigger em si não tem amount
+            target: effectType,
+            frequency: 'ON_CONDITION'
+          } as any);
+          
+          // Também adicionar o efeito real que será executado
+          effects.push({
+            type: effectType,
+            amount: amount,
+            frequency: 'ON_CONDITION'
+          });
         }
       }
     }
@@ -470,6 +506,13 @@ export function parseEffectLogic(effectLogic: string | null): CardEffectLogic | 
     result.random = parseRandomEffectLogic(effectLogic);
   }
   
+  // Verificar se tem efeitos ON_PLAY_*
+  if (effectLogic.includes('ON_PLAY_')) {
+    const onPlayEffects = parseOnPlayEffects(effectLogic);
+    if (!result.simple) result.simple = [];
+    result.simple.push(...onPlayEffects);
+  }
+
   // Verificar se tem boost de construções
   if (effectLogic.includes('BOOST_CONSTRUCTIONS:')) {
     result.constructionBoost = parseConstructionBoostLogic(effectLogic);
