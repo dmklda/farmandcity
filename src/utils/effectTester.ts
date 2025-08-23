@@ -68,15 +68,62 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
 
     // 4. Verificar mudanças
     const resourceChanges = Object.keys(executionResult).length > 0;
-    const hasChanges = resourceChanges || 
-                      JSON.stringify(beforeResources) !== JSON.stringify(afterResources) ||
-                      JSON.stringify(beforeStats) !== JSON.stringify(afterStats);
+    const basicResourcesChanged = JSON.stringify(beforeResources) !== JSON.stringify(afterResources);
+    const statsChanged = JSON.stringify(beforeStats) !== JSON.stringify(afterStats);
+    
+    // Verificar se há efeitos especiais (não recursos básicos)
+    const executionResultAny = executionResult as any;
+    const hasSpecialEffects = executionResult && (
+      executionResultAny.hasEffectExecuted ||
+      executionResultAny.reputation !== undefined ||
+      executionResultAny.defense !== undefined ||
+      executionResultAny.landmarks !== undefined ||
+      executionResultAny.farmsBoost !== undefined ||
+      executionResultAny.citiesBoost !== undefined ||
+      executionResultAny.farmsBoostTemp !== undefined ||
+      executionResultAny.citiesBoostTemp !== undefined ||
+      executionResultAny.constructionsBoost !== undefined ||
+      executionResultAny.onPlayFarm !== undefined ||
+      executionResultAny.onPlayCity !== undefined ||
+      executionResultAny.onPlayMagic !== undefined ||
+      executionResultAny.drawCards !== undefined ||
+      executionResultAny.drawCityCards !== undefined ||
+      executionResultAny.duplicateMagicEffects !== undefined ||
+      executionResultAny.citiesMaterialsBoostTemp !== undefined ||
+      executionResultAny.optionalPayCoins !== undefined ||
+      executionResultAny.restrictFarmActivation !== undefined ||
+      executionResultAny.reduceCityCost !== undefined ||
+      executionResultAny.discardCards !== undefined ||
+      executionResultAny.createCityCard !== undefined ||
+      executionResultAny.constructionCostReduction !== undefined ||
+      executionResultAny.extraBuildCity !== undefined ||
+      executionResultAny.citiesCoinsBoostTemp !== undefined ||
+      executionResultAny.magicCostReduction !== undefined ||
+      executionResultAny.magicCostReductionTemp !== undefined ||
+      executionResultAny.farmProtection !== undefined ||
+      executionResultAny.eventProtection !== undefined ||
+      executionResultAny.blockNegativeEvent !== undefined ||
+      executionResultAny.cancelEvent !== undefined ||
+      executionResultAny.destroyCard !== undefined ||
+      executionResultAny.absorbNegative !== undefined ||
+      executionResultAny.extraCardPlay !== undefined ||
+      executionResultAny.indestructible !== undefined ||
+      executionResultAny.optionalFarmBoost !== undefined ||
+      executionResultAny.optionalElemental !== undefined ||
+      executionResultAny.randomElemental !== undefined ||
+      executionResultAny.optionalMagicCard !== undefined ||
+      executionResultAny.optionalGainMaterials !== undefined ||
+      // Verificar efeitos não implementados também
+      Object.keys(executionResultAny).some(key => key.startsWith('unimplemented_'))
+    );
+    
+    const hasChanges = resourceChanges || basicResourcesChanged || statsChanged || hasSpecialEffects;
 
     return {
       success: hasChanges,
       message: hasChanges 
-        ? `✅ Efeito executado com sucesso! Mudanças: ${JSON.stringify(executionResult)}`
-        : '⚠️ Efeito parseado mas não executou mudanças',
+        ? `✅ Efeito executado com sucesso! Mudanças: ${JSON.stringify(executionResult)} | Recursos: ${basicResourcesChanged ? 'Sim' : 'Não'} | Stats: ${statsChanged ? 'Sim' : 'Não'} | Especiais: ${hasSpecialEffects ? 'Sim' : 'Não'}`
+        : '⚠️ Efeito parseado mas não executou mudanças detectáveis',
       parsedEffect,
       executionResult
     };
