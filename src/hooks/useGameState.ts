@@ -3550,18 +3550,23 @@ export function useGameState() {
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar executeCardEffects com o gameState temporário para permitir execução de PRODUCE_*
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id) : {};
+        // Usar executeCardEffects com força total (ignora tracking de frequência) para produção
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id, undefined, undefined, undefined, undefined, true) : {};
         
         console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {
           effect_logic: card.effect_logic,
           result: p
         });
         
-        Object.entries(p).forEach(([key, value]) => {
-          prod[key as keyof Resources] += value || 0;
-          if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
-        });
+        // Verificar se p é um objeto válido com propriedades numéricas
+        if (p && typeof p === 'object') {
+          Object.entries(p).forEach(([key, value]) => {
+            if (typeof value === 'number') {
+              prod[key as keyof Resources] += value || 0;
+              if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
+            }
+          });
+        }
       }
     });
     

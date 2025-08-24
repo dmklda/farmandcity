@@ -1104,7 +1104,8 @@ export function executeCardEffects(
   diceNumber?: number,
   setTemporaryBoosts?: (callback: (prev: any[]) => any[]) => void,
   setContinuousBoosts?: (callback: (prev: any[]) => any[]) => void,
-  addToHistory?: (message: string) => void
+  addToHistory?: (message: string) => void,
+  forceExecution?: boolean
 ): Partial<Resources> {
   console.log('[EFFECT DEBUG] Valor de effectLogic:', effectLogic);
   console.log('[EFFECT DEBUG] Tipo de effectLogic:', typeof effectLogic);
@@ -1133,7 +1134,7 @@ export function executeCardEffects(
   // Executar efeitos simples
   if (parsed.simple && parsed.simple.length > 0) {
     console.log('[EFFECT] Executando efeitos simples', parsed.simple, 'para carta', cardId);
-    const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory, false);
+    const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory, forceExecution || false);
     console.log('[EFFECT DEBUG] Mudanças dos efeitos simples:', simpleChanges);
     mergeResourceChanges(totalChanges, simpleChanges);
   }
