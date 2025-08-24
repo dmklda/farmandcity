@@ -1,6 +1,6 @@
 # Lista de Tarefas - Jogo de Construção de Cidade
 
-## 📋 Sprint 1: Fundação do Projeto
+## 📋 Sprint 1: Fundação do Projeto w
 
 ### ✅ Concluído
 - [x] Setup inicial do projeto React + TypeScript
