@@ -29,12 +29,15 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
   for (const statement of statements) {
     const [type, ...params] = statement.trim().split(':');
     
-    if (!type || !params.length) continue;
+    if (!type) continue;
     
     const effectType = type.trim() as SimpleEffectType;
-    const amount = parseInt(params[0]);
     
-    if (isNaN(amount)) continue;
+    // Alguns efeitos não precisam de parâmetros ou têm valor padrão
+    let amount = 1; // valor padrão
+    if (params.length > 0 && !isNaN(parseInt(params[0]))) {
+      amount = parseInt(params[0]);
+    }
     
     const effect: SimpleEffect = {
       type: effectType,
@@ -486,8 +489,15 @@ export function parseEffectLogic(effectLogic: string | null): CardEffectLogic | 
     }
   }
   
-  // Verificar se é um efeito simples
-  if (effectLogic.includes('PRODUCE_') || effectLogic.includes('GAIN_') || effectLogic.includes('LOSE_')) {
+  // Verificar se é um efeito simples (excluindo efeitos ON_DICE)
+  if ((effectLogic.includes('PRODUCE_') || effectLogic.includes('GAIN_') || effectLogic.includes('LOSE_') ||
+      effectLogic.includes('BOOST_') || effectLogic.includes('EXTRA_') || effectLogic.includes('DUPLICATE_') ||
+      effectLogic.includes('TRADE_') || effectLogic.includes('COST_') || effectLogic.includes('RESTORE_') ||
+      effectLogic.includes('DRAW_') || effectLogic.includes('CREATE_') || effectLogic.includes('REDUCE_') ||
+      effectLogic.includes('DISCARD_') || effectLogic.includes('PROTECT_') || effectLogic.includes('RESTRICT_') ||
+      effectLogic.includes('CANCEL_') || effectLogic.includes('BLOCK_') || effectLogic.includes('DESTROY_') ||
+      effectLogic.includes('STEAL_') || effectLogic.includes('ABSORB_') || effectLogic.includes('OPTIONAL_') ||
+      effectLogic.includes('INDESTRUCTIBLE')) && !effectLogic.includes('ON_DICE:')) {
     result.simple = parseSimpleEffectLogic(effectLogic);
   }
   

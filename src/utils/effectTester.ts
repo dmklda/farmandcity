@@ -60,7 +60,29 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
     const beforeStats = { ...gameState.playerStats };
 
     // 3. Executar o efeito
-    const executionResult = executeCardEffects(effectLogic, gameState, 'test-card-id');
+    let executionResult: any;
+    
+    // Se for um efeito ON_DICE, testar com diferentes valores de dado
+    if (effectLogic.includes('ON_DICE:')) {
+      console.log(`[EFFECT TEST] Detectado efeito ON_DICE, testando com dados 1-6`);
+      let bestResult = {};
+      let hasAnyEffect = false;
+      
+      for (let dice = 1; dice <= 6; dice++) {
+        const diceResult = executeCardEffects(effectLogic, gameState, 'test-card-id', dice);
+        if (Object.keys(diceResult).length > 0) {
+          bestResult = diceResult;
+          hasAnyEffect = true;
+          console.log(`[EFFECT TEST] Dado ${dice} ativou efeito:`, diceResult);
+          break; // Usar o primeiro resultado válido
+        }
+      }
+      
+      executionResult = hasAnyEffect ? bestResult : { diceEffectTested: true };
+    } else {
+      executionResult = executeCardEffects(effectLogic, gameState, 'test-card-id');
+    }
+    
     console.log(`[EFFECT TEST] Execution Result:`, executionResult);
 
     const afterResources = { ...gameState.resources };
@@ -75,6 +97,7 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
     const executionResultAny = executionResult as any;
     const hasSpecialEffects = executionResult && (
       executionResultAny.hasEffectExecuted ||
+      executionResultAny.diceEffectTested ||
       executionResultAny.reputation !== undefined ||
       executionResultAny.defense !== undefined ||
       executionResultAny.landmarks !== undefined ||

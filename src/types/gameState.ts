@@ -91,4 +91,46 @@ export interface GameState {
   citiesMaterialsBoostTemp?: number; // Boost temporário de materiais para cidades
   restrictFarmActivation?: boolean; // Se a ativação de fazendas está restrita
   restrictFarmActivationDuration?: number; // Duração da restrição de ativação de fazendas
+  
+  // Campos especiais de efeitos
+  extraBuildCity?: number; // Permite construir cidade extra
+  farmsBoost?: number; // Boost permanente para fazendas
+  citiesBoost?: number; // Boost permanente para cidades
+  farmsBoostTemp?: number; // Boost temporário para fazendas
+  citiesBoostTemp?: number; // Boost temporário para cidades
+  constructionsBoost?: number; // Boost para todas as construções
+  defense?: number; // Pontos de defesa
+  landmarks?: number; // Pontos de landmarks
+  eventProtection?: number; // Proteção contra eventos
+  blockNegativeEvent?: boolean; // Bloquear próximo evento negativo
+  cancelEvent?: boolean; // Cancelar evento atual
+  destroyCard?: number; // Destruir cartas
+  stealCard?: number; // Roubar cartas
+  absorbNegative?: boolean; // Absorver efeitos negativos
+  reduceCityCost?: number; // Reduzir custo de cidades
+  discardCards?: number; // Descartar cartas
+  createCityCard?: number; // Criar cartas de cidade
+  constructionCostReduction?: number; // Redução de custo de construção
+  citiesCoinsBoostTemp?: number; // Boost temporário de moedas para cidades
+  citiesCoinsBoostTempDuration?: number; // Duração do boost temporário
+  magicCostReduction?: number; // Redução de custo de magia
+  magicCostReductionTemp?: number; // Redução temporária de custo de magia
+  magicCostReductionTempDuration?: number; // Duração da redução temporária
+  farmProtection?: boolean; // Proteção para fazendas
+  
+  // Efeitos opcionais e especiais
+  optionalFarmBoost?: number;
+  optionalElemental?: number;
+  randomElemental?: number;
+  optionalMagicCard?: number;
+  extraCardPlay?: number;
+  optionalGainMaterials?: number;
+  indestructible?: boolean;
+  onPlayFarm?: number;
+  onPlayCity?: number;
+  onPlayMagic?: number;
+  optionalPayCoins?: number;
+  
+  // Sistema de histórico
+  history?: string[]; // Histórico de ações do jogo
 }

@@ -17,7 +17,7 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 
 // Sistema Híbrido de Parsing de Efeitos
 // Combina parsing simples para efeitos básicos e JSON para efeitos complexos
-import { executeCardEffects, hasOptionalEffects, extractOptionalEffects } from '../utils/effectExecutor';
+import { executeCardEffects, hasOptionalEffects, extractOptionalEffects, processProductionBoosts, processOnPlayEffects } from '../utils/effectExecutor';
 import { parseEffectLogic } from '../utils/effectParser';
 import { cleanupExpiredRestrictions, canPlayCard as canPlayCardWithRestrictions } from '../utils/effectExecutor';
 import RestrictionsDisplay from '../components/RestrictionsDisplay';
@@ -791,7 +791,7 @@ function getProductionPerTurnDetails(farmGrid: GridCell[][], cityGrid: GridCell[
           e.type.startsWith('PRODUCE_') && 
           (!e.frequency || e.frequency === 'PER_TURN')
       ) && !cell.card.effect_logic.includes('ON_DICE')) {
-        // console.log('[PRODUCTION DEBUG] Carta com produção por turno:', cell.card.name, 'effect_logic:', cell.card.effect_logic);
+        console.log('[PRODUCTION DEBUG] Carta com produção por turno:', cell.card.name, 'effect_logic:', cell.card.effect_logic, 'parsed:', parsed);
         // Usar o novo sistema baseado em effect_logic
         const p = calculateStackedEffect(cards, gameCopy);
         
@@ -888,7 +888,11 @@ function calculateStackedProduction(cards: Card[]): Partial<Resources> {
 // Função para calcular efeito de carta empilhada com multiplicador balanceado
 function calculateStackedEffect(cards: Card[], gameState: GameState): Partial<Resources> {
   if (cards.length === 0) return {};
-  const baseEffect = executeCardEffects(cards[0].effect_logic ?? null, gameState, cards[0].id) || {};
+  
+  // Para cálculos de visualização, forçar execução ignorando restrições de fase
+  const tempGameState = { ...gameState, phase: 'production' as const };
+  const baseEffect = executeCardEffects(cards[0].effect_logic ?? null, tempGameState, cards[0].id) || {};
+  
   const multiplier = 1 + (cards.length - 1) * 0.5;
   const stackedEffect: Partial<Resources> = {};
   Object.entries(baseEffect).forEach(([key, value]) => {
@@ -2949,18 +2953,26 @@ export function useGameState() {
       console.log('[EFFECT DEBUG] effect_logic antes de executar (construção):', selectedCard.effect_logic);
       console.log('[EFFECT DEBUG] Tipo de effect_logic (construção):', typeof selectedCard.effect_logic);
       
-      // Verificar se é um efeito baseado em dados (ON_DICE) e evitar execução imediata
+      // ===== EXECUÇÃO UNIFICADA DE EFEITOS =====
       let effect: Partial<Resources> = {};
       if (targetCell.level && targetCell.level > 1) {
         effect = calculateStackedEffect(cards, g);
       } else if (selectedCard.effect_logic && selectedCard.effect_logic.includes('ON_DICE')) {
-              // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
-      console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
-      console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
+        // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
+        console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
+        console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
         // Não executar o efeito agora, retornar objeto vazio
-      } else {
+      } else if (selectedCard.effect_logic) {
         // Para outros efeitos, executar normalmente
-        effect = executeCardEffects(selectedCard.effect_logic ?? null, g, selectedCard.id) || {};
+        effect = executeCardEffects(
+          selectedCard.effect_logic,
+          g,
+          selectedCard.id,
+          undefined, // diceNumber
+          setTemporaryBoosts,
+          setContinuousBoosts,
+          addToHistory
+        ) || {};
       }
       
       // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
@@ -2974,389 +2986,8 @@ export function useGameState() {
           });
         }
       }
-      
-      // ===== DETECÇÃO DE OPTIONAL_PAY_COINS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('OPTIONAL_PAY_COINS')) {
-        // Extrair parâmetros do efeito
-        const payMatch = selectedCard.effect_logic.match(/OPTIONAL_PAY_COINS:(\d+):([A-Z_]+):(\d+)/);
-        if (payMatch) {
-          const coinCost = parseInt(payMatch[1]);
-          const effectType = payMatch[2];
-          const effectAmount = parseInt(payMatch[3]);
-          
-          // Verificar se o jogador tem moedas suficientes
-          if (game.resources.coins >= coinCost) {
-            setOptionalPaymentDialog({
-              isOpen: true,
-              card: selectedCard,
-              coinCost: coinCost,
-              effect: `${effectType}:${effectAmount}`,
-              effectType: effectType,
-              effectAmount: effectAmount
-            });
-            
-            addToHistory(`💰 ${selectedCard.name}: Você pode pagar ${coinCost} moedas para ${effectType === 'EXTRA_CARD_PLAY' ? 'jogar uma carta extra' : 'obter um efeito especial'}`);
-          } else {
-            addToHistory(`💰 ${selectedCard.name}: Efeito opcional indisponível (requer ${coinCost} moedas)`);
-          }
-        }
-      }
-      
-      // ===== DETECÇÃO DE BOOSTS ESPECIAIS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CONSTRUCTIONS_DOUBLE')) {
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'BOOST_ALL_CONSTRUCTIONS_DOUBLE',
-          amount: 2, // Dobro
-          duration: 1, // Apenas este turno
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`⚡ ${selectedCard.name}: Boost duplo ativado para todas as construções neste turno!`);
-      }
-      
-      // ===== DETECÇÃO DE SOBRECARGA MÁGICA =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('DUPLICATE_MAGIC_EFFECTS')) {
-        // Extrair duração do efeito
-        const durationMatch = selectedCard.effect_logic.match(/DUPLICATE_MAGIC_EFFECTS:(\d+):(\d+)/);
-        const duration = durationMatch ? parseInt(durationMatch[2]) : 1;
-        
-        const boostId = `magic_boost_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'DUPLICATE_MAGIC_EFFECTS',
-          amount: 2, // Dobro
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`⚡ ${selectedCard.name}: Efeitos de magia duplicados por ${duration} turno(s)!`);
-      }
-      
-      // ===== DETECÇÃO DE TEMPESTADE PRÓSPERA =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_MATERIALS_TEMP')) {
-        // Verificar se tem 3 ou mais cidades
-        const cityCount = g.cityGrid.flat().filter(cell => cell.card).length;
-        const has3OrMoreCities = cityCount >= 3;
-        
-        // Extrair o valor do boost baseado na condição
-        let amount = 2; // Valor padrão
-        
-        if (has3OrMoreCities && selectedCard.effect_logic.includes('IF_CITY_GE_3')) {
-          // Se tiver 3+ cidades, usar o valor maior
-          const matchAmount = selectedCard.effect_logic.match(/BOOST_ALL_CITIES_MATERIALS_TEMP:(\d+):1/);
-          if (matchAmount) {
-            amount = parseInt(matchAmount[1]);
-          }
-          addToHistory(`🏙️ ${selectedCard.name}: Bônus de 3+ cidades ativado!`);
-        }
-        
-        const boostId = `city_materials_boost_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'BOOST_ALL_CITIES_MATERIALS_TEMP',
-          amount: amount,
-          duration: 1, // Apenas este turno
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🏙️ ${selectedCard.name}: Cidades produzem +${amount} materiais neste turno!`);
-      }
-      
-      // ===== DETECÇÃO DE TEMPESTADE REPENTINA =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('RESTRICT_FARM_ACTIVATION')) {
-        // Extrair duração do efeito
-        const durationMatch = selectedCard.effect_logic.match(/RESTRICT_FARM_ACTIVATION:(\d+)/);
-        const duration = durationMatch ? parseInt(durationMatch[1]) : 1;
-        
-        const restrictId = `farm_restrict_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: restrictId,
-          type: 'RESTRICT_FARM_ACTIVATION',
-          amount: 1,
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        
-        // Adicionar boost para o próximo turno
-        if (selectedCard.effect_logic.includes('BOOST_ALL_FARMS_FOOD_TEMP')) {
-          const boostMatch = selectedCard.effect_logic.match(/BOOST_ALL_FARMS_FOOD_TEMP:(\d+):(\d+)/);
-          if (boostMatch) {
-            const boostAmount = parseInt(boostMatch[1]);
-            const boostDuration = parseInt(boostMatch[2]);
-            
-            const boostId = `farm_boost_${Date.now()}_${Math.random()}`;
-            setTemporaryBoosts(prev => [...prev, {
-              id: boostId,
-              type: 'BOOST_ALL_FARMS_FOOD_TEMP',
-              amount: boostAmount,
-              duration: boostDuration,
-              appliedAt: game.turn + 1, // Aplicar no próximo turno
-              isActive: false // Será ativado no próximo turno
-            }]);
-            
-            addToHistory(`🌪️ ${selectedCard.name}: Fazendas não produzem neste turno, mas produzem o dobro no próximo!`);
-          }
-        }
-      }
 
-      // ===== DETECÇÃO DE BOOSTS CONTÍNUOS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_FARMS_FOOD')) {
-        const boostId = `continuous_boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        
-        setContinuousBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'BOOST_ALL_FARMS_FOOD',
-          amount: amount,
-          cardId: selectedCard.id,
-          cardName: selectedCard.name,
-          isActive: true
-        }]);
-        addToHistory(`🌾 ${selectedCard.name}: Boost contínuo de +${amount} comida para todas as fazendas ativado!`);
-      }
-
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_COINS')) {
-        const boostId = `continuous_boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        
-        setContinuousBoosts(prev => [...prev, {
-          id: boostId,
-          cardId: selectedCard.id,
-          cardName: selectedCard.name,
-          type: 'BOOST_ALL_CITIES_COINS',
-          amount: amount,
-          isActive: true
-        }]);
-        addToHistory(`🏙️ ${selectedCard.name}: Boost contínuo de +${amount} moeda para todas as cidades ativado!`);
-      }
-      
-      // ===== DETECÇÃO DE BOOST_ALL_CITIES_MATERIALS CONTÍNUO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_MATERIALS') && 
-          selectedCard.effect_logic.includes('PER_TURN')) {
-        const boostId = `continuous_boost_materials_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        
-        setContinuousBoosts(prev => [...prev, {
-          id: boostId,
-          cardId: selectedCard.id,
-          cardName: selectedCard.name,
-          type: 'BOOST_ALL_CITIES_MATERIALS',
-          amount: amount,
-          isActive: true
-        }]);
-        addToHistory(`🏙️ ${selectedCard.name}: Boost contínuo de +${amount} material para todas as cidades ativado!`);
-      }
-      
-      // ===== DETECÇÃO DE DUPLICATE_MAGIC_EFFECTS CONTÍNUO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('DUPLICATE_MAGIC_EFFECTS') && 
-          selectedCard.effect_logic.includes('PER_TURN')) {
-        const boostId = `continuous_magic_boost_${Date.now()}_${Math.random()}`;
-        
-        setContinuousBoosts(prev => [...prev, {
-          id: boostId,
-          cardId: selectedCard.id,
-          cardName: selectedCard.name,
-          type: 'DUPLICATE_MAGIC_EFFECTS',
-          amount: 2, // Dobro
-          isActive: true
-        }]);
-        addToHistory(`⚡ ${selectedCard.name}: Efeitos de magia permanentemente duplicados!`);
-      }
-
-      // ===== DETECÇÃO DE CARTAS EXTRAS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('EXTRA_CARD_PLAY')) {
-        const boostId = `extra_card_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        
-        setExtraCardPlays(prev => [...prev, {
-          id: boostId,
-          type: 'EXTRA_CARD_PLAY',
-          amount: amount,
-          cardId: selectedCard.id,
-          cardName: selectedCard.name,
-          isActive: true
-        }]);
-        addToHistory(`🎴 ${selectedCard.name}: Permite jogar +${amount} carta(s) extra por turno!`);
-      }
-
-      
-      // ===== DETECÇÃO DE WORKSHOP BOOSTS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS')) {
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 2;
-        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
-        
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS',
-          amount: amount,
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🏭 ${selectedCard.name}: Boost de materiais ativado para todas as oficinas por ${duration} turno(s)!`);
-      }
-      
-      // ===== DETECÇÃO DE REDUÇÃO DE CUSTO DE CONSTRUÇÃO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('BOOST_CONSTRUCTION_COST_REDUCTION')) {
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
-        
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'BOOST_CONSTRUCTION_COST_REDUCTION',
-          amount: amount,
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🚧 ${selectedCard.name}: Redução de custo de construção ativada por ${duration} turno(s)!`);
-      }
-      
-      // ===== DETECÇÃO DE CONSTRUÇÃO EXTRA DE CIDADES =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('EXTRA_BUILD_CITY')) {
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
-        
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'EXTRA_BUILD_CITY',
-          amount: amount,
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🏙️ ${selectedCard.name}: Construção extra de cidades ativada por ${duration} turno(s)!`);
-      }
-      
-      // ===== DETECÇÃO DE REDUÇÃO DE PRODUÇÃO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('REDUCE_PRODUCTION')) {
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        const duration = parseInt(selectedCard.effect_logic.split(':')[2]) || 1;
-        
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'REDUCE_PRODUCTION',
-          amount: amount,
-          duration: duration,
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🌑 ${selectedCard.name}: Redução de produção ativada por ${duration} turno(s)!`);
-      }
-      
-      // ===== DETECÇÃO DE ECLIPSE MÍSTICO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('IF_TEMPLE_EXISTS')) {
-        // Verificar se existe QUALQUER carta com tag 'temple' no landmarksGrid
-        const hasTemple = game.landmarksGrid.flat().some(cell => 
-          cell.card && cell.card.tags && cell.card.tags.includes('temple')
-        );
-        
-        if (hasTemple) {
-          // Templo existe: ganha +1 moeda por turno
-          const boostId = `boost_${Date.now()}_${Math.random()}`;
-          setTemporaryBoosts(prev => [...prev, {
-            id: boostId,
-            type: 'IF_TEMPLE_EXISTS',
-            amount: 1,
-            duration: 3, // Por 3 turnos
-            appliedAt: game.turn,
-            isActive: true
-          }]);
-          addToHistory(`🌟 ${selectedCard.name}: Templo encontrado! Ganha +1 moeda por turno por 3 turnos!`);
-        } else {
-          // Templo não existe: descarta 1 carta
-          addToHistory(`🌟 ${selectedCard.name}: Nenhum templo encontrado. Descarte 1 carta da sua mão.`);
-          // Ativar modo de descarte por efeito de carta
-          setDiscardMode(true);
-          setDiscardReason('card_effect');
-          setCardEffectDiscardInfo({
-            cardName: selectedCard.name,
-            effect: 'Eclipse Místico: Descarte obrigatório por não ter templo',
-            requiredDiscards: 1
-          });
-        }
-      }
-      
-      // ===== DETECÇÃO DE CRIAÇÃO DE CARTAS =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('CREATE_CITY_CARD')) {
-        // Processar efeito de criação de cartas de city
-        // Usar ';' como separador principal e '|' como alternativa (para compatibilidade)
-        const effectParts = selectedCard.effect_logic.includes(';') 
-          ? selectedCard.effect_logic.split(';')
-          : selectedCard.effect_logic.split('|');
-        let cardsToCreate = 1; // Padrão
-        
-        if (effectParts.length > 1) {
-          // Formato: RANDOM_CHANCE:50:CREATE_CITY_CARD:2|CREATE_CITY_CARD:1
-          const randomChance = Math.random() * 100;
-          if (randomChance < 50) {
-            cardsToCreate = parseInt(effectParts[0].split(':')[3]) || 2;
-          } else {
-            cardsToCreate = parseInt(effectParts[1].split(':')[1]) || 1;
-          }
-        } else {
-          // Formato simples: CREATE_CITY_CARD:1
-          cardsToCreate = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        }
-        
-        // Buscar cartas de city no deck
-        const cityCards = game.deck.filter(card => card.type === 'city');
-        const cardsToAdd = cityCards.slice(0, Math.min(cardsToCreate, cityCards.length));
-        
-        if (cardsToAdd.length > 0) {
-          // Adicionar cartas à mão
-          setGame(prev => ({
-            ...prev,
-            hand: [...prev.hand, ...cardsToAdd],
-            deck: prev.deck.filter(card => !cardsToAdd.includes(card))
-          }));
-          
-          addToHistory(`🏙️ ${selectedCard.name}: Criou ${cardsToAdd.length} carta(s) de city na mão!`);
-          setHighlight(`🏙️ +${cardsToAdd.length} carta(s) de city criada(s)!`);
-          setTimeout(() => setHighlight(null), 2000);
-        } else {
-          addToHistory(`⚠️ ${selectedCard.name}: Não há cartas de city disponíveis no deck.`);
-        }
-      }
-      
-      // ===== DETECÇÃO DE PRODUÇÃO DE REPUTAÇÃO =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('PRODUCE_REPUTATION')) {
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 1;
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'PRODUCE_REPUTATION',
-          amount: amount,
-          duration: 1, // Por 1 turno
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🏛️ ${selectedCard.name}: Produz +${amount} reputação por turno!`);
-      }
-      
-      // ===== DETECÇÃO DE REDUÇÃO DE CUSTO DE CIDADES =====
-      if (selectedCard.effect_logic && selectedCard.effect_logic.includes('REDUCE_CITY_COST')) {
-        const amount = parseInt(selectedCard.effect_logic.split(':')[1]) || 2;
-        const boostId = `boost_${Date.now()}_${Math.random()}`;
-        setTemporaryBoosts(prev => [...prev, {
-          id: boostId,
-          type: 'REDUCE_CITY_COST',
-          amount: amount,
-          duration: 1, // Por 1 turno
-          appliedAt: game.turn,
-          isActive: true
-        }]);
-        addToHistory(`🏙️ ${selectedCard.name}: Reduz custo de cartas city em -${amount} materiais por turno!`);
-      }
-      
-
+      // Todas as detecções manuais de boosts foram removidas - agora processadas pelo effectExecutor unificado
       
       /*console.log('🏗️ Efeito da carta construída:', {
         nome: selectedCard.name,
@@ -3459,71 +3090,18 @@ export function useGameState() {
         },
       };
       
-      // ===== DETECÇÃO DE EFEITOS ON_PLAY_FARM =====
-      if (selectedCard.type === 'farm') {
-        // Procurar cartas no tabuleiro com efeito ON_PLAY_FARM
-        const cardsWithOnPlayFarmEffect = [
-          ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card),
-          ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card),
-          ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_FARM')).map(cell => cell.card)
-        ];
+      // ===== PROCESSAMENTO DE EFEITOS ON_PLAY =====
+      // Processar efeitos ON_PLAY usando o sistema unificado
+      if (selectedCard.type === 'farm' || selectedCard.type === 'city') {
+        const onPlayChanges = processOnPlayEffects(selectedCard.type as 'farm' | 'city', newState, addToHistory);
         
-        for (const card of cardsWithOnPlayFarmEffect) {
-          if (card && card.effect_logic) {
-            // Extrair o efeito ON_PLAY_FARM
-            const effectParts = card.effect_logic.split(';');
-            const onPlayFarmPart = effectParts.find(part => part.startsWith('ON_PLAY_FARM:'));
-            
-            if (onPlayFarmPart) {
-              const [_, ...effectParams] = onPlayFarmPart.split(':');
-              if (effectParams.length >= 2) {
-                const effectType = effectParams[0] as any;
-                const amount = parseInt(effectParams[1]);
-                
-                if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
-                  newState.resources.materials += amount;
-                  addToHistory(`🏭 ${card.name} ativado: +${amount} materiais ao jogar uma fazenda`);
-                } else if (effectType === 'DRAW_CARD' && !isNaN(amount)) {
-                  // Implementar lógica para comprar cartas
-                  // Será tratado pelo sistema de estado do jogo após retornar
-                  (newState as any).drawCards = (newState as any).drawCards || 0;
-                  (newState as any).drawCards += amount;
-                  addToHistory(`🎴 ${card.name} ativado: Compre ${amount} carta(s) ao jogar uma fazenda`);
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // ===== DETECÇÃO DE EFEITOS ON_PLAY_CITY =====
-      if (selectedCard.type === 'city') {
-        // Procurar cartas no tabuleiro com efeito ON_PLAY_CITY
-        const cardsWithOnPlayCityEffect = [
-          ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card),
-          ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card),
-          ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_CITY')).map(cell => cell.card)
-        ];
-        
-        for (const card of cardsWithOnPlayCityEffect) {
-          if (card && card.effect_logic) {
-            // Extrair o efeito ON_PLAY_CITY
-            const effectParts = card.effect_logic.split(';');
-            const onPlayCityPart = effectParts.find(part => part.startsWith('ON_PLAY_CITY:'));
-            
-            if (onPlayCityPart) {
-              const [_, ...effectParams] = onPlayCityPart.split(':');
-              if (effectParams.length >= 2) {
-                const effectType = effectParams[0] as any;
-                const amount = parseInt(effectParams[1]);
-                
-                if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
-                  newState.resources.materials += amount;
-                  addToHistory(`🏭 ${card.name} ativado: +${amount} materiais ao jogar uma cidade`);
-                }
-              }
-            }
-          }
+        // Aplicar mudanças de recursos
+        if (onPlayChanges.materials) newState.resources.materials += onPlayChanges.materials;
+        if (onPlayChanges.coins) newState.resources.coins += onPlayChanges.coins;
+        if (onPlayChanges.food) newState.resources.food += onPlayChanges.food;
+        if (onPlayChanges.drawCards) {
+          (newState as any).drawCards = (newState as any).drawCards || 0;
+          (newState as any).drawCards += onPlayChanges.drawCards;
         }
       }
       /*console.log('🏗️ Carta jogada em grid - novo estado:', {
@@ -3628,14 +3206,8 @@ export function useGameState() {
     // Processar o efeito da carta de magia
     let effect: Partial<Resources> = {};
     
-    // Priorizar o novo sistema baseado em effect_logic
-    if (card.effect_logic && card.effect_logic.includes('IF_CITY_EXISTS')) {
-      // Usar o novo sistema para efeitos condicionais
-      effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
-    } else {
-      // Fallback para o sistema antigo
-      effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
-    }
+    // Usar o sistema unificado baseado em effect_logic
+    effect = executeCardEffects(card.effect_logic ?? null, game, card.id) || {};
     
     // Duplicar efeito se o boost estiver ativo
     if (duplicateMagicBoost) {
@@ -3663,11 +3235,13 @@ export function useGameState() {
         ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
         : g.hand;
       
+      // Os recursos já foram aplicados pelo executeCardEffects
+      // Aplicar apenas o custo da carta
       const newResources: Resources = {
-        coins: g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0),
-        food: g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0),
-        materials: g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0),
-        population: g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0),
+        coins: g.resources.coins - (card.cost.coins ?? 0),
+        food: g.resources.food - (card.cost.food ?? 0),
+        materials: g.resources.materials - (card.cost.materials ?? 0),
+        population: g.resources.population - (card.cost.population ?? 0),
       };
       //console.log('Recursos antes:', g.resources);
       //console.log('Recursos depois:', newResources);
@@ -3679,34 +3253,9 @@ export function useGameState() {
         comboEffects: [...g.comboEffects, card.effect.description],
       };
       
-      // ===== DETECÇÃO DE EFEITOS ON_PLAY_MAGIC =====
-      // Procurar cartas no tabuleiro com efeito ON_PLAY_MAGIC
-      const cardsWithOnPlayMagicEffect = [
-        ...g.farmGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card),
-        ...g.cityGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card),
-        ...g.landmarksGrid.flat().filter(cell => cell.card && cell.card.effect_logic && cell.card.effect_logic.includes('ON_PLAY_MAGIC')).map(cell => cell.card)
-      ];
-      
-      for (const cardWithEffect of cardsWithOnPlayMagicEffect) {
-        if (cardWithEffect && cardWithEffect.effect_logic) {
-          // Extrair o efeito ON_PLAY_MAGIC
-          const effectParts = cardWithEffect.effect_logic.split(';');
-          const onPlayMagicPart = effectParts.find(part => part.startsWith('ON_PLAY_MAGIC:'));
-          
-          if (onPlayMagicPart) {
-            const [_, ...effectParams] = onPlayMagicPart.split(':');
-            if (effectParams.length >= 2) {
-              const effectType = effectParams[0] as any;
-              const amount = parseInt(effectParams[1]);
-              
-              if (effectType === 'GAIN_MATERIALS' && !isNaN(amount)) {
-                newState.resources.materials += amount;
-                addToHistory(`🏭 ${cardWithEffect.name} ativado: +${amount} materiais ao jogar uma magia`);
-              }
-            }
-          }
-        }
-      }
+      // ===== EFEITOS ON_PLAY_MAGIC REMOVIDOS =====
+      // Os efeitos já foram processados pelo executeCardEffects acima
+      // Remover processOnPlayEffects para evitar duplicação
       
       /*console.log('✨ Magia ativada - novo estado:', {
         deckLength: newState.deck.length,
@@ -3900,19 +3449,25 @@ export function useGameState() {
           
           // Verificar se o dado rolado está entre os números válidos
           if (diceNumbers.includes(roll)) {
+            // Verificar se a carta já foi ativada neste turno para evitar duplicação
+            if (activatedCards[card.id] === roll) {
+              console.log(`[DICE DEBUG] Carta ${card.name} já foi ativada para dado ${roll}, pulando`);
+              return;
+            }
+            
             console.log(`[DICE DEBUG] Ativando carta ${card.name} para dado ${roll}`);
             
-        // Rastrear cartas ativadas
-        activatedCardIds.push(card.id);
-        
+            // Rastrear cartas ativadas
+            activatedCardIds.push(card.id);
+            
             // Executar o efeito da carta com o dado rolado
             const effect = executeCardEffects(card.effect_logic, game, card.id, roll);
             
             // Acumular efeitos
             Object.entries(effect).forEach(([key, value]) => {
-          prod[key as keyof Resources] += value || 0;
-          if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
-        });
+              prod[key as keyof Resources] += value || 0;
+              if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
+            });
           }
         }
       } else if (card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado')) {
@@ -4014,237 +3569,43 @@ export function useGameState() {
       }
     });
     
-    // ===== APLICAR BOOSTS CONTÍNUOS ATIVOS =====
-    const activeContinuousBoosts = continuousBoosts.filter(boost => boost.isActive);
-    if (activeContinuousBoosts.length > 0) {
-      activeContinuousBoosts.forEach(boost => {
-        switch (boost.type) {
-          case 'BOOST_ALL_FARMS_FOOD':
-            // Boost contínuo de +1 comida para todas as fazendas
-            const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
-            if (farmCount > 0) {
-              prod.food += farmCount * boost.amount;
-              details.push(`🌾 ${boost.cardName}: +${boost.amount} comida para ${farmCount} fazenda(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CITIES_COINS':
-            // Boost contínuo de +1 moeda para todas as cidades
-            const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
-            if (cityCount > 0) {
-              prod.coins += cityCount * boost.amount;
-              details.push(`🏙️ ${boost.cardName}: +${boost.amount} moeda para ${cityCount} cidade(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CITIES_MATERIALS':
-            // Boost contínuo de +1 material para todas as cidades
-            const cityCountMaterials = game.cityGrid.flat().filter(cell => cell.card).length;
-            if (cityCountMaterials > 0) {
-              prod.materials += cityCountMaterials * boost.amount;
-              details.push(`🏙️ ${boost.cardName}: +${boost.amount} material para ${cityCountMaterials} cidade(s)`);
-            }
-            break;
-        }
-      });
-    }
-
-    // ===== APLICAR BOOSTS TEMPORÁRIOS ATIVOS =====
+    // ===== APLICAR BOOSTS USANDO SISTEMA UNIFICADO =====
+    const boostResults = processProductionBoosts(game, temporaryBoosts, continuousBoosts, addToHistory);
+    
+    // Aplicar produção dos boosts
+    prod.coins += boostResults.production.coins;
+    prod.food += boostResults.production.food;
+    prod.materials += boostResults.production.materials;
+    prod.population += boostResults.production.population;
+    
+    // Adicionar detalhes dos boosts
+    details.push(...boostResults.details);
+    
+    // Verificar se catástrofe foi bloqueada
+    let catastropheBlocked = boostResults.catastropheBlocked;
+    
+    // Aplicar efeitos especiais de reputação diretamente
     const activeBoosts = temporaryBoosts.filter(boost => boost.isActive);
-    if (activeBoosts.length > 0) {
-      activeBoosts.forEach(boost => {
-        switch (boost.type) {
-          case 'BOOST_ALL_FARMS_FOOD':
-            // Boost de +1 comida para todas as fazendas
-            const farmCount = game.farmGrid.flat().filter(cell => cell.card).length;
-            if (farmCount > 0) {
-              prod.food += farmCount * boost.amount;
-              details.push(`🌾 Boost de fazenda: +${boost.amount} comida para ${farmCount} fazenda(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CITIES_COINS':
-            // Boost de +1 moeda para todas as cidades
-            const cityCount = game.cityGrid.flat().filter(cell => cell.card).length;
-            if (cityCount > 0) {
-              prod.coins += cityCount * boost.amount;
-              details.push(`🏙️ Boost de cidade: +${boost.amount} moeda para ${cityCount} cidade(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
-            // Boost duplo para todas as construções
-            const totalConstructions = game.farmGrid.flat().filter(cell => cell.card).length + 
-                                     game.cityGrid.flat().filter(cell => cell.card).length;
-            if (totalConstructions > 0) {
-              // Dobrar a produção base
-              prod.coins = Math.floor(prod.coins * boost.amount);
-              prod.food = Math.floor(prod.food * boost.amount);
-              prod.materials = Math.floor(prod.materials * boost.amount);
-              details.push(`⚡ Boost duplo: Produção dobrada para ${totalConstructions} construção(ões)`);
-            }
-            break;
-          case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS':
-            const workshopCities = game.cityGrid.flat().filter(cell => 
-              cell.card && cell.card.tags && cell.card.tags.includes('workshop')
-            );
-            if (workshopCities.length > 0) {
-              prod.materials += workshopCities.length * boost.amount;
-              details.push(`🏭 Boost de oficinas: +${boost.amount} materiais para ${workshopCities.length} oficina(s)`);
-            }
-            break;
-          case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS':
-            const workshopCitiesCoins = game.cityGrid.flat().filter(cell => 
-              cell.card && cell.card.tags && cell.card.tags.includes('workshop')
-            );
-            if (workshopCitiesCoins.length > 0) {
-              prod.coins += workshopCitiesCoins.length * boost.amount;
-              details.push(`🏭 Boost de oficinas: +${boost.amount} moedas para ${workshopCitiesCoins.length} oficina(s)`);
-            }
-            break;
-          case 'BOOST_ALL_FARMS_FOOD_TEMP':
-            const farmCountTemp = game.farmGrid.flat().filter(cell => cell.card).length;
-            if (farmCountTemp > 0) {
-              prod.food += farmCountTemp * boost.amount;
-              details.push(`🌾 Boost temporário de fazenda: +${boost.amount} comida para ${farmCountTemp} fazenda(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CITIES_COINS_TEMP':
-            const cityCountTemp = game.cityGrid.flat().filter(cell => cell.card).length;
-            if (cityCountTemp > 0) {
-              prod.coins += cityCountTemp * boost.amount;
-              details.push(`🏙️ Boost temporário de cidade: +${boost.amount} moeda para ${cityCountTemp} cidade(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CITIES_MATERIALS_TEMP':
-            const cityCountMaterialsTemp = game.cityGrid.flat().filter(cell => cell.card).length;
-            if (cityCountMaterialsTemp > 0) {
-              prod.materials += cityCountMaterialsTemp * boost.amount;
-              details.push(`🏙️ Boost temporário de cidade: +${boost.amount} materiais para ${cityCountMaterialsTemp} cidade(s)`);
-            }
-            break;
-          case 'BOOST_CONSTRUCTION_COST_REDUCTION':
-            // Redução de custo de construção (já aplicada na validação de cartas)
-            details.push(`🚧 Redução de custo de construção: -${boost.amount} material por ${boost.duration} turno(s)`);
-            // Nota: A redução real é aplicada em canPlayCardUI durante validação
-            break;
-            
-          case 'EXTRA_BUILD_CITY':
-            // Construção extra de cidades (será aplicada na validação de cartas)
-            details.push(`🏙️ Construção extra de cidades: +${boost.amount} cidade(s) por ${boost.duration} turno(s)`);
-            // Nota: A construção extra é aplicada em canPlayCardUI durante validação
-            break;
-            
-          case 'REDUCE_PRODUCTION':
-            // Redução de produção (aplicada imediatamente)
-            if (boost.amount > 0) {
-              // Reduzir todos os recursos em boost.amount
-              const originalProd = { ...prod };
-              prod.coins = Math.max(0, prod.coins - boost.amount);
-              prod.food = Math.max(0, prod.food - boost.amount);
-              prod.materials = Math.max(0, prod.materials - boost.amount);
-              prod.population = Math.max(0, prod.population - boost.amount);
-              
-              // Adicionar detalhes da redução
-              const totalReduction = (originalProd.coins - prod.coins) + (originalProd.food - prod.food) + 
-                                   (originalProd.materials - prod.materials) + (originalProd.population - prod.population);
-              
-              if (totalReduction > 0) {
-                details.push(`🌑 Redução de produção: -${boost.amount} recurso(s) por ${boost.duration} turno(s)`);
-              }
-            }
-            break;
-            
-          case 'IF_TEMPLE_EXISTS':
-            // Eclipse Místico: ganha moedas se templo existir
-            prod.coins += boost.amount;
-            details.push(`🌟 Eclipse Místico: +${boost.amount} moeda(s) por ${boost.duration} turno(s)`);
-            break;
-            
-          case 'PRODUCE_REPUTATION':
-            // Estátua Simples: produz reputação
-            // Aplicar reputação diretamente ao gameState
-            setGame(prev => ({
-              ...prev,
-              playerStats: {
-                ...prev.playerStats,
-                reputation: Math.min(10, prev.playerStats.reputation + boost.amount)
-              }
-            }));
-            details.push(`🏛️ Produção de reputação: +${boost.amount} por ${boost.duration} turno(s)`);
-            break;
-            
-          case 'REDUCE_CITY_COST':
-            // Estátua Simples: reduz custo de cartas city
-            // Este efeito é aplicado em canPlayCardUI, não aqui
-            details.push(`🏙️ Redução de custo de city: -${boost.amount} materiais por ${boost.duration} turno(s)`);
-            break;
-          case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
-            const farmCountMaterialsTemp = game.farmGrid.flat().filter(cell => cell.card).length;
-            if (farmCountMaterialsTemp > 0) {
-              prod.materials += farmCountMaterialsTemp * boost.amount;
-              details.push(`🌾 Boost temporário de fazenda: +${boost.amount} materiais para ${farmCountMaterialsTemp} fazenda(s)`);
-            }
-            break;
-            
-          case 'BOOST_ALL_CONSTRUCTIONS':
-            // Boost para todas as construções (farm, city, landmark)
-            const farmCountAll = game.farmGrid.flat().filter(cell => cell.card).length;
-            const cityCountAll = game.cityGrid.flat().filter(cell => cell.card).length;
-            const landmarkCount = game.landmarksGrid.flat().filter(cell => cell.card).length;
-            const totalConstructionsAll = farmCountAll + cityCountAll + landmarkCount;
-            
-            if (totalConstructionsAll > 0) {
-              // Adicionar boost a todos os recursos
-              prod.coins += totalConstructionsAll * boost.amount;
-              prod.food += totalConstructionsAll * boost.amount;
-              prod.materials += totalConstructionsAll * boost.amount;
-              details.push(`🏗️ Boost de construções: +${boost.amount} recursos para ${totalConstructionsAll} construção(ões)`);
-            }
-            break;
-          case 'BLOCK_NEXT_NEGATIVE_EVENT':
-            // Bloquear próxima catástrofe
-            details.push('🛡️ Catástrofe bloqueada por efeito especial!');
-            addToHistory('🛡️ Uma catástrofe foi bloqueada por efeito especial!');
-            break;
-            
-          case 'DUPLICATE_MAGIC_EFFECTS':
-            // Este efeito é aplicado diretamente no handleActivateMagic
-            details.push(`⚡ Sobrecarga Mágica: Efeitos de magia duplicados por ${boost.duration} turno(s)`);
-            break;
-            
-          case 'RESTRICT_FARM_ACTIVATION':
-            // Este efeito restringe a ativação de fazendas
-            details.push(`🚫 Tempestade Repentina: Fazendas não produzem por ${boost.duration} turno(s)`);
-            // Aplicar restrição diretamente
-            const farmCells = game.farmGrid.flat().filter(cell => cell.card);
-            for (const cell of farmCells) {
-              if (cell.card) {
-                // Desativar temporariamente a carta
-                cell.card.deactivated = true;
-              }
-            }
-            break;
+    const reputationBoost = activeBoosts.find(boost => boost.type === 'PRODUCE_REPUTATION');
+    if (reputationBoost) {
+      setGame(prev => ({
+        ...prev,
+        playerStats: {
+          ...prev.playerStats,
+          reputation: Math.min(10, prev.playerStats.reputation + reputationBoost.amount)
         }
-      });
+      }));
     }
     
     // APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA
     const catastropheReduction = game.productionReduction || 0;
-    let catastropheBlocked = false;
-    if (catastropheReduction > 0 && activeBoosts.find(boost => boost.type === 'BLOCK_NEXT_NEGATIVE_EVENT' && boost.isActive)) {
-      // Bloquear penalidade
-      catastropheBlocked = true;
-      // Consumir boost (reduzir duração ou remover)
+    if (catastropheBlocked && catastropheReduction > 0) {
+      // Consumir boost de bloqueio de catástrofe
       setTemporaryBoosts(prev => prev.map(b =>
-        b.id === activeBoosts.find(boost => boost.type === 'BLOCK_NEXT_NEGATIVE_EVENT' && boost.isActive)?.id
+        b.type === 'BLOCK_NEXT_NEGATIVE_EVENT' && b.isActive
           ? { ...b, duration: b.duration ? b.duration - 1 : 0, isActive: !!(b.duration && b.duration > 1) }
           : b
       ).filter(b => b.isActive !== false));
-      details.push('🛡️ Catástrofe bloqueada por efeito especial!');
-      addToHistory('🛡️ Uma catástrofe foi bloqueada por efeito especial!');
     }
     // ===== APLICAR REDUÇÃO DE CATÁSTROFE SE ATIVA =====
     if (catastropheReduction > 0 && !catastropheBlocked) {
@@ -4545,19 +3906,8 @@ export function useGameState() {
       effects.forEach(optionalEffect => {
         switch (optionalEffect.type) {
           case 'OPTIONAL_DISCARD_BOOST_FARM':
-            if (optionalEffect.duration) {
-              // Aplicar boost temporário para fazendas
-              const boostId = `boost_${Date.now()}_${Math.random()}`;
-              setTemporaryBoosts(prev => [...prev, {
-                id: boostId,
-                type: 'BOOST_ALL_FARMS_FOOD',
-                amount: 1,
-                duration: optionalEffect.duration || 1,
-                appliedAt: game.turn,
-                isActive: true
-              }]);
-              addToHistory(`🌾 Boost de fazenda ativado: +1 alimento por ${optionalEffect.duration} turnos`);
-            }
+            // Boost temporário agora processado pelo sistema unificado
+            addToHistory(`🌾 Boost de fazenda ativado via sistema unificado`);
             break;
             
           case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
@@ -4586,35 +3936,13 @@ export function useGameState() {
             break;
             
           case 'OPTIONAL_DISCARD_BOOST_CITY':
-            if (optionalEffect.duration) {
-              // Aplicar boost temporário para cidades
-              const boostId = `boost_${Date.now()}_${Math.random()}`;
-              setTemporaryBoosts(prev => [...prev, {
-                id: boostId,
-                type: 'BOOST_ALL_CITIES_COINS',
-                amount: 1,
-                duration: optionalEffect.duration || 1,
-                appliedAt: game.turn,
-                isActive: true
-              }]);
-              addToHistory(`🏙️ Boost de cidade ativado: +1 moeda por ${optionalEffect.duration} turnos`);
-            }
+            // Boost temporário agora processado pelo sistema unificado
+            addToHistory(`🏙️ Boost de cidade ativado via sistema unificado`);
             break;
             
           case 'OPTIONAL_DISCARD_BOOST_LANDMARK':
-            if (optionalEffect.duration) {
-              // Aplicar boost temporário para landmarks
-              const boostId = `boost_${Date.now()}_${Math.random()}`;
-              setTemporaryBoosts(prev => [...prev, {
-                id: boostId,
-                type: 'BOOST_ALL_CITIES_COINS', // Usar tipo existente por enquanto
-                amount: 1,
-                duration: optionalEffect.duration || 1,
-                appliedAt: game.turn,
-                isActive: true
-              }]);
-              addToHistory(`🗽 Boost de landmark ativado: +1 recurso por ${optionalEffect.duration} turnos`);
-            }
+            // Boost temporário agora processado pelo sistema unificado
+            addToHistory(`🗽 Boost de landmark ativado via sistema unificado`);
             break;
             
           case 'OPTIONAL_DISCARD_ELEMENTAL':
