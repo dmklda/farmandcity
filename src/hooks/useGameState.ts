@@ -3542,13 +3542,22 @@ export function useGameState() {
     // Filtrar apenas cartas não desativadas
     const activeCards = allCards.filter(card => !card.deactivated);
     
+    // TEMPORARIAMENTE ALTERAR A FASE PARA 'production' PARA PERMITIR EXECUÇÃO DOS EFEITOS PRODUCE_*
+    const tempGameState = { ...game, phase: 'production' as const };
+    
     activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar diretamente executeCardEffects em vez de parseProduction
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, game, card.id) : {};
+        // Usar executeCardEffects com o gameState temporário para permitir execução de PRODUCE_*
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id) : {};
+        
+        console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {
+          effect_logic: card.effect_logic,
+          result: p
+        });
+        
         Object.entries(p).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
@@ -3634,6 +3643,8 @@ export function useGameState() {
         ...g.playerStats,
         totalProduction: g.playerStats.totalProduction + prod.coins + prod.food + prod.materials + prod.population,
       },
+      // ATUALIZAR TRACKING DE EFEITOS DO ESTADO TEMPORÁRIO
+      effectTracking: tempGameState.effectTracking,
       phase: 'production',
     }));
     if (prod.coins || prod.food || prod.materials || prod.population) {
@@ -3647,7 +3658,7 @@ export function useGameState() {
       setGame((g) => ({ ...g, phase: 'end' }));
       setProductionSummary(null);
     }, 1800);
-  }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction]);
+  }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction, game]);
 
   // --- PROPS PARA COMPONENTES ---
   const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid, game);
