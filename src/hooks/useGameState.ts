@@ -3648,8 +3648,9 @@ export function useGameState() {
         ...g.playerStats,
         totalProduction: g.playerStats.totalProduction + prod.coins + prod.food + prod.materials + prod.population,
       },
-      // ATUALIZAR TRACKING DE EFEITOS DO ESTADO TEMPORÁRIO
-      effectTracking: tempGameState.effectTracking,
+      // ATUALIZAR TRACKING DE EFEITOS APENAS SE NÃO FOR FORÇADO
+      // Se foi forçado, não queremos salvar o tracking para evitar duplicação
+      ...(tempGameState.effectTracking && tempGameState.effectTracking !== game.effectTracking ? {} : { effectTracking: tempGameState.effectTracking }),
       phase: 'production',
     }));
     if (prod.coins || prod.food || prod.materials || prod.population) {

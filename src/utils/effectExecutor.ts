@@ -27,8 +27,14 @@ import { parseEffectLogic, extractRestrictions } from './effectParser';
 function canExecuteEffect(
   effect: SimpleEffect, 
   cardId: string, 
-  gameState: GameState
+  gameState: GameState,
+  forceExecution?: boolean
 ): boolean {
+  // Se execução forçada, ignora todas as verificações de tracking
+  if (forceExecution) {
+    return true;
+  }
+  
   const currentTurn = gameState.turn;
   
   // Se não há tracking, criar um novo
@@ -138,7 +144,7 @@ export function executeSimpleEffect(
   forceExecution?: boolean
 ): Partial<Resources> {
   // Verificar se o efeito pode ser executado (exceto se forçado para cálculos)
-  if (!forceExecution && !canExecuteEffect(effect, cardId, gameState)) {
+  if (!forceExecution && !canExecuteEffect(effect, cardId, gameState, forceExecution)) {
     return {};
   }
   
