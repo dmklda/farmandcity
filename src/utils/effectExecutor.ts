@@ -1183,17 +1183,18 @@ export function executeCardEffects(
     }
   }
 
-  // Aplicar as mudanças ao gameState apenas se não for efeito de dado
+  // Aplicar as mudanças ao gameState apenas se não for efeito de dado E não for durante produção forçada
   // Para efeitos de dado, os recursos são aplicados pela função handleDiceRoll
-  if (diceNumber === undefined) {
+  // Para produção forçada, os recursos são aplicados pela função handleProduction
+  if (diceNumber === undefined && !forceExecution) {
     applyResourceChanges(gameState, totalChanges);
     
     // Log final de recursos antes/depois apenas quando aplicamos
     const after = { ...gameState.resources };
     console.log('[EFFECT] Resultado dos efeitos da carta', cardId, '\nRecursos antes:', before, '\nMudanças:', totalChanges, '\nRecursos depois:', after);
   } else {
-    // Para efeitos de dado, apenas log das mudanças calculadas
-    console.log('[EFFECT] Efeito de dado calculado para carta', cardId, '\nMudanças:', totalChanges);
+    // Para efeitos de dado ou produção forçada, apenas log das mudanças calculadas
+    console.log('[EFFECT] Efeito calculado para carta', cardId, '\nMudanças:', totalChanges, '\nForceExecution:', forceExecution);
   }
 
   return totalChanges;
