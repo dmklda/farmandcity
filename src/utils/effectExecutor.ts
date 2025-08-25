@@ -27,30 +27,9 @@ import { parseEffectLogic, extractRestrictions } from './effectParser';
 function canExecuteEffect(
   effect: SimpleEffect, 
   cardId: string, 
-  gameState: GameState,
-  forceExecution?: boolean
+  gameState: GameState
 ): boolean {
-  // CRITICAL FIX: PRODUCE_* effects NEVER run during build phase, even with forceExecution
-  if (effect.type.startsWith('PRODUCE_')) {
-    if (gameState.phase !== 'production') {
-      console.log(`[EFFECT TRACKING] PRODUCE_ effect ${effect.type} BLOCKED in ${gameState.phase} phase (preventing duplication)`);
-      return false;
-    }
-  }
-
-  // GAIN_* effects should only run during build phase  
-  if (effect.type.startsWith('GAIN_')) {
-    if (gameState.phase !== 'build') {
-      console.log(`[EFFECT TRACKING] GAIN_ effect ${effect.type} blocked in ${gameState.phase} phase`);
-      return false;
-    }
-  }
-
-  // If forced execution and not a PRODUCE_* effect, allow it
-  if (forceExecution && !effect.type.startsWith('PRODUCE_')) {
-    return true;
-  }
-  
+  console.log('[EXECUTION DEBUG] canExecuteEffect: verificando se pode executar', effect.type, 'para carta', cardId);
   const currentTurn = gameState.turn;
   
   // Se não há tracking, criar um novo
@@ -61,82 +40,79 @@ function canExecuteEffect(
   const trackingKey = `${cardId}_${effect.type}`;
   const tracking = gameState.effectTracking[trackingKey];
   
+  console.log('[EXECUTION DEBUG] Tracking atual:', tracking);
+  console.log('[EXECUTION DEBUG] Frequência do efeito:', effect.frequency);
+  console.log('[EXECUTION DEBUG] Fase atual:', gameState.phase);
+  
+  let canExecute = true;
+  
   switch (effect.frequency) {
     case 'ONCE':
-      // Efeitos imediatos (GAIN_*, LOSE_*, COST_*) podem executar durante construção
-      const isImmediateEffect = effect.type.startsWith('GAIN_') || 
-                               effect.type.startsWith('LOSE_') || 
-                               effect.type.startsWith('COST_');
-      
-      if (isImmediateEffect && gameState.phase === 'build') {
-        // Durante construção, efeitos imediatos sempre podem executar (uma vez)
-        return !tracking || tracking.executionCount < (effect.maxExecutions || 1);
-      }
-      
       // Efeito único: só executa uma vez
       if (tracking && tracking.executionCount >= (effect.maxExecutions || 1)) {
-        return false;
+        canExecute = false;
+        console.log('[EXECUTION DEBUG] Efeito ONCE já executou o máximo de vezes');
       }
       break;
       
     case 'PER_TURN':
-      // Efeitos BOOST_ALL_* com PER_TURN podem executar durante construção para criar boosts contínuos
-      const isBoostAllEffect = effect.type.startsWith('BOOST_ALL_');
-      
-      if (isBoostAllEffect && gameState.phase === 'build') {
-        // Durante construção, boosts contínuos só executam uma vez para criar o boost
-        return !tracking || tracking.executionCount < 1;
-      }
-      
-      // Efeito por turno: executa apenas durante a fase de produção
-      if (gameState.phase !== 'production') {
-        return false;
-      }
-      
+      // Efeito por turno: executa apenas uma vez por turno durante a fase de produção
       // Se não há tracking, pode executar
       if (!tracking) {
-        return true;
+        canExecute = gameState.phase === 'production';
+        console.log('[EXECUTION DEBUG] Efeito PER_TURN sem tracking, pode executar:', canExecute, 'fase:', gameState.phase);
+      } else {
+        // Se já executou neste turno, não pode executar novamente
+        if (tracking.lastExecutedTurn === currentTurn) {
+          canExecute = false;
+          console.log('[EXECUTION DEBUG] Efeito PER_TURN já executou neste turno');
+        } else {
+          // Só executa durante a fase de produção
+          canExecute = gameState.phase === 'production';
+          console.log('[EXECUTION DEBUG] Efeito PER_TURN pode executar:', canExecute, 'fase:', gameState.phase);
+        }
       }
-      
-      // Se já executou neste turno, não pode executar novamente
-      if (tracking.lastExecutedTurn === currentTurn) {
-        return false;
-      }
-      
-      return true;
+      break;
       
     case 'ON_TURN_X':
       // Efeito a cada X turnos
       if (tracking && effect.turnInterval) {
-        return (currentTurn - tracking.lastExecutedTurn) >= effect.turnInterval;
+        canExecute = (currentTurn - tracking.lastExecutedTurn) >= effect.turnInterval;
+        console.log('[EXECUTION DEBUG] Efeito ON_TURN_X pode executar:', canExecute, 'turnos desde última execução:', currentTurn - tracking.lastExecutedTurn);
       }
-      return true;
+      break;
       
     case 'TEMPORARY':
       // Efeito temporário: executa por X turnos
       if (tracking && effect.duration) {
         const turnsElapsed = currentTurn - tracking.lastExecutedTurn;
-        return turnsElapsed < effect.duration;
+        canExecute = turnsElapsed < effect.duration;
+        console.log('[EXECUTION DEBUG] Efeito TEMPORARY pode executar:', canExecute, 'turnos decorridos:', turnsElapsed, 'duração:', effect.duration);
       }
-      return true;
+      break;
 
     case 'ON_DICE':
       // Efeito baseado em dado: executa quando dado é rolado
-      return true;
+      canExecute = true;
+      break;
       
     case 'ON_CONDITION':
       // Efeito condicional: executa quando condição é atendida
-      return true;
+      canExecute = true;
+      break;
       
     case 'CONTINUOUS':
       // Efeito contínuo: sempre ativo
-      return true;
+      canExecute = true;
+      break;
       
     default:
-      return true;
+      canExecute = true;
+      break;
   }
   
-  return true;
+  console.log('[EXECUTION DEBUG] Resultado final canExecuteEffect:', canExecute);
+  return canExecute;
 }
 
 /**
@@ -147,6 +123,7 @@ function updateEffectTracking(
   cardId: string, 
   gameState: GameState
 ): void {
+  console.log('[TRACKING DEBUG] Atualizando tracking para efeito:', effect.type, 'da carta:', cardId);
   const currentTurn = gameState.turn;
   
   if (!gameState.effectTracking) {
@@ -155,6 +132,8 @@ function updateEffectTracking(
   
   const trackingKey = `${cardId}_${effect.type}`;
   const currentTracking = gameState.effectTracking[trackingKey];
+  
+  console.log('[TRACKING DEBUG] Tracking atual:', currentTracking);
   
   const newTracking: EffectExecutionTracking = {
     cardId,
@@ -166,6 +145,7 @@ function updateEffectTracking(
   };
   
   gameState.effectTracking[trackingKey] = newTracking;
+  console.log('[TRACKING DEBUG] Novo tracking aplicado:', newTracking);
 }
 
 // ===== EXECUTOR DE EFEITOS SIMPLES =====
@@ -182,18 +162,17 @@ export function executeSimpleEffect(
   addToHistory?: (message: string) => void,
   forceExecution?: boolean
 ): Partial<Resources> {
-  // Debug log para efeitos BOOST_ALL_*
-  if (effect.type.startsWith('BOOST_ALL_')) {
-    console.log(`[EFFECT EXECUTOR] Tentando executar: ${effect.type}:${effect.amount} (frequência: ${effect.frequency}) da carta ${cardId} na fase ${gameState.phase}`);
-  }
+  console.log('[SIMPLE EFFECT DEBUG] ===== INICIANDO EXECUÇÃO DE EFEITO SIMPLES =====');
+  console.log('[SIMPLE EFFECT DEBUG] Efeito:', effect.type, 'com valor:', effect.amount, 'frequência:', effect.frequency);
+  console.log('[SIMPLE EFFECT DEBUG] Force execution:', forceExecution);
   
-  // Verificar se o efeito pode ser executado
-  if (!canExecuteEffect(effect, cardId, gameState, forceExecution)) {
-    if (effect.type.startsWith('BOOST_ALL_')) {
-      console.log(`[EFFECT EXECUTOR] Efeito ${effect.type} não pode ser executado (canExecuteEffect retornou false)`);
-    }
+  // Verificar se o efeito pode ser executado (exceto se forçado para cálculos)
+  if (!forceExecution && !canExecuteEffect(effect, cardId, gameState)) {
+    console.log('[SIMPLE EFFECT DEBUG] Efeito não pode ser executado');
     return {};
   }
+  
+  console.log('[SIMPLE EFFECT DEBUG] Efeito pode ser executado, processando...');
   
   const changes: Partial<Resources> = {};
   
@@ -285,67 +264,39 @@ export function executeSimpleEffect(
       break;
     case 'PRODUCE_REPUTATION': {
       // Produzir reputação
+      console.log('[SIMPLE EFFECT DEBUG] PRODUCE_REPUTATION: aplicando', effect.amount, 'de reputação');
       (changes as any).reputation = (changes as any).reputation || 0;
       (changes as any).reputation += effect.amount;
       // Marcar que houve mudança
       (changes as any).hasEffectExecuted = true;
+      console.log('[SIMPLE EFFECT DEBUG] PRODUCE_REPUTATION: mudanças aplicadas:', changes);
       break;
     }
     case 'BOOST_ALL_FARMS_FOOD': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS_FOOD',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS_FOOD:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS_FOOD';
-        }
-      } else {
-        // Para efeitos não PER_TURN, usar boost temporário
-        if (setTemporaryBoosts) {
-          setTemporaryBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS_FOOD',
-            amount: effect.amount,
-            duration: 1,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          (changes as any).farmsBoost = effect.amount;
-        }
+      // Adicionar aos boosts temporários em vez de aplicar diretamente
+      if (setTemporaryBoosts) {
+        setTemporaryBoosts(prev => [...prev, {
+          type: 'BOOST_ALL_FARMS_FOOD',
+          amount: effect.amount,
+          duration: 1, // Dura apenas este turno
+          cardName: `Carta ${cardId}`,
+          isActive: true
+        }]);
+        (changes as any).farmsBoost = effect.amount; // Para logging
       }
       break;
     }
     case 'BOOST_ALL_CITIES_COINS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES_COINS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_COINS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_COINS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, usar boost temporário
-        if (setTemporaryBoosts) {
-          setTemporaryBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES_COINS',
-            amount: effect.amount,
-            duration: 1,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          (changes as any).citiesBoost = effect.amount;
-        }
+      // Adicionar aos boosts temporários em vez de aplicar diretamente
+      if (setTemporaryBoosts) {
+        setTemporaryBoosts(prev => [...prev, {
+          type: 'BOOST_ALL_CITIES_COINS',
+          amount: effect.amount,
+          duration: 1, // Dura apenas este turno
+          cardName: `Carta ${cardId}`,
+          isActive: true
+        }]);
+        (changes as any).citiesBoost = effect.amount; // Para logging
       }
       break;
     }
@@ -372,73 +323,28 @@ export function executeSimpleEffect(
       (changes as any).optionalMagicCard = effect.amount;
       break;
     case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CONSTRUCTIONS_DOUBLE',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS_DOUBLE:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS_DOUBLE';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
-        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-        const landmarkCount = gameState.landmarksGrid.flat().filter(cell => cell.card).length;
-        const totalBoost = (farmCount + cityCount + landmarkCount) * effect.amount * 2;
-        
-        changes.food = (changes.food || 0) + Math.floor(totalBoost / 3);
-        changes.coins = (changes.coins || 0) + Math.floor(totalBoost / 3);
-        changes.materials = (changes.materials || 0) + Math.ceil(totalBoost / 3);
-      }
+      // Boost duplo para todas as construções
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      const landmarkCount = gameState.landmarksGrid.flat().filter(cell => cell.card).length;
+      const totalBoost = (farmCount + cityCount + landmarkCount) * effect.amount * 2;
+      
+      changes.food = (changes.food || 0) + Math.floor(totalBoost / 3);
+      changes.coins = (changes.coins || 0) + Math.floor(totalBoost / 3);
+      changes.materials = (changes.materials || 0) + Math.ceil(totalBoost / 3);
       break;
     }
     case 'BOOST_ALL_CITIES': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-        changes.coins = (changes.coins || 0) + effect.amount * cityCount;
-        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
-      }
+      // Boost geral para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      changes.coins = (changes.coins || 0) + effect.amount * cityCount;
+      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
       break;
     }
     case 'BOOST_ALL_FARMS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente  
-        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
-        changes.food = (changes.food || 0) + effect.amount * farmCount;
-      }
+      // Boost para todas as fazendas
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      changes.food = (changes.food || 0) + effect.amount * farmCount;
       break;
     }
     case 'TRADE_MATERIALS_FOR_FOOD': {
@@ -529,24 +435,9 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_CONSTRUCTIONS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CONSTRUCTIONS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
-        (changes as any).constructionsBoost += effect.amount;
-      }
+      // Aplica boost para todas as construções (farm, city, landmark)
+      (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
+      (changes as any).constructionsBoost += effect.amount;
       break;
     }
     case 'ON_PLAY_FARM': {
@@ -582,7 +473,7 @@ export function executeSimpleEffect(
       (changes as any).duplicateMagicEffectsDuration = effect.duration || 1;
       
       // Adicionar boost temporário se as funções estiverem disponíveis
-      if (setTemporaryBoosts) {
+      if (setTemporaryBoosts && addToHistory) {
         const duration = effect.duration || 1;
         const boostId = `magic_boost_${Date.now()}_${Math.random()}`;
         setTemporaryBoosts(prev => [...prev, {
@@ -593,9 +484,7 @@ export function executeSimpleEffect(
           appliedAt: gameState.turn,
           isActive: true
         }]);
-        if (addToHistory) {
-          addToHistory(`⚡ Efeitos de magia duplicados por ${duration} turno(s)!`);
-        }
+        addToHistory(`⚡ Efeitos de magia duplicados por ${duration} turno(s)!`);
       }
       break;
     }
@@ -612,45 +501,42 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_CITIES_MATERIALS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES_MATERIALS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_MATERIALS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_MATERIALS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
-      }
+      // Boost de materiais para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
       break;
     }
-    // Duplicate cases removed - these are handled earlier in the function
-    case 'BOOST_ALL_CITIES_MATERIALS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES_MATERIALS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_MATERIALS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_MATERIALS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+    case 'BOOST_ALL_FARMS_POPULATION': {
+      // Boost de população para todas as fazendas
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      changes.population = (changes.population || 0) + effect.amount * farmCount;
+      break;
+    }
+    case 'BOOST_ALL_CITIES_POPULATION': {
+      // Boost de população para todas as cidades
+      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+      changes.population = (changes.population || 0) + effect.amount * cityCount;
+      break;
+    }
+    case 'CREATE_CITY_CARD': {
+      // Cria uma carta de cidade na mão do jogador
+      (changes as any).createCityCard = effect.amount;
+      break;
+    }
+    case 'EXTRA_BUILD_CITY': {
+      // Permite construir cidade extra
+      (changes as any).extraBuildCity = effect.amount;
+      
+      // Adicionar boost temporário se as funções estiverem disponíveis
+      if (setTemporaryBoosts && addToHistory) {
+        const duration = effect.duration || 1;
+        setTemporaryBoosts(prev => [...prev, {
+          type: 'EXTRA_BUILD_CITY',
+          amount: effect.amount,
+          duration: duration,
+          appliedAt: gameState.turn
+        }]);
+        addToHistory(`Você pode construir ${effect.amount} cidade(s) extra(s) neste turno`);
       }
       break;
     }
@@ -693,18 +579,15 @@ export function executeSimpleEffect(
       (changes as any).extraBuildCity = effect.amount;
       
       // Adicionar boost temporário se as funções estiverem disponíveis
-      if (setTemporaryBoosts) {
+      if (setTemporaryBoosts && addToHistory) {
         const duration = effect.duration || 1;
         setTemporaryBoosts(prev => [...prev, {
           type: 'EXTRA_BUILD_CITY',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn,
-          isActive: true
+          appliedAt: gameState.turn
         }]);
-        if (addToHistory) {
-          addToHistory(`Você pode construir ${effect.amount} cidade(s) extra(s) neste turno`);
-        }
+        addToHistory(`Você pode construir ${effect.amount} cidade(s) extra(s) neste turno`);
       }
       break;
     }
@@ -753,22 +636,18 @@ export function executeSimpleEffect(
       const boostAmount = farmCount * effect.amount;
       const duration = effect.duration || 2;
       
-      if (setTemporaryBoosts) {
+      if (setTemporaryBoosts && addToHistory) {
         setTemporaryBoosts(prev => [...prev, {
           type: 'BOOST_ALL_FARMS_FOOD_TEMP',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn,
-          isActive: true
+          appliedAt: gameState.turn
         }]);
-        if (addToHistory) {
-          addToHistory(`Boost temporário aplicado: +${effect.amount} alimento por fazenda por ${duration} turnos (${farmCount} fazendas)`);
-        }
+        addToHistory(`Boost temporário aplicado: +${effect.amount} alimento por fazenda por ${duration} turnos (${farmCount} fazendas)`);
       }
       
       // Retornar mudança detectável para indicar que o efeito foi executado
       (changes as any).temporaryBoostApplied = true;
-      (changes as any).tempFarmsFoodBoost = effect.amount;
       break;
     }
     case 'BOOST_ALL_FARMS_MATERIALS_TEMP': {
@@ -777,22 +656,18 @@ export function executeSimpleEffect(
       const boostAmount = farmCount * effect.amount;
       const duration = effect.duration || 2;
       
-      if (setTemporaryBoosts) {
+      if (setTemporaryBoosts && addToHistory) {
         setTemporaryBoosts(prev => [...prev, {
           type: 'BOOST_ALL_FARMS_MATERIALS_TEMP',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn,
-          isActive: true
+          appliedAt: gameState.turn
         }]);
-        if (addToHistory) {
-          addToHistory(`Boost temporário aplicado: +${effect.amount} materiais por fazenda por ${duration} turnos (${farmCount} fazendas)`);
-        }
+        addToHistory(`Boost temporário aplicado: +${effect.amount} materiais por fazenda por ${duration} turnos (${farmCount} fazendas)`);
       }
       
       // Retornar mudança detectável para indicar que o efeito foi executado
       (changes as any).temporaryBoostApplied = true;
-      (changes as any).tempFarmsMaterialsBoost = effect.amount;
       break;
     }
     // EXTRA_CARD_PLAY case handled elsewhere
@@ -826,18 +701,16 @@ export function executeSimpleEffect(
       break;
   }
   
-  // Atualizar tracking se o efeito foi executado (exceto para cálculos forçados)
-  if (Object.keys(changes).length > 0 && !forceExecution) {
+  // Atualizar tracking se o efeito foi executado
+  if (Object.keys(changes).length > 0) {
+    console.log('[SIMPLE EFFECT DEBUG] Atualizando tracking para efeito executado');
     updateEffectTracking(effect, cardId, gameState);
-    
-    // Debug log para efeitos BOOST_ALL_*
-    if (effect.type.startsWith('BOOST_ALL_')) {
-      console.log(`[EFFECT EXECUTOR] Efeito ${effect.type}:${effect.amount} executado com sucesso da carta ${cardId}. Mudanças:`, changes);
-    }
-  } else if (effect.type.startsWith('BOOST_ALL_') && Object.keys(changes).length === 0) {
-    console.log(`[EFFECT EXECUTOR] ⚠️ Efeito ${effect.type}:${effect.amount} foi processado mas não gerou mudanças detectáveis`);
+  } else {
+    console.log('[SIMPLE EFFECT DEBUG] Nenhuma mudança detectada, não atualizando tracking');
   }
   
+  console.log('[SIMPLE EFFECT DEBUG] Mudanças finais retornadas:', changes);
+  console.log('[SIMPLE EFFECT DEBUG] ===== FINALIZANDO EXECUÇÃO DE EFEITO SIMPLES =====');
   return changes;
 }
 
@@ -853,10 +726,13 @@ export function executeSimpleEffects(
   addToHistory?: (message: string) => void,
   forceExecution?: boolean
 ): Partial<Resources> {
+  console.log('[SIMPLE EFFECTS DEBUG] Executando', effects.length, 'efeitos simples');
   const totalChanges: Partial<Resources> = {};
   
   for (const effect of effects) {
+    console.log('[SIMPLE EFFECTS DEBUG] Processando efeito:', effect.type, 'com valor:', effect.amount);
     const changes = executeSimpleEffect(effect, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory, forceExecution);
+    console.log('[SIMPLE EFFECTS DEBUG] Mudanças do efeito', effect.type, ':', changes);
     
     // Acumular mudanças
     for (const [resource, amount] of Object.entries(changes)) {
@@ -866,6 +742,7 @@ export function executeSimpleEffects(
     }
   }
   
+  console.log('[SIMPLE EFFECTS DEBUG] Total de mudanças acumuladas:', totalChanges);
   return totalChanges;
 }
 
@@ -875,6 +752,9 @@ export function executeSimpleEffects(
  * Verifica se uma condição é verdadeira
  */
 export function checkCondition(condition: ConditionalEffect['type'], gameState: GameState): boolean {
+  console.log('[CONDITION DEBUG] ===== VERIFICANDO CONDIÇÃO =====');
+  console.log('[CONDITION DEBUG] Condição a verificar:', condition);
+  
   // Caso especial: FALLBACK é sempre verdadeiro (usado para o operador OR)
   if (condition === 'FALLBACK') {
     console.log('[CONDITION DEBUG] Condição FALLBACK é sempre verdadeira');
@@ -897,10 +777,12 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
   switch (condition) {
     case 'IF_CITY_EXISTS':
       result = allCards.some(card => card.type === 'city');
+      console.log('[CONDITION DEBUG] IF_CITY_EXISTS: resultado:', result, 'cidades encontradas:', allCards.filter(card => card.type === 'city').length);
       break;
       
     case 'IF_FARMS_GE_3':
       result = allCards.filter(card => card.type === 'farm').length >= 3;
+      console.log('[CONDITION DEBUG] IF_FARMS_GE_3: resultado:', result, 'fazendas encontradas:', allCards.filter(card => card.type === 'farm').length);
       break;
       
     case 'IF_WORKSHOPS_GE_2':
@@ -911,10 +793,17 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
           (card.tags && card.tags.includes('workshop'))
         )
       ).length >= 2;
+      console.log('[CONDITION DEBUG] IF_WORKSHOPS_GE_2: resultado:', result, 'oficinas encontradas:', allCards.filter(card => 
+        card.type === 'city' && (
+          card.name.toLowerCase().includes('oficina') || 
+          (card.tags && card.tags.includes('workshop'))
+        )
+      ).length);
       break;
       
     case 'IF_MAGIC_EXISTS':
       result = allCards.filter(card => card.type === 'magic').length > 0;
+      console.log('[CONDITION DEBUG] IF_MAGIC_EXISTS: resultado:', result, 'magias encontradas:', allCards.filter(card => card.type === 'magic').length);
       break;
       
     case 'IF_WATER_EXISTS':
@@ -922,46 +811,57 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
         (card.name.toLowerCase().includes('poço') || card.name.toLowerCase().includes('agua')) ||
         (card.tags && (card.tags.includes('agua') || card.tags.includes('poco')))
       );
+      console.log('[CONDITION DEBUG] IF_WATER_EXISTS: resultado:', result);
       break;
       
     case 'IF_COINS_GE_5':
       result = (gameState.resources.coins || 0) >= 5;
+      console.log('[CONDITION DEBUG] IF_COINS_GE_5: resultado:', result, 'moedas atuais:', gameState.resources.coins);
       break;
       
     case 'IF_COINS_GE_10':
       result = (gameState.resources.coins || 0) >= 10;
+      console.log('[CONDITION DEBUG] IF_COINS_GE_10: resultado:', result, 'moedas atuais:', gameState.resources.coins);
       break;
       
     case 'IF_CELESTIAL_FARMS_EXIST':
       result = allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('celestial'));
+      console.log('[CONDITION DEBUG] IF_CELESTIAL_FARMS_EXIST: resultado:', result);
       break;
       
     case 'IF_VERTICAL_FARMS_EXIST':
       result = allCards.some(card => card.type === 'farm' && card.tags && card.tags.includes('vertical'));
+      console.log('[CONDITION DEBUG] IF_VERTICAL_FARMS_EXIST: resultado:', result);
       break;
       
     case 'IF_HAND_GE_5':
       result = (gameState.hand?.length || 0) >= 5;
+      console.log('[CONDITION DEBUG] IF_HAND_GE_5: resultado:', result, 'cartas na mão:', gameState.hand?.length);
       break;
       
     case 'IF_HORTA_EXISTS':
       result = allCards.some(card => card.name.toLowerCase().includes('horta'));
+      console.log('[CONDITION DEBUG] IF_HORTA_EXISTS: resultado:', result);
       break;
       
     case 'IF_SACRED_FIELD_EXISTS':
       result = allCards.some(card => card.name.toLowerCase().includes('sagrado') || card.name.toLowerCase().includes('sagrada') || card.name.toLowerCase().includes('templo') || card.name.toLowerCase().includes('altar'));
+      console.log('[CONDITION DEBUG] IF_SACRED_FIELD_EXISTS: resultado:', result);
       break;
       
     case 'IF_SACRED_TAG_EXISTS':
       result = allCards.some(card => card.tags && card.tags.includes('sagrado'));
+      console.log('[CONDITION DEBUG] IF_SACRED_TAG_EXISTS: resultado:', result);
       break;
       
     case 'IF_CITY_GE_3':
       result = allCards.filter(card => card.type === 'city').length >= 3;
+      console.log('[CONDITION DEBUG] IF_CITY_GE_3: resultado:', result, 'cidades encontradas:', allCards.filter(card => card.type === 'city').length);
       break;
       
     case 'IF_POPULATION_GE_2':
       result = (gameState.resources.population || 0) >= 2;
+      console.log('[CONDITION DEBUG] IF_POPULATION_GE_2: resultado:', result, 'população atual:', gameState.resources.population);
       break;
       
     case 'IF_TEMPLE_EXISTS':
@@ -971,10 +871,12 @@ export function checkCondition(condition: ConditionalEffect['type'], gameState: 
         card.name.toLowerCase().includes('santuario') ||
         (card.tags && card.tags.includes('templo'))
       );
+      console.log('[CONDITION DEBUG] IF_TEMPLE_EXISTS: resultado:', result);
       break;
   }
   
-  console.log('[CONDITION DEBUG] Resultado da condição', condition, ':', result);
+  console.log('[CONDITION DEBUG] Resultado final da condição', condition, ':', result);
+  console.log('[CONDITION DEBUG] ===== FINALIZANDO VERIFICAÇÃO DE CONDIÇÃO =====');
   return result;
 }
 
@@ -986,33 +888,40 @@ export function executeConditionalEffects(
   gameState: GameState, 
   cardId: string
 ): Partial<Resources> {
+  console.log('[CONDITIONAL DEBUG] ===== INICIANDO EXECUÇÃO DE EFEITOS CONDICIONAIS =====');
+  console.log('[CONDITIONAL DEBUG] Número de efeitos condicionais:', effects.length);
+  
   const changes: Partial<Resources> = {};
   
   // Verificar se estamos usando operador OR ou AND
   // Se pelo menos um efeito tiver operador OR, tratamos como OR
   const hasOrOperator = effects.some(effect => effect.logicalOperator === 'OR');
-  console.log('[CONDITION DEBUG] Tipo de operador lógico:', hasOrOperator ? 'OR' : 'AND');
+  console.log('[CONDITIONAL DEBUG] Tipo de operador lógico:', hasOrOperator ? 'OR' : 'AND');
   
   // Para operador OR, basta que uma condição seja verdadeira
   if (hasOrOperator) {
+    console.log('[CONDITIONAL DEBUG] Processando com operador OR');
     let anyConditionMet = false;
     let effectToApply: ConditionalEffect | null = null;
     
     // Verificar todas as condições
     for (const conditionalEffect of effects) {
       const conditionMet = checkCondition(conditionalEffect.type, gameState);
-      console.log('[CONDITION DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
+      console.log('[CONDITIONAL DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
       
       if (conditionMet) {
         anyConditionMet = true;
         effectToApply = conditionalEffect;
+        console.log('[CONDITIONAL DEBUG] Primeira condição verdadeira encontrada:', conditionalEffect.type);
         break; // Com OR, a primeira condição verdadeira já é suficiente
       }
     }
     
     // Aplicar o efeito se qualquer condição for atendida
     if (anyConditionMet && effectToApply) {
+      console.log('[CONDITIONAL DEBUG] Aplicando efeito da condição:', effectToApply.type);
       const effectChanges = executeSimpleEffect(effectToApply.effect, gameState, cardId);
+      console.log('[CONDITIONAL DEBUG] Mudanças do efeito aplicado:', effectChanges);
       
       // Acumular mudanças
       for (const [resource, amount] of Object.entries(effectChanges)) {
@@ -1020,27 +929,33 @@ export function executeConditionalEffects(
           changes[resource as keyof Resources] = (changes[resource as keyof Resources] || 0) + amount;
         }
       }
+    } else {
+      console.log('[CONDITIONAL DEBUG] Nenhuma condição foi atendida para operador OR');
     }
   } 
   // Para operador AND (padrão), todas as condições devem ser verdadeiras
   else {
+    console.log('[CONDITIONAL DEBUG] Processando com operador AND');
     let allConditionsMet = true;
     
     // Verificar todas as condições
     for (const conditionalEffect of effects) {
       const conditionMet = checkCondition(conditionalEffect.type, gameState);
-      console.log('[CONDITION DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
+      console.log('[CONDITIONAL DEBUG] Condição', conditionalEffect.type, 'atendida?', conditionMet);
       
       if (!conditionMet) {
         allConditionsMet = false;
+        console.log('[CONDITIONAL DEBUG] Condição falsa encontrada:', conditionalEffect.type, '- parando verificação');
         break; // Com AND, uma condição falsa já é suficiente para falhar
       }
     }
     
     // Aplicar os efeitos se todas as condições forem atendidas
     if (allConditionsMet && effects.length > 0) {
+      console.log('[CONDITIONAL DEBUG] Todas as condições atendidas, aplicando efeito da última condição');
       // No caso de AND, aplicamos o efeito da última condição
       const effectChanges = executeSimpleEffect(effects[effects.length - 1].effect, gameState, cardId);
+      console.log('[CONDITIONAL DEBUG] Mudanças do efeito aplicado:', effectChanges);
       
       // Acumular mudanças
       for (const [resource, amount] of Object.entries(effectChanges)) {
@@ -1048,10 +963,14 @@ export function executeConditionalEffects(
           changes[resource as keyof Resources] = (changes[resource as keyof Resources] || 0) + amount;
         }
       }
+    } else {
+      console.log('[CONDITIONAL DEBUG] Nem todas as condições foram atendidas para operador AND');
     }
   }
   
-  console.log('[CONDITION DEBUG] Resultado final das condições:', Object.keys(changes).length > 0 ? 'Efeito aplicado' : 'Nenhum efeito aplicado');
+  console.log('[CONDITIONAL DEBUG] Resultado final das condições:', Object.keys(changes).length > 0 ? 'Efeito aplicado' : 'Nenhum efeito aplicado');
+  console.log('[CONDITIONAL DEBUG] Mudanças finais:', changes);
+  console.log('[CONDITIONAL DEBUG] ===== FINALIZANDO EXECUÇÃO DE EFEITOS CONDICIONAIS =====');
   return changes;
 }
 
@@ -1097,23 +1016,37 @@ export function executeRandomEffects(
   setContinuousBoosts?: (callback: (prev: any[]) => any[]) => void,
   addToHistory?: (message: string) => void
 ): Partial<Resources> {
+  console.log('[RANDOM DEBUG] ===== INICIANDO EXECUÇÃO DE EFEITOS ALEATÓRIOS =====');
+  console.log('[RANDOM DEBUG] Número de efeitos aleatórios:', effects.length);
+  
   const changes: Partial<Resources> = {};
   
   for (const randomEffect of effects) {
+    console.log('[RANDOM DEBUG] Processando efeito aleatório com chance:', randomEffect.chance, '%');
+    
     // Gerar número aleatório (1-100)
     const randomNumber = Math.floor(Math.random() * 100) + 1;
+    console.log('[RANDOM DEBUG] Número aleatório gerado:', randomNumber, 'chance necessária:', randomEffect.chance);
     
     if (randomNumber <= randomEffect.chance) {
       // Efeito principal acontece
+      console.log('[RANDOM DEBUG] Efeito principal ativado!');
       const effectChanges = executeSimpleEffects(randomEffect.effects, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory);
+      console.log('[RANDOM DEBUG] Mudanças do efeito principal:', effectChanges);
       mergeResourceChanges(changes, effectChanges);
     } else if (randomEffect.fallbackEffect) {
       // Efeito de fallback acontece
+      console.log('[RANDOM DEBUG] Efeito de fallback ativado');
       const fallbackChanges = executeSimpleEffect(randomEffect.fallbackEffect, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory);
+      console.log('[RANDOM DEBUG] Mudanças do efeito de fallback:', fallbackChanges);
       mergeResourceChanges(changes, fallbackChanges);
+    } else {
+      console.log('[RANDOM DEBUG] Nenhum efeito ativado');
     }
   }
   
+  console.log('[RANDOM DEBUG] Mudanças finais dos efeitos aleatórios:', changes);
+  console.log('[RANDOM DEBUG] ===== FINALIZANDO EXECUÇÃO DE EFEITOS ALEATÓRIOS =====');
   return changes;
 }
 
@@ -1304,9 +1237,9 @@ export function executeCardEffects(
   diceNumber?: number,
   setTemporaryBoosts?: (callback: (prev: any[]) => any[]) => void,
   setContinuousBoosts?: (callback: (prev: any[]) => any[]) => void,
-  addToHistory?: (message: string) => void,
-  forceExecution?: boolean
+  addToHistory?: (message: string) => void
 ): Partial<Resources> {
+  console.log('[EFFECT DEBUG] ===== INICIANDO EXECUÇÃO DE EFEITOS =====');
   console.log('[EFFECT DEBUG] Valor de effectLogic:', effectLogic);
   console.log('[EFFECT DEBUG] Tipo de effectLogic:', typeof effectLogic);
   console.log('[EFFECT DEBUG] É null?', effectLogic === null);
@@ -1334,7 +1267,7 @@ export function executeCardEffects(
   // Executar efeitos simples
   if (parsed.simple && parsed.simple.length > 0) {
     console.log('[EFFECT] Executando efeitos simples', parsed.simple, 'para carta', cardId);
-    const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory, forceExecution || false);
+    const simpleChanges = executeSimpleEffects(parsed.simple, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory, false);
     console.log('[EFFECT DEBUG] Mudanças dos efeitos simples:', simpleChanges);
     mergeResourceChanges(totalChanges, simpleChanges);
   }
@@ -1343,6 +1276,7 @@ export function executeCardEffects(
   if (parsed.conditional && parsed.conditional.length > 0) {
     console.log('[EFFECT] Executando efeitos condicionais', parsed.conditional, 'para carta', cardId);
     const conditionalChanges = executeConditionalEffects(parsed.conditional, gameState, cardId);
+    console.log('[EFFECT DEBUG] Mudanças dos efeitos condicionais:', conditionalChanges);
     mergeResourceChanges(totalChanges, conditionalChanges);
   }
 
@@ -1357,6 +1291,7 @@ export function executeCardEffects(
   if (parsed.random && parsed.random.length > 0) {
     console.log('[EFFECT] Executando efeitos aleatórios', parsed.random, 'para carta', cardId);
     const randomChanges = executeRandomEffects(parsed.random, gameState, cardId, setTemporaryBoosts, setContinuousBoosts, addToHistory);
+    console.log('[EFFECT DEBUG] Mudanças dos efeitos aleatórios:', randomChanges);
     mergeResourceChanges(totalChanges, randomChanges);
   }
 
@@ -1383,20 +1318,24 @@ export function executeCardEffects(
     }
   }
 
-  // Aplicar as mudanças ao gameState apenas se não for efeito de dado E não for durante produção forçada
+  console.log('[EFFECT DEBUG] Total de mudanças acumuladas:', totalChanges);
+  console.log('[EFFECT DEBUG] Chaves das mudanças:', Object.keys(totalChanges));
+
+  // Aplicar as mudanças ao gameState apenas se não for efeito de dado
   // Para efeitos de dado, os recursos são aplicados pela função handleDiceRoll
-  // Para produção forçada, os recursos são aplicados pela função handleProduction
-  if (diceNumber === undefined && !forceExecution) {
+  if (diceNumber === undefined) {
+    console.log('[EFFECT DEBUG] Aplicando mudanças ao gameState...');
     applyResourceChanges(gameState, totalChanges);
     
     // Log final de recursos antes/depois apenas quando aplicamos
     const after = { ...gameState.resources };
     console.log('[EFFECT] Resultado dos efeitos da carta', cardId, '\nRecursos antes:', before, '\nMudanças:', totalChanges, '\nRecursos depois:', after);
   } else {
-    // Para efeitos de dado ou produção forçada, apenas log das mudanças calculadas
-    console.log('[EFFECT] Efeito calculado para carta', cardId, '\nMudanças:', totalChanges, '\nForceExecution:', forceExecution);
+    // Para efeitos de dado, apenas log das mudanças calculadas
+    console.log('[EFFECT] Efeito de dado calculado para carta', cardId, '\nMudanças:', totalChanges);
   }
 
+  console.log('[EFFECT DEBUG] ===== FINALIZANDO EXECUÇÃO DE EFEITOS =====');
   return totalChanges;
 }
 
@@ -1406,28 +1345,43 @@ export function executeCardEffects(
  * Combina mudanças de recursos
  */
 function mergeResourceChanges(target: Partial<Resources>, source: Partial<Resources>): void {
+  console.log('[MERGE RESOURCES DEBUG] Combinando mudanças. Target antes:', target, 'Source:', source);
+  
   for (const [resource, amount] of Object.entries(source)) {
     if (amount !== undefined) {
-      target[resource as keyof Resources] = (target[resource as keyof Resources] || 0) + amount;
+      const currentValue = target[resource as keyof Resources] || 0;
+      target[resource as keyof Resources] = currentValue + amount;
+      console.log('[MERGE RESOURCES DEBUG] Recurso', resource, 'combinado:', currentValue, '+', amount, '=', target[resource as keyof Resources]);
     }
   }
+  
+  console.log('[MERGE RESOURCES DEBUG] Target depois:', target);
 }
 
 /**
  * Aplica mudanças de recursos ao estado do jogo
  */
 export function applyResourceChanges(gameState: GameState, changes: Partial<Resources>): void {
+  console.log('[APPLY RESOURCES DEBUG] Aplicando mudanças:', changes);
+  console.log('[APPLY RESOURCES DEBUG] GameState antes:', { resources: gameState.resources, playerStats: gameState.playerStats });
+  
   for (const [resource, amount] of Object.entries(changes)) {
     if (amount !== undefined && amount !== 0) {
+      console.log('[APPLY RESOURCES DEBUG] Processando recurso:', resource, 'com valor:', amount);
+      
       if (resource === 'reputation') {
         // Aplicar mudanças de reputação ao playerStats
+        console.log('[APPLY RESOURCES DEBUG] Aplicando reputação:', amount, 'ao playerStats');
         gameState.playerStats.reputation = Math.max(0, (gameState.playerStats.reputation || 0) + amount);
+        console.log('[APPLY RESOURCES DEBUG] Reputação atualizada para:', gameState.playerStats.reputation);
       } else if (resource in gameState.resources) {
         // Aplicar mudanças de recursos normais
         const currentValue = gameState.resources[resource as keyof Resources] || 0;
         gameState.resources[resource as keyof Resources] = Math.max(0, currentValue + amount);
+        console.log('[APPLY RESOURCES DEBUG] Recurso', resource, 'atualizado de', currentValue, 'para', gameState.resources[resource as keyof Resources]);
       } else {
         // Aplicar outros efeitos especiais ao gameState
+        console.log('[APPLY RESOURCES DEBUG] Aplicando efeito especial:', resource, 'com valor:', amount);
         switch (resource) {
           case 'drawCards':
             gameState.drawCards = (gameState.drawCards || 0) + amount;
@@ -1747,37 +1701,6 @@ export function processProductionBoosts(
         }
         break;
         
-      case 'BOOST_ALL_CITIES':
-        const cityCountAll = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
-        if (cityCountAll > 0) {
-          prod.coins += cityCountAll * boost.amount;
-          prod.materials += cityCountAll * boost.amount;
-          details.push(`🏙️ ${boost.cardName}: +${boost.amount} moeda e materiais para ${cityCountAll} cidade(s)`);
-        }
-        break;
-        
-      case 'BOOST_ALL_FARMS':
-        const farmCountAll = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
-        if (farmCountAll > 0) {
-          prod.food += farmCountAll * boost.amount;
-          details.push(`🌾 ${boost.cardName}: +${boost.amount} comida para ${farmCountAll} fazenda(s)`);
-        }
-        break;
-        
-      case 'BOOST_ALL_CONSTRUCTIONS':
-        const farmCountConst = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
-        const cityCountConst = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
-        const landmarkCountConst = gameState.landmarksGrid.flat().filter((cell: any) => cell.card).length;
-        const totalConstructionsConst = farmCountConst + cityCountConst + landmarkCountConst;
-        
-        if (totalConstructionsConst > 0) {
-          prod.coins += totalConstructionsConst * boost.amount;
-          prod.food += totalConstructionsConst * boost.amount;
-          prod.materials += totalConstructionsConst * boost.amount;
-          details.push(`🏗️ ${boost.cardName}: +${boost.amount} recursos para ${totalConstructionsConst} construção(ões)`);
-        }
-        break;
-        
       case 'BOOST_ALL_CITIES_MATERIALS':
         const cityCountMaterials = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
         if (cityCountMaterials > 0) {
@@ -1807,23 +1730,6 @@ export function processProductionBoosts(
         if (cityCount > 0) {
           prod.coins += cityCount * boost.amount;
           details.push(`🏙️ Boost de cidade: +${boost.amount} moeda para ${cityCount} cidade(s)`);
-        }
-        break;
-        
-      case 'BOOST_ALL_CITIES':
-        const cityCountAll2 = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
-        if (cityCountAll2 > 0) {
-          prod.coins += cityCountAll2 * boost.amount;
-          prod.materials += cityCountAll2 * boost.amount;
-          details.push(`🏙️ Boost de cidade (completo): +${boost.amount} moeda e materiais para ${cityCountAll2} cidade(s)`);
-        }
-        break;
-        
-      case 'BOOST_ALL_FARMS':
-        const farmCountAll2 = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
-        if (farmCountAll2 > 0) {
-          prod.food += farmCountAll2 * boost.amount;
-          details.push(`🌾 Boost de fazenda (completo): +${boost.amount} comida para ${farmCountAll2} fazenda(s)`);
         }
         break;
         

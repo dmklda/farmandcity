@@ -2,6 +2,7 @@
 // Este arquivo pode ser removido após a implementação estar funcionando
 
 import { parseEffectLogic, validateEffectLogic, getEffectLogicType } from './effectParser';
+import { executeCardEffects } from './effectExecutor';
 
 // Testes do sistema de parsing
 export function testEffectParser() {
@@ -140,4 +141,64 @@ if (typeof window !== 'undefined') {
   // No browser, adicionar ao console global para testes manuais
   (window as any).testEffectSystem = runAllTests;
   console.log('🧪 Sistema de testes disponível em window.testEffectSystem()');
+}
+
+// Teste simples para verificar se o parser está funcionando
+import { parseEffectLogic } from './effectParser';
+import { executeCardEffects } from './effectExecutor';
+
+// Testar algumas das cartas problemáticas
+const testCards = [
+  {
+    name: 'Elemental da Luz',
+    effect_logic: 'PRODUCE_REPUTATION:1:4'
+  },
+  {
+    name: 'Comércio Urbano',
+    effect_logic: 'IF_CITY_EXISTS:GAIN_COINS:3|GAIN_COINS:2'
+  },
+  {
+    name: 'Celebração Metropolitana',
+    effect_logic: 'RANDOM_CHANCE:50:GAIN_MATERIALS:3|GAIN_MATERIALS:1'
+  },
+  {
+    name: 'Tempestade Próspera',
+    effect_logic: 'IF_CITY_GE_3:BOOST_ALL_CITIES_MATERIALS_TEMP:3:1|BOOST_ALL_CITIES_MATERIALS_TEMP:2:1'
+  },
+  {
+    name: 'Construção Urbana',
+    effect_logic: 'EXTRA_BUILD_CITY:1:1'
+  }
+];
+
+// Mock do gameState para teste
+const mockGameState = {
+  turn: 1,
+  phase: 'build' as const,
+  resources: { coins: 10, food: 10, materials: 10, population: 5 },
+  playerStats: { reputation: 0, totalProduction: 0, buildings: 0, landmarks: 0 },
+  farmGrid: Array(3).fill(null).map(() => Array(3).fill(null).map(() => ({ card: null }))),
+  cityGrid: Array(3).fill(null).map(() => Array(3).fill(null).map(() => ({ card: null }))),
+  landmarksGrid: Array(3).fill(null).map(() => Array(3).fill(null).map(() => ({ card: null }))),
+  eventGrid: Array(1).fill(null).map(() => Array(1).fill(null).map(() => ({ card: null }))),
+  hand: [],
+  deck: [],
+  activeEvents: [],
+  comboEffects: [],
+  magicUsedThisTurn: false,
+  builtCountThisTurn: 0
+};
+
+console.log('=== TESTANDO PARSER DE EFEITOS ===');
+for (const card of testCards) {
+  console.log(`\n--- ${card.name} ---`);
+  console.log('Effect Logic:', card.effect_logic);
+  const parsed = parseEffectLogic(card.effect_logic);
+  console.log('Parsed Result:', JSON.stringify(parsed, null, 2));
+  
+  // Testar execução
+  if (parsed) {
+    const result = executeCardEffects(card.effect_logic, mockGameState, 'test-card-id');
+    console.log('Execution Result:', result);
+  }
 }

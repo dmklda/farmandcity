@@ -888,11 +888,7 @@ function calculateStackedProduction(cards: Card[]): Partial<Resources> {
 // Função para calcular efeito de carta empilhada com multiplicador balanceado
 function calculateStackedEffect(cards: Card[], gameState: GameState): Partial<Resources> {
   if (cards.length === 0) return {};
-  
-  // Para cálculos de visualização, forçar execução ignorando restrições de fase
-  const tempGameState = { ...gameState, phase: 'production' as const };
-  const baseEffect = executeCardEffects(cards[0].effect_logic ?? null, tempGameState, cards[0].id) || {};
-  
+  const baseEffect = executeCardEffects(cards[0].effect_logic ?? null, gameState, cards[0].id) || {};
   const multiplier = 1 + (cards.length - 1) * 0.5;
   const stackedEffect: Partial<Resources> = {};
   Object.entries(baseEffect).forEach(([key, value]) => {
@@ -2955,21 +2951,15 @@ export function useGameState() {
       
       // ===== EXECUÇÃO UNIFICADA DE EFEITOS =====
       let effect: Partial<Resources> = {};
-      
-      console.log('[EFFECT DEBUG] Processando efeitos na construção:', selectedCard.name);
-      console.log('[EFFECT DEBUG] effect_logic:', selectedCard.effect_logic);
-      console.log('[EFFECT DEBUG] Fase atual:', g.phase);
-      
       if (targetCell.level && targetCell.level > 1) {
         effect = calculateStackedEffect(cards, g);
-        console.log('[EFFECT DEBUG] Efeito empilhado calculado:', effect);
       } else if (selectedCard.effect_logic && selectedCard.effect_logic.includes('ON_DICE')) {
         // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
         console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
         console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
         // Não executar o efeito agora, retornar objeto vazio
       } else if (selectedCard.effect_logic) {
-        // Para outros efeitos, executar normalmente (forçando execução para build phase)
+        // Para outros efeitos, executar normalmente
         effect = executeCardEffects(
           selectedCard.effect_logic,
           g,
@@ -2977,11 +2967,8 @@ export function useGameState() {
           undefined, // diceNumber
           setTemporaryBoosts,
           setContinuousBoosts,
-          addToHistory,
-          true // forceExecution: true for construction phase
+          addToHistory
         ) || {};
-        
-        console.log('[EFFECT DEBUG] Efeito imediato executado:', effect);
       }
       
       // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
@@ -3010,15 +2997,15 @@ export function useGameState() {
       console.log('[RESOURCES DEBUG] Custo da carta construída:', selectedCard.cost);
       console.log('[RESOURCES DEBUG] Efeito da carta construída:', effect);
       
-      // Aplicar o custo da carta E os efeitos imediatos
+      // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
       const newResources: Resources = {
-        coins: g.resources.coins - (selectedCard.cost.coins ?? 0) + (effect.coins ?? 0),
-        food: g.resources.food - (selectedCard.cost.food ?? 0) + (effect.food ?? 0),
-        materials: g.resources.materials - (selectedCard.cost.materials ?? 0) + (effect.materials ?? 0),
-        population: g.resources.population - (selectedCard.cost.population ?? 0) + (effect.population ?? 0),
+        coins: g.resources.coins - (selectedCard.cost.coins ?? 0),
+        food: g.resources.food - (selectedCard.cost.food ?? 0),
+        materials: g.resources.materials - (selectedCard.cost.materials ?? 0),
+        population: g.resources.population - (selectedCard.cost.population ?? 0),
       };
       
-      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo + efeito:', newResources);
+      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
       
       /*console.log('🏗️ Recursos atualizados:', {
         antes: g.resources,
@@ -3551,31 +3538,17 @@ export function useGameState() {
     // Filtrar apenas cartas não desativadas
     const activeCards = allCards.filter(card => !card.deactivated);
     
-    // TEMPORARIAMENTE ALTERAR A FASE PARA 'production' PARA PERMITIR EXECUÇÃO DOS EFEITOS PRODUCE_*
-    const tempGameState = { ...game, phase: 'production' as const };
-    
     activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar executeCardEffects para produção normal (sem forçar execução - PRODUCE_* só executa aqui)
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id, undefined, setTemporaryBoosts, setContinuousBoosts, addToHistory, false) : {};
-        
-        console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {
-          effect_logic: card.effect_logic,
-          result: p
+        // Usar diretamente executeCardEffects em vez de parseProduction
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, game, card.id) : {};
+        Object.entries(p).forEach(([key, value]) => {
+          prod[key as keyof Resources] += value || 0;
+          if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
         });
-        
-        // Verificar se p é um objeto válido com propriedades numéricas
-        if (p && typeof p === 'object') {
-          Object.entries(p).forEach(([key, value]) => {
-            if (typeof value === 'number') {
-              prod[key as keyof Resources] += value || 0;
-              if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
-            }
-          });
-        }
       }
     });
     
@@ -3657,9 +3630,6 @@ export function useGameState() {
         ...g.playerStats,
         totalProduction: g.playerStats.totalProduction + prod.coins + prod.food + prod.materials + prod.population,
       },
-      // ATUALIZAR TRACKING DE EFEITOS APENAS SE NÃO FOR FORÇADO
-      // Se foi forçado, não queremos salvar o tracking para evitar duplicação
-      ...(tempGameState.effectTracking && tempGameState.effectTracking !== game.effectTracking ? {} : { effectTracking: tempGameState.effectTracking }),
       phase: 'production',
     }));
     if (prod.coins || prod.food || prod.materials || prod.population) {
@@ -3673,7 +3643,7 @@ export function useGameState() {
       setGame((g) => ({ ...g, phase: 'end' }));
       setProductionSummary(null);
     }, 1800);
-  }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction, game]);
+  }, [game.farmGrid, game.cityGrid, game.eventGrid, game.productionReduction]);
 
   // --- PROPS PARA COMPONENTES ---
   const { prod: prodPerTurn, details: prodDetails } = getProductionPerTurnDetails(game.farmGrid, game.cityGrid, game);

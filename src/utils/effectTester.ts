@@ -97,7 +97,6 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
     const executionResultAny = executionResult as any;
     const hasSpecialEffects = executionResult && (
       executionResultAny.hasEffectExecuted ||
-      executionResultAny.diceEffectTested ||
       executionResultAny.reputation !== undefined ||
       executionResultAny.defense !== undefined ||
       executionResultAny.landmarks !== undefined ||

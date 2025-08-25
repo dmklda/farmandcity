@@ -1,6 +1,3 @@
-// Sistema Híbrido de Parsing de Efeitos
-// Combina parsing simples para efeitos básicos e JSON para efeitos complexos
-
 import { 
   SimpleEffect, 
   ConditionalEffect, 
@@ -9,645 +6,414 @@ import {
   CardEffectLogic,
   SimpleEffectType,
   EffectFrequency,
-  RandomEffect,
-  ConstructionBoostEffect,
   CardRestriction,
   CardRestrictionType,
-  RestrictionScope
+  RandomEffect
 } from '../types/card';
 
-// ===== PARSER DE EFEITOS SIMPLES =====
-
-/**
- * Converte uma string de effect_logic simples em um array de efeitos
- * Formato: "PRODUCE_FOOD:3;GAIN_COINS:2"
- */
-export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
-  const effects: SimpleEffect[] = [];
-  const statements = effectLogic.split(';');
+export function parseEffectLogic(effectLogic: string): CardEffectLogic | null {
+  console.log('[PARSER DEBUG] ===== INICIANDO PARSING =====');
+  console.log('[PARSER DEBUG] EffectLogic recebido:', effectLogic);
   
-  for (const statement of statements) {
-    const [type, ...params] = statement.trim().split(':');
-    
-    if (!type) continue;
-    
-    const effectType = type.trim() as SimpleEffectType;
-    
-    // Alguns efeitos não precisam de parâmetros ou têm valor padrão
-    let amount = 1; // valor padrão
-    if (params.length > 0 && !isNaN(parseInt(params[0]))) {
-      amount = parseInt(params[0]);
-    }
-    
-    const effect: SimpleEffect = {
-      type: effectType,
-      amount: amount
-    };
-    
-    // Determinar frequência baseada no tipo de efeito
-    effect.frequency = determineEffectFrequency(effectType, params);
-    
-    // Debug log para efeitos BOOST_ALL_*
-    if (effectType.startsWith('BOOST_ALL_')) {
-      console.log(`[PARSER DEBUG] Parseando efeito BOOST_ALL: ${effectType}:${amount}${params.length > 1 ? ':' + params.slice(1).join(':') : ''} -> Frequência: ${effect.frequency}`);
-    }
-    
-    // Processar parâmetros adicionais
-    if (params.length > 1) {
-      const secondParam = params[1];
-      // Para efeitos de troca, o segundo parâmetro é o recurso a receber
-      if (
-        effectType === 'TRADE_MATERIALS_FOR_FOOD' ||
-        effectType === 'TRADE_FOOD_FOR_COINS' ||
-        effectType === 'TRADE_COINS_FOR_MATERIALS'
-      ) {
-        if (!isNaN(parseInt(secondParam))) {
-          (effect as any).extraAmount = parseInt(secondParam);
-        }
-      } else if (!isNaN(parseInt(secondParam))) {
-        if (effect.frequency === 'ON_TURN_X') {
-          effect.turnInterval = parseInt(secondParam);
-        } else {
-          effect.duration = parseInt(secondParam);
-        }
-      } else {
-        effect.condition = secondParam;
-      }
-      // Processar terceiro parâmetro se existir
-      if (params.length > 2) {
-        const thirdParam = params[2];
-        if (thirdParam === 'PER_TURN' || thirdParam === 'ONCE' || thirdParam === 'TEMPORARY') {
-          // Já foi processado em determineEffectFrequency
-          console.log(`[PARSER DEBUG] Frequência explícita detectada: ${thirdParam} para efeito ${effectType}`);
-        } else if (!isNaN(parseInt(thirdParam))) {
-          effect.duration = parseInt(thirdParam);
-        }
-      }
-    }
-    
-    // Definir máximo de execuções para efeitos únicos
-    if (effect.frequency === 'ONCE') {
-      effect.maxExecutions = 1;
-    }
-    
-    effects.push(effect);
-  }
-  
-  return effects;
-}
-
-/**
- * Determina a frequência de um efeito baseado no tipo
- */
-function determineEffectFrequency(effectType: SimpleEffectType, params: string[]): EffectFrequency {
-  // Verificar primeiro se há especificação explícita de frequência nos parâmetros
-  if (params.length > 1) {
-    const lastParam = params[params.length - 1];
-    if (lastParam === 'PER_TURN') {
-      return 'PER_TURN';
-    }
-    if (lastParam === 'ONCE') {
-      return 'ONCE';
-    }
-    if (lastParam === 'TEMPORARY') {
-      return 'TEMPORARY';
-    }
-    if (lastParam === 'CONTINUOUS') {
-      return 'CONTINUOUS';
-    }
-  }
-  
-  // Efeitos que executam apenas uma vez
-  if (effectType.startsWith('GAIN_') || 
-      effectType.startsWith('LOSE_') || 
-      effectType.startsWith('COST_') ||
-      effectType === 'RESTORE_POPULATION' ||
-      effectType === 'GAIN_DEFENSE' ||
-      effectType === 'GAIN_LANDMARK' ||
-      effectType === 'GAIN_REPUTATION' ||
-      effectType === 'DESTROY_CARD' ||
-      effectType === 'STEAL_CARD' ||
-      effectType === 'CANCEL_EVENT' ||
-      effectType === 'BLOCK_NEXT_NEGATIVE_EVENT') {
-    return 'ONCE';
-  }
-  
-  // Efeitos que executam a cada turno
-  if (effectType.startsWith('PRODUCE_') ||
-      effectType.startsWith('BOOST_') ||
-      effectType === 'RESTRICT_ACTION_CARDS' ||
-      effectType === 'RESTRICT_MAGIC_CARDS' ||
-      effectType === 'RESTRICT_CITY_CARDS' ||
-      effectType === 'RESTRICT_FARM_CARDS' ||
-      effectType === 'RESTRICT_EVENT_CARDS' ||
-      effectType === 'RESTRICT_LANDMARK_CARDS') {
-    return 'PER_TURN';
-  }
-  
-  // Efeitos temporários (com duração específica)
-  if (effectType.endsWith('_TEMP') ||
-      effectType === 'BOOST_ALL_FARMS_FOOD_TEMP' ||
-      effectType === 'BOOST_ALL_CITIES_COINS_TEMP' ||
-      effectType === 'BOOST_ALL_CITIES_TEMP' ||
-      effectType === 'BOOST_ALL_FARMS_TEMP') {
-    return 'TEMPORARY'; // Executa por X turnos
-  }
-  
-  // Efeitos condicionais
-  if (effectType.startsWith('IF_') || 
-      effectType === 'BLOCK_ACTION' ||
-      effectType === 'DEACTIVATE_CITY_CARD') {
-    return 'ON_CONDITION';
-  }
-  
-  // Efeitos opcionais (descartar carta para ativar)
-  if (effectType.startsWith('OPTIONAL_DISCARD_') ||
-      effectType === 'OPTIONAL_DISCARD_BOOST_FARM' ||
-      effectType === 'OPTIONAL_DISCARD_BOOST_CITY' ||
-      effectType === 'OPTIONAL_DISCARD_BOOST_LANDMARK' ||
-      effectType === 'OPTIONAL_DISCARD_BUY_MAGIC_CARD' ||
-      effectType === 'OPTIONAL_DISCARD_ELEMENTAL') {
-    return 'ON_CONDITION'; // Executa se jogador escolher
-  }
-  
-  // Efeitos de boost para todas as construções
-  if (effectType === 'BOOST_ALL_CONSTRUCTIONS_DOUBLE') {
-    return 'PER_TURN'; // Executa a cada turno
-  }
-  
-  // Efeitos contínuos
-  if (effectType === 'PROTECT_AGAINST_EVENTS' ||
-      effectType === 'ABSORB_NEGATIVE_EFFECTS') {
-    return 'CONTINUOUS';
-  }
-  
-  // Padrão: executa a cada turno
-  return 'PER_TURN';
-}
-
-/**
- * Converte uma string de effect_logic condicional em um array de efeitos condicionais
- * Formato: "IF_CITY_EXISTS:GAIN_COINS:5"
- */
-export function parseConditionalEffectLogic(effectLogic: string): ConditionalEffect[] {
-  const effects: ConditionalEffect[] = [];
-  
-  // Primeiro verificamos se há condições com operador AND (;) ou OR (|)
-  let statements: string[];
-  let isOrOperator = false;
-  
-  if (effectLogic.includes('|')) {
-    statements = effectLogic.split('|');
-    isOrOperator = true;
-    console.log('[PARSER DEBUG] Detectado operador OR (|) para condições:', statements);
-  } else {
-    statements = effectLogic.split(';');
-    console.log('[PARSER DEBUG] Detectado operador AND (;) para condições:', statements);
-  }
-  
-  for (let i = 0; i < statements.length; i++) {
-    const statement = statements[i].trim();
-    
-    if (statement.startsWith('IF_')) {
-      const [condition, ...effectParams] = statement.split(':');
-      
-      if (effectParams.length >= 2) {
-        const effectType = effectParams[0] as SimpleEffectType;
-        const amount = parseInt(effectParams[1]);
-        
-        if (!isNaN(amount)) {
-          const conditionalEffect: ConditionalEffect = {
-            type: condition as any,
-            effect: {
-              type: effectType,
-              amount: amount,
-              frequency: 'ON_CONDITION'
-            },
-            // Adicionamos uma propriedade para indicar o tipo de operador lógico
-            logicalOperator: isOrOperator ? 'OR' : 'AND'
-          };
-          
-          effects.push(conditionalEffect);
-        }
-      }
-    } else {
-      // Se não começar com IF_, é um efeito simples após o operador OR
-      // Por exemplo: "IF_CITY_EXISTS:GAIN_COINS:5|GAIN_COINS:3"
-      // Nesse caso, criamos um efeito condicional especial "FALLBACK" que sempre é verdadeiro
-      if (isOrOperator && statement.includes(':')) {
-        const effectParams = statement.split(':');
-        if (effectParams.length >= 2) {
-          const effectType = effectParams[0] as SimpleEffectType;
-          const amount = parseInt(effectParams[1]);
-          
-          if (!isNaN(amount)) {
-            const conditionalEffect: ConditionalEffect = {
-              type: 'FALLBACK' as any, // Tipo especial que sempre retorna true
-              effect: {
-                type: effectType,
-                amount: amount,
-                frequency: 'ON_CONDITION'
-              },
-              logicalOperator: 'OR'
-            };
-            
-            effects.push(conditionalEffect);
-            console.log('[PARSER DEBUG] Adicionado efeito FALLBACK para operador OR:', conditionalEffect);
-          }
-        }
-      }
-    }
-  }
-  
-  return effects;
-}
-
-/**
- * Converte uma string de effect_logic com dados em efeitos de produção por dado
- * Formato: "PRODUCE_FOOD:1:ON_DICE:1,2"
- */
-export function parseDiceEffectLogic(effectLogic: string): DiceProductionEffect[] {
-  const effects: DiceProductionEffect[] = [];
-  const statements = effectLogic.split(';');
-  
-  for (const statement of statements) {
-    if (statement.includes('ON_DICE:')) {
-      const [effectPart, dicePart] = statement.split('ON_DICE:');
-      const [type, amount] = effectPart.split(':');
-      
-      if (type && amount) {
-        const effectType = type.trim() as SimpleEffectType;
-        const effectAmount = parseInt(amount);
-        const diceNumbers = dicePart.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
-        
-        if (!isNaN(effectAmount) && diceNumbers.length > 0) {
-          const diceEffect: DiceProductionEffect = {
-            type: 'ON_DICE',
-            diceNumbers: diceNumbers,
-            effect: {
-              type: effectType,
-              amount: effectAmount,
-              frequency: 'ON_DICE'
-            }
-          };
-          
-          // Reduzir logs excessivos - só logar em casos específicos
-          // Usando uma variável para controlar os logs de dados
-          const debugDice = false; // Mudar para true para ativar logs de dados
-          if (debugDice) {
-            console.log(`[DICE PARSER] Efeito de dado analisado: ${effectType} ${effectAmount} para dados ${diceNumbers.join(',')}`);
-          }
-          effects.push(diceEffect);
-        }
-      }
-    }
-  }
-  
-  return effects;
-}
-
-// ===== NOVOS PARSERS PARA EFEITOS COMPLEXOS =====
-
-/**
- * Converte uma string de effect_logic com efeitos aleatórios
- * Formato: "RANDOM_CHANCE:50:PRODUCE_MATERIALS:2|LOSE_MATERIALS:1"
- */
-export function parseRandomEffectLogic(effectLogic: string): RandomEffect[] {
-  const effects: RandomEffect[] = [];
-  const statements = effectLogic.split(';');
-  
-  for (const statement of statements) {
-    if (statement.startsWith('RANDOM_CHANCE:')) {
-      const [_, chanceStr, ...effectParts] = statement.split(':');
-      const chance = parseInt(chanceStr);
-      
-      if (!isNaN(chance) && effectParts.length > 0) {
-        const effectString = effectParts.join(':');
-        // Usar '|' como separador para efeitos alternativos
-        const [mainEffect, fallbackEffect] = effectString.split('|');
-        
-        const mainEffects = parseSimpleEffectLogic(mainEffect);
-        let fallback: SimpleEffect | undefined;
-        
-        if (fallbackEffect) {
-          const fallbackEffects = parseSimpleEffectLogic(fallbackEffect);
-          fallback = fallbackEffects[0];
-        }
-        
-        if (mainEffects.length > 0) {
-          const randomEffect: RandomEffect = {
-            type: 'RANDOM_CHANCE',
-            chance: chance,
-            effects: mainEffects,
-            fallbackEffect: fallback
-          };
-          
-          effects.push(randomEffect);
-        }
-      }
-    }
-  }
-  
-  return effects;
-}
-
-/**
- * Parser para efeitos ON_PLAY_* 
- * Formato: "ON_PLAY_FARM:GAIN_MATERIALS:1"
- */
-export function parseOnPlayEffects(effectLogic: string): SimpleEffect[] {
-  const effects: SimpleEffect[] = [];
-  const statements = effectLogic.split(';');
-  
-  for (const statement of statements) {
-    if (statement.includes('ON_PLAY_')) {
-      const [triggerPart, ...effectParts] = statement.split(':');
-      
-      if (effectParts.length >= 2) {
-        const effectType = effectParts[0] as SimpleEffectType;
-        const amount = parseInt(effectParts[1]);
-        
-        if (!isNaN(amount)) {
-          effects.push({
-            type: triggerPart as SimpleEffectType, // ON_PLAY_FARM, ON_PLAY_CITY, etc.
-            amount: 0, // O trigger em si não tem amount
-            target: effectType,
-            frequency: 'ON_CONDITION'
-          } as any);
-          
-          // Também adicionar o efeito real que será executado
-          effects.push({
-            type: effectType,
-            amount: amount,
-            frequency: 'ON_CONDITION'
-          });
-        }
-      }
-    }
-  }
-  
-  return effects;
-}
-
-/**
- * Converte uma string de effect_logic com boost de construções
- * Formato: "BOOST_CONSTRUCTIONS:food:1:farm,city"
- */
-export function parseConstructionBoostLogic(effectLogic: string): ConstructionBoostEffect[] {
-  const effects: ConstructionBoostEffect[] = [];
-  const statements = effectLogic.split(';');
-  
-  for (const statement of statements) {
-    if (statement.startsWith('BOOST_CONSTRUCTIONS:')) {
-      const [_, resourceType, amountStr, targetTypesStr] = statement.split(':');
-      const amount = parseInt(amountStr);
-      
-      if (!isNaN(amount) && resourceType && targetTypesStr) {
-        const targetTypes = targetTypesStr.split(',').map(t => t.trim()) as any[];
-        
-        const boostEffect: ConstructionBoostEffect = {
-          type: 'BOOST_CONSTRUCTIONS',
-          resourceType: resourceType as any,
-          amount: amount,
-          targetTypes: targetTypes,
-          frequency: 'PER_TURN'
-        };
-        
-        effects.push(boostEffect);
-      }
-    }
-  }
-  
-  return effects;
-}
-
-// ===== PARSER DE EFEITOS COMPLEXOS (JSON) =====
-
-/**
- * Converte uma string JSON de effect_logic em um objeto ComplexEffect
- */
-export function parseComplexEffectLogic(effectLogic: string): ComplexEffect | null {
-  try {
-    return JSON.parse(effectLogic);
-  } catch (error) {
-    console.warn('Erro ao fazer parse do JSON:', error);
-    return null;
-  }
-}
-
-// ===== PARSER DE RESTRIÇÕES TEMPORÁRIAS =====
-
-/**
- * Converte uma string de restrição em um objeto CardRestriction
- * Formato: "RESTRICT_CARD_TYPES:action,magic:1:next_turn"
- */
-export function parseRestrictionLogic(restrictionLogic: string): CardRestriction | null {
-  const [type, types, duration, scope] = restrictionLogic.split(':');
-  
-  if (type !== 'RESTRICT_CARD_TYPES' || !types || !duration || !scope) {
+  if (!effectLogic || effectLogic.trim() === '') {
+    console.log('[PARSER DEBUG] EffectLogic vazio ou null');
     return null;
   }
   
-  const restrictedTypes = types.split(',').map(t => t.trim()) as CardRestrictionType[];
-  const durationNum = parseInt(duration);
-  
-  if (isNaN(durationNum)) {
-    return null;
-  }
-  
-  const restrictionScope = scope.trim() as RestrictionScope;
-  
-  return {
-    id: `restriction_${Date.now()}_${Math.random()}`,
-    restrictedTypes,
-    duration: durationNum,
-    scope: restrictionScope,
-    appliedAt: 0, // Será definido pelo executor
-    appliedBy: '', // Será definido pelo executor
-    description: `Não pode jogar cartas de ${restrictedTypes.join(', ')} por ${durationNum} turno(s)`,
-    isActive: true
-  };
-}
-
-/**
- * Verifica se uma string contém lógica de restrição
- */
-export function hasRestrictionLogic(effectLogic: string): boolean {
-  return effectLogic.includes('RESTRICT_CARD_TYPES:');
-}
-
-/**
- * Extrai restrições de uma string de effect_logic
- */
-export function extractRestrictions(effectLogic: string): CardRestriction[] {
-  const restrictions: CardRestriction[] = [];
-  const statements = effectLogic.split(';');
-  
-  for (const statement of statements) {
-    if (statement.trim().startsWith('RESTRICT_CARD_TYPES:')) {
-      const restriction = parseRestrictionLogic(statement.trim());
-      if (restriction) {
-        restrictions.push(restriction);
-      }
-    }
-  }
-  
-  return restrictions;
-}
-
-// ===== PARSER PRINCIPAL HÍBRIDO =====
-
-/**
- * Parser principal que detecta automaticamente o tipo de effect_logic e retorna o objeto apropriado
- */
-export function parseEffectLogic(effectLogic: string | null): CardEffectLogic | null {
-  if (!effectLogic) return null;
+  const statements = effectLogic.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  console.log('[PARSER DEBUG] Statements extraídos:', statements);
   
   const result: CardEffectLogic = {};
   
-  // Verificar se é um efeito JSON complexo
-  if (effectLogic.trim().startsWith('{')) {
-    const complex = parseComplexEffectLogic(effectLogic);
-    if (complex) {
-      result.complex = complex;
-      return result;
+  for (const statement of statements) {
+    console.log('[PARSER DEBUG] Processando statement:', statement);
+    
+    // Verificar se é um efeito condicional (IF_*)
+    if (statement.startsWith('IF_')) {
+      console.log('[PARSER DEBUG] Detectado efeito condicional:', statement);
+      parseConditionalEffect(statement, result);
+      continue;
     }
+    
+    // Verificar se é um efeito aleatório (RANDOM_CHANCE)
+    if (statement.startsWith('RANDOM_CHANCE')) {
+      console.log('[PARSER DEBUG] Detectado efeito aleatório:', statement);
+      parseRandomEffect(statement, result);
+      continue;
+    }
+    
+    // Verificar se é um efeito de dado (ON_DICE)
+    if (statement.startsWith('ON_DICE')) {
+      console.log('[PARSER DEBUG] Detectado efeito de dado:', statement);
+      parseDiceEffect(statement, result);
+      continue;
+    }
+    
+    // Verificar se é um efeito simples
+    console.log('[PARSER DEBUG] Processando como efeito simples:', statement);
+    parseSimpleEffect(statement, result);
   }
   
-  // Verificar se é um efeito simples (excluindo efeitos ON_DICE)
-  if ((effectLogic.includes('PRODUCE_') || effectLogic.includes('GAIN_') || effectLogic.includes('LOSE_') ||
-      effectLogic.includes('BOOST_') || effectLogic.includes('EXTRA_') || effectLogic.includes('DUPLICATE_') ||
-      effectLogic.includes('TRADE_') || effectLogic.includes('COST_') || effectLogic.includes('RESTORE_') ||
-      effectLogic.includes('DRAW_') || effectLogic.includes('CREATE_') || effectLogic.includes('REDUCE_') ||
-      effectLogic.includes('DISCARD_') || effectLogic.includes('PROTECT_') || effectLogic.includes('RESTRICT_') ||
-      effectLogic.includes('CANCEL_') || effectLogic.includes('BLOCK_') || effectLogic.includes('DESTROY_') ||
-      effectLogic.includes('STEAL_') || effectLogic.includes('ABSORB_') || effectLogic.includes('OPTIONAL_') ||
-      effectLogic.includes('INDESTRUCTIBLE')) && !effectLogic.includes('ON_DICE:')) {
-    result.simple = parseSimpleEffectLogic(effectLogic);
-  }
-  
-  // Verificar se tem efeitos condicionais
-  if (effectLogic.includes('IF_')) {
-    result.conditional = parseConditionalEffectLogic(effectLogic);
-  }
-  
-  // Verificar se tem efeitos de dado
-  if (effectLogic.includes('ON_DICE:')) {
-    result.dice = parseDiceEffectLogic(effectLogic);
-  }
-  
-  // Verificar se tem efeitos aleatórios
-  if (effectLogic.includes('RANDOM_CHANCE:')) {
-    result.random = parseRandomEffectLogic(effectLogic);
-  }
-  
-  // Verificar se tem efeitos ON_PLAY_*
-  if (effectLogic.includes('ON_PLAY_')) {
-    const onPlayEffects = parseOnPlayEffects(effectLogic);
-    if (!result.simple) result.simple = [];
-    result.simple.push(...onPlayEffects);
-  }
-
-  // Verificar se tem boost de construções
-  if (effectLogic.includes('BOOST_CONSTRUCTIONS:')) {
-    result.constructionBoost = parseConstructionBoostLogic(effectLogic);
-  }
-  
-  // Se não se encaixou em nenhum padrão, salvar como raw
-  if ((!result.simple || result.simple.length === 0) && 
-      (!result.conditional || result.conditional.length === 0) && 
-      (!result.dice || result.dice.length === 0) && 
-      (!result.random || result.random.length === 0) &&
-      (!result.constructionBoost || result.constructionBoost.length === 0) &&
-      !result.complex) {
-    result.raw = effectLogic;
-  }
-  
+  console.log('[PARSER DEBUG] Resultado final:', JSON.stringify(result, null, 2));
+  console.log('[PARSER DEBUG] ===== FINALIZANDO PARSING =====');
   return result;
 }
 
-// ===== VALIDADORES =====
-
-/**
- * Valida se um effect_logic é válido
- */
-export function validateEffectLogic(effectLogic: string): boolean {
-  try {
-    const parsed = parseEffectLogic(effectLogic);
-    return parsed !== null && (
-      (parsed.simple && parsed.simple.length > 0) || 
-      (parsed.conditional && parsed.conditional.length > 0) || 
-      (parsed.dice && parsed.dice.length > 0) || 
-      (parsed.random && parsed.random.length > 0) ||
-      (parsed.constructionBoost && parsed.constructionBoost.length > 0) ||
-      parsed.complex !== null ||
-      parsed.raw !== undefined
-    );
-  } catch (error) {
-    return false;
+function parseConditionalEffect(statement: string, result: CardEffectLogic): void {
+  console.log('[PARSER DEBUG] parseConditionalEffect: processando statement:', statement);
+  const [condition, ...effects] = statement.split(':');
+  console.log('[PARSER DEBUG] Condição:', condition, 'Efeitos:', effects);
+  
+  if (effects.length === 0) {
+    console.log('[PARSER DEBUG] Nenhum efeito encontrado, retornando');
+    return;
+  }
+  
+  // Separar múltiplos efeitos por | (operador OR)
+  const effectStrings = effects.join(':').split('|');
+  console.log('[PARSER DEBUG] Effect strings separados por |:', effectStrings);
+  
+  for (const effectString of effectStrings) {
+    console.log('[PARSER DEBUG] Processando effect string:', effectString.trim());
+    const parsedEffect = parseSimpleEffectLogic(effectString.trim());
+    if (parsedEffect) {
+      if (!result.conditional) result.conditional = [];
+      const conditionalEffect = {
+        type: condition as any,
+        effect: parsedEffect,
+        logicalOperator: effectStrings.length > 1 ? ('OR' as const) : ('AND' as const)
+      };
+      result.conditional.push(conditionalEffect);
+      console.log('[PARSER DEBUG] Efeito condicional adicionado:', conditionalEffect);
+    } else {
+      console.log('[PARSER DEBUG] Falha ao parsear effect string:', effectString.trim());
+    }
   }
 }
 
-/**
- * Retorna o tipo de effect_logic (simple, complex, mixed, invalid)
- */
-export function getEffectLogicType(effectLogic: string): 'simple' | 'complex' | 'mixed' | 'invalid' {
-  try {
-    const parsed = parseEffectLogic(effectLogic);
-    if (!parsed) return 'invalid';
+function parseRandomEffect(statement: string, result: CardEffectLogic): void {
+  console.log('[PARSER DEBUG] parseRandomEffect: processando statement:', statement);
+  const [_, chance, ...effects] = statement.split(':');
+  console.log('[PARSER DEBUG] Chance:', chance, 'Efeitos:', effects);
+  
+  if (effects.length === 0) {
+    console.log('[PARSER DEBUG] Nenhum efeito encontrado, retornando');
+    return;
+  }
+  
+  // Separar efeito principal e fallback por |
+  const effectStrings = effects.join(':').split('|');
+  console.log('[PARSER DEBUG] Effect strings separados por |:', effectStrings);
+  
+  if (effectStrings.length >= 2) {
+    console.log('[PARSER DEBUG] Processando efeito principal e fallback');
+    const mainEffect = parseSimpleEffectLogic(effectStrings[0].trim());
+    const fallbackEffect = parseSimpleEffectLogic(effectStrings[1].trim());
     
-    const hasSimple = parsed.simple && parsed.simple.length > 0;
-    const hasComplex = parsed.complex !== null;
-    const hasConditional = parsed.conditional && parsed.conditional.length > 0;
-    const hasDice = parsed.dice && parsed.dice.length > 0;
-    const hasRandom = parsed.random && parsed.random.length > 0;
-    const hasConstructionBoost = parsed.constructionBoost && parsed.constructionBoost.length > 0;
-    
-    if (hasComplex && !hasSimple && !hasConditional && !hasDice && !hasRandom && !hasConstructionBoost) return 'complex';
-    if (hasSimple && !hasComplex) return 'simple';
-    if (hasSimple || hasConditional || hasDice || hasRandom || hasConstructionBoost) return 'mixed';
-    
-    return 'invalid';
-  } catch (error) {
-    return 'invalid';
+    if (mainEffect) {
+      if (!result.random) result.random = [];
+      const randomEffect = {
+        type: 'RANDOM_CHANCE' as const,
+        chance: parseInt(chance) || 50,
+        effects: [mainEffect],
+        fallbackEffect: fallbackEffect || undefined
+      };
+      result.random.push(randomEffect);
+      console.log('[PARSER DEBUG] Efeito aleatório adicionado:', randomEffect);
+    } else {
+      console.log('[PARSER DEBUG] Falha ao parsear efeito principal');
+    }
+  } else if (effectStrings.length === 1) {
+    console.log('[PARSER DEBUG] Processando apenas efeito principal');
+    const mainEffect = parseSimpleEffectLogic(effectStrings[0].trim());
+    if (mainEffect) {
+      if (!result.random) result.random = [];
+      const randomEffect = {
+        type: 'RANDOM_CHANCE' as const,
+        chance: parseInt(chance) || 50,
+        effects: [mainEffect]
+      };
+      result.random.push(randomEffect);
+      console.log('[PARSER DEBUG] Efeito aleatório adicionado:', randomEffect);
+    } else {
+      console.log('[PARSER DEBUG] Falha ao parsear efeito principal');
+    }
   }
 }
 
-// ===== UTILITÁRIOS =====
+function parseDiceEffect(statement: string, result: CardEffectLogic): void {
+  console.log('[PARSER DEBUG] parseDiceEffect: processando statement:', statement);
+  const [_, diceNumbers, ...effects] = statement.split(':');
+  console.log('[PARSER DEBUG] Dice numbers:', diceNumbers, 'Efeitos:', effects);
+  
+  if (effects.length === 0) {
+    console.log('[PARSER DEBUG] Nenhum efeito encontrado, retornando');
+    return;
+  }
+  
+  const diceNumbersArray = diceNumbers ? diceNumbers.split(',').map(n => parseInt(n.trim())) : [6];
+  console.log('[PARSER DEBUG] Dice numbers array:', diceNumbersArray);
+  
+  const parsedDiceEffect = parseSimpleEffectLogic(effects.join(':'));
+  console.log('[PARSER DEBUG] Efeito de dado parseado:', parsedDiceEffect);
+  
+  if (parsedDiceEffect) {
+    if (!result.dice) result.dice = [];
+    const diceEffect = {
+      type: 'ON_DICE' as const,
+      diceNumbers: diceNumbersArray,
+      effect: parsedDiceEffect
+    };
+    result.dice.push(diceEffect);
+    console.log('[PARSER DEBUG] Efeito de dado adicionado:', diceEffect);
+  } else {
+    console.log('[PARSER DEBUG] Falha ao parsear efeito de dado');
+  }
+}
 
-/**
- * Converte um CardEffectLogic de volta para string (para debugging)
- */
-export function effectLogicToString(effectLogic: CardEffectLogic): string {
-  if (effectLogic.complex) {
-    return JSON.stringify(effectLogic.complex);
+function parseSimpleEffect(statement: string, result: CardEffectLogic): void {
+  console.log('[PARSER DEBUG] parseSimpleEffect: processando statement:', statement);
+  const [effectType, ...params] = statement.split(':');
+  console.log('[PARSER DEBUG] EffectType:', effectType, 'Params:', params);
+  
+  switch (effectType) {
+    case 'PRODUCE_FOOD':
+    case 'PRODUCE_COINS':
+    case 'PRODUCE_MATERIALS':
+    case 'PRODUCE_POPULATION':
+    case 'PRODUCE_REPUTATION':
+    case 'GAIN_FOOD':
+    case 'GAIN_COINS':
+    case 'GAIN_MATERIALS':
+    case 'GAIN_POPULATION':
+    case 'GAIN_REPUTATION':
+    case 'LOSE_FOOD':
+    case 'LOSE_COINS':
+    case 'LOSE_MATERIALS':
+    case 'LOSE_POPULATION':
+    case 'COST_FOOD':
+    case 'COST_COINS':
+    case 'COST_MATERIALS':
+    case 'COST_POPULATION':
+    case 'TRADE_FOOD_FOR_MATERIALS':
+    case 'TRADE_MATERIALS_FOR_FOOD':
+    case 'TRADE_FOOD_FOR_COINS':
+    case 'TRADE_COINS_FOR_MATERIALS':
+    case 'BOOST_ALL_CONSTRUCTIONS':
+    case 'BOOST_ALL_FARMS_FOOD_TEMP':
+    case 'BOOST_ALL_CITIES_COINS_TEMP':
+    case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
+    case 'BOOST_MAGIC_COST_REDUCTION_TEMP':
+    case 'BOOST_ALL_FARMS_FOOD':
+    case 'BOOST_ALL_CITIES_COINS':
+    case 'BOOST_ALL_CITIES_MATERIALS':
+    case 'BOOST_ALL_CITIES_MATERIALS_TEMP':
+    case 'BOOST_MAGIC_COST_REDUCTION':
+    case 'BOOST_ALL_FARMS_POPULATION':
+    case 'BOOST_ALL_CITIES_POPULATION':
+    case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
+    case 'BOOST_ALL_CITIES':
+    case 'BOOST_ALL_FARMS':
+    case 'BOOST_ALL_CITIES_TEMP':
+    case 'BOOST_ALL_FARMS_TEMP':
+    case 'BOOST_ALL_CITIES_COINS_TEMP':
+    case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_MATERIALS':
+    case 'BOOST_ALL_CITIES_WITH_TAG_WORKSHOP_COINS':
+    case 'OPTIONAL_DISCARD_ELEMENTAL':
+    case 'INVOKE_RANDOM_ELEMENTAL':
+    case 'OPTIONAL_DISCARD_GAIN_MATERIALS':
+    case 'OPTIONAL_DISCARD_BOOST_FARM':
+    case 'OPTIONAL_DISCARD_BOOST_CITY':
+    case 'OPTIONAL_DISCARD_BUY_MAGIC_CARD':
+    case 'INDESTRUCTIBLE':
+    case 'BLOCK_NEXT_NEGATIVE_EVENT':
+    case 'ON_PLAY_FARM':
+    case 'ON_PLAY_CITY':
+    case 'ON_PLAY_MAGIC':
+    case 'DRAW_CARD':
+    case 'DRAW_CITY_CARD':
+    case 'DUPLICATE_MAGIC_EFFECTS':
+    case 'RESTRICT_FARM_ACTIVATION':
+    case 'OPTIONAL_PAY_COINS':
+    case 'GAIN_GEM':
+    case 'REDUCE_FARM_PRODUCTION':
+    case 'BOOST_FARM_PRODUCTION':
+    case 'PROTECT_FARMS':
+    case 'LOSE_CARD':
+    case 'STEAL_CARD':
+    case 'RETURN_GRAVEYARD_CARD':
+    case 'RESTORE_POPULATION':
+    case 'GAIN_DEFENSE':
+    case 'GAIN_LANDMARK':
+    case 'EXTRA_CARD_PLAY':
+    case 'CANCEL_EVENT':
+    case 'BLOCK_NEXT_NEGATIVE_EVENT':
+    case 'DESTROY_CARD':
+    case 'STEAL_CARD':
+    case 'PROTECT_AGAINST_EVENTS':
+    case 'ABSORB_NEGATIVE_EFFECTS':
+    case 'EXTRA_BUILD_CITY':
+    case 'REDUCE_PRODUCTION':
+    case 'REDUCE_CITY_COST':
+    case 'DISCARD_CARD':
+    case 'CREATE_CITY_CARD':
+    case 'BOOST_CONSTRUCTION_COST_REDUCTION':
+    case 'BOOST_MAGIC_COST_REDUCTION_TEMP':
+    case 'RESTRICT_ACTION_CARDS':
+    case 'RESTRICT_MAGIC_CARDS':
+    case 'RESTRICT_CITY_CARDS':
+    case 'RESTRICT_FARM_CARDS':
+    case 'RESTRICT_EVENT_CARDS':
+    case 'RESTRICT_LANDMARK_CARDS':
+    case 'BLOCK_ACTION':
+    case 'DEACTIVATE_CITY_CARD':
+    case 'DESTROY_OWN_CARD':
+      if (!result.simple) result.simple = [];
+      const simpleEffect = {
+        type: effectType as SimpleEffectType,
+        amount: parseInt(params[0]) || 0,
+        frequency: determineEffectFrequency(effectType as SimpleEffectType),
+        duration: params[1] ? parseInt(params[1]) : undefined,
+        turnInterval: params[2] ? parseInt(params[2]) : undefined
+      };
+      result.simple.push(simpleEffect);
+      console.log('[PARSER DEBUG] Efeito simples adicionado:', simpleEffect);
+      break;
+      
+    case 'IF_CELESTIAL_FARMS_EXIST':
+    case 'IF_VERTICAL_FARMS_EXIST':
+    case 'IF_HORTA_EXISTS':
+    case 'IF_MAGIC_EXISTS':
+    case 'IF_HAND_GE_5':
+    case 'IF_CITY_GE_3':
+    case 'IF_POPULATION_GE_2':
+    case 'IF_WATER_EXISTS':
+    case 'IF_SACRED_TAG_EXISTS':
+    case 'IF_CITY_EXISTS':
+    case 'IF_FARMS_GE_3':
+    case 'IF_WORKSHOPS_GE_2':
+    case 'IF_COINS_GE_5':
+    case 'IF_COINS_GE_10':
+    case 'IF_TEMPLE_EXISTS':
+      console.log('[PARSER DEBUG] Detectado efeito condicional no parseSimpleEffect:', effectType);
+      if (!result.conditional) result.conditional = [];
+      const parsedEffect = parseSimpleEffectLogic(params.join(':'));
+      if (parsedEffect) {
+        const conditionalEffect = {
+          type: effectType as any,
+          effect: parsedEffect,
+          logicalOperator: 'AND' as const
+        };
+        result.conditional.push(conditionalEffect);
+        console.log('[PARSER DEBUG] Efeito condicional adicionado no parseSimpleEffect:', conditionalEffect);
+      } else {
+        console.log('[PARSER DEBUG] Falha ao parsear efeito condicional no parseSimpleEffect');
+      }
+      break;
+      
+    case 'ON_DICE':
+      console.log('[PARSER DEBUG] Detectado efeito de dado no parseSimpleEffect:', effectType);
+      if (!result.dice) result.dice = [];
+      const diceNumbers = params[0] ? params[0].split(',').map(n => parseInt(n.trim())) : [6];
+      const parsedDiceEffect = parseSimpleEffectLogic(params.slice(1).join(':'));
+      if (parsedDiceEffect) {
+        const diceEffect = {
+          type: 'ON_DICE' as const,
+          diceNumbers,
+          effect: parsedDiceEffect
+        };
+        result.dice.push(diceEffect);
+        console.log('[PARSER DEBUG] Efeito de dado adicionado no parseSimpleEffect:', diceEffect);
+      } else {
+        console.log('[PARSER DEBUG] Falha ao parsear efeito de dado no parseSimpleEffect');
+      }
+      break;
   }
   
-  const parts: string[] = [];
+  console.log('[PARSER DEBUG] parseSimpleEffect: finalizado para statement:', statement);
+}
+
+function parseSimpleEffectLogic(logic: string): SimpleEffect | null {
+  console.log('[PARSER DEBUG] parseSimpleEffectLogic: processando logic:', logic);
   
-  if (effectLogic.simple) {
-    parts.push(...effectLogic.simple.map(e => `${e.type}:${e.amount}${e.frequency ? `:${e.frequency}` : ''}`));
+  if (!logic || logic.trim() === '') {
+    console.log('[PARSER DEBUG] Logic vazio ou null');
+    return null;
   }
   
-  if (effectLogic.conditional) {
-    parts.push(...effectLogic.conditional.map(e => `${e.type}:${e.effect.type}:${e.effect.amount}`));
+  const [effectType, amount, duration] = logic.split(':');
+  console.log('[PARSER DEBUG] EffectType:', effectType, 'Amount:', amount, 'Duration:', duration);
+  
+  const parsedEffect = {
+    type: effectType as SimpleEffectType,
+    amount: parseInt(amount) || 0,
+    frequency: determineEffectFrequency(effectType as SimpleEffectType),
+    duration: duration ? parseInt(duration) : undefined
+  };
+  
+  console.log('[PARSER DEBUG] Efeito parseado:', parsedEffect);
+  return parsedEffect;
+}
+
+function determineEffectFrequency(effectType: SimpleEffectType): EffectFrequency {
+  console.log('[PARSER DEBUG] determineEffectFrequency: determinando frequência para', effectType);
+  
+  let frequency: EffectFrequency;
+  
+  switch (effectType) {
+    case 'PRODUCE_FOOD':
+    case 'PRODUCE_COINS':
+    case 'PRODUCE_MATERIALS':
+    case 'PRODUCE_POPULATION':
+    case 'PRODUCE_REPUTATION':
+      frequency = 'PER_TURN';
+      break;
+    case 'BOOST_ALL_FARMS_FOOD_TEMP':
+    case 'BOOST_ALL_CITIES_COINS_TEMP':
+    case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
+    case 'BOOST_MAGIC_COST_REDUCTION_TEMP':
+    case 'BOOST_ALL_CITIES_MATERIALS_TEMP':
+    case 'BOOST_ALL_CITIES_COINS_TEMP':
+    case 'BOOST_ALL_FARMS_FOOD_TEMP':
+    case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
+      frequency = 'TEMPORARY';
+      break;
+    case 'BOOST_ALL_FARMS_FOOD':
+    case 'BOOST_ALL_CITIES_COINS':
+    case 'BOOST_ALL_CONSTRUCTIONS':
+    case 'BOOST_ALL_CITIES_MATERIALS':
+    case 'BOOST_MAGIC_COST_REDUCTION':
+    case 'BOOST_ALL_FARMS_POPULATION':
+    case 'BOOST_ALL_CITIES_POPULATION':
+    case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
+    case 'BOOST_ALL_CITIES':
+    case 'BOOST_ALL_FARMS':
+      frequency = 'CONTINUOUS';
+      break;
+    default:
+      frequency = 'ONCE';
+      break;
   }
   
-  if (effectLogic.dice) {
-    parts.push(...effectLogic.dice.map(e => `${e.effect.type}:${e.effect.amount}:ON_DICE:${e.diceNumbers.join(',')}`));
+  console.log('[PARSER DEBUG] Frequência determinada:', frequency, 'para', effectType);
+  return frequency;
+}
+
+export function extractRestrictions(effectLogic: string): CardRestriction[] {
+  const restrictions: CardRestriction[] = [];
+  if (effectLogic.includes('RESTRICT_CARD_TYPES:')) {
+    const parts = effectLogic.split('RESTRICT_CARD_TYPES:')[1].split(';')[0];
+    const cardTypes = parts.split(',').map(t => t.trim() as CardRestrictionType);
+    restrictions.push({
+      id: `restriction_${Date.now()}_${Math.random()}`,
+      restrictedTypes: cardTypes,
+      duration: 1,
+      scope: 'next_turn',
+      appliedAt: 0,
+      appliedBy: 'system',
+      description: `Restrição: ${cardTypes.join(', ')} não podem ser jogadas`,
+      isActive: true
+    });
   }
-  
-  if (effectLogic.random) {
-    parts.push(...effectLogic.random.map(e => `RANDOM_CHANCE:${e.chance}:${e.effects.map(ef => `${ef.type}:${ef.amount}`).join(';')}${e.fallbackEffect ? `;${e.fallbackEffect.type}:${e.fallbackEffect.amount}` : ''}`));
-  }
-  
-  if (effectLogic.constructionBoost) {
-    parts.push(...effectLogic.constructionBoost.map(e => `BOOST_CONSTRUCTIONS:${e.resourceType}:${e.amount}:${e.targetTypes.join(',')}`));
-  }
-  
-  if (effectLogic.raw) {
-    parts.push(effectLogic.raw);
-  }
-  
-  return parts.join(';');
+  return restrictions;
 }
