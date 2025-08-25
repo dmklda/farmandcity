@@ -2959,7 +2959,7 @@ export function useGameState() {
         console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
         // Não executar o efeito agora, retornar objeto vazio
       } else if (selectedCard.effect_logic) {
-        // Para outros efeitos, executar normalmente
+        // Para outros efeitos, executar normalmente durante construção
         effect = executeCardEffects(
           selectedCard.effect_logic,
           g,
@@ -2967,7 +2967,8 @@ export function useGameState() {
           undefined, // diceNumber
           setTemporaryBoosts,
           setContinuousBoosts,
-          addToHistory
+          addToHistory,
+          true // forceExecution: true para permitir efeitos GAIN_, LOSE_, COST_ e BOOST_ durante build
         ) || {};
       }
       
@@ -3543,8 +3544,17 @@ export function useGameState() {
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar diretamente executeCardEffects em vez de parseProduction
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, game, card.id) : {};
+        // Usar diretamente executeCardEffects durante produção
+        const p = card.effect_logic ? executeCardEffects(
+          card.effect_logic, 
+          game, 
+          card.id, 
+          undefined, // diceNumber
+          undefined, // setTemporaryBoosts (não necessário durante produção)
+          undefined, // setContinuousBoosts (não necessário durante produção) 
+          undefined, // addToHistory (não necessário durante produção)
+          false // forceExecution: false para executar apenas efeitos PER_TURN durante production
+        ) : {};
         Object.entries(p).forEach(([key, value]) => {
           prod[key as keyof Resources] += value || 0;
           if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
