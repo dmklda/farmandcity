@@ -47,6 +47,16 @@ function canExecuteEffect(
   
   switch (effect.frequency) {
     case 'ONCE':
+      // Efeitos imediatos (GAIN_*, LOSE_*, COST_*) podem executar durante construção
+      const isImmediateEffect = effect.type.startsWith('GAIN_') || 
+                               effect.type.startsWith('LOSE_') || 
+                               effect.type.startsWith('COST_');
+      
+      if (isImmediateEffect && gameState.phase === 'build') {
+        // Durante construção, efeitos imediatos sempre podem executar (uma vez)
+        return !tracking || tracking.executionCount < (effect.maxExecutions || 1);
+      }
+      
       // Efeito único: só executa uma vez
       if (tracking && tracking.executionCount >= (effect.maxExecutions || 1)) {
         return false;
@@ -54,17 +64,22 @@ function canExecuteEffect(
       break;
       
     case 'PER_TURN':
-      // Efeito por turno: executa apenas uma vez por turno durante a fase de produção
+      // Efeito por turno: executa apenas durante a fase de produção
+      if (gameState.phase !== 'production') {
+        return false;
+      }
+      
       // Se não há tracking, pode executar
       if (!tracking) {
-        return gameState.phase === 'production';
+        return true;
       }
+      
       // Se já executou neste turno, não pode executar novamente
       if (tracking.lastExecutedTurn === currentTurn) {
         return false;
       }
-      // Só executa durante a fase de produção
-      return gameState.phase === 'production';
+      
+      return true;
       
     case 'ON_TURN_X':
       // Efeito a cada X turnos

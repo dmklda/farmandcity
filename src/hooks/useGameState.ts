@@ -2955,8 +2955,14 @@ export function useGameState() {
       
       // ===== EXECUÇÃO UNIFICADA DE EFEITOS =====
       let effect: Partial<Resources> = {};
+      
+      console.log('[EFFECT DEBUG] Processando efeitos na construção:', selectedCard.name);
+      console.log('[EFFECT DEBUG] effect_logic:', selectedCard.effect_logic);
+      console.log('[EFFECT DEBUG] Fase atual:', g.phase);
+      
       if (targetCell.level && targetCell.level > 1) {
         effect = calculateStackedEffect(cards, g);
+        console.log('[EFFECT DEBUG] Efeito empilhado calculado:', effect);
       } else if (selectedCard.effect_logic && selectedCard.effect_logic.includes('ON_DICE')) {
         // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
         console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
@@ -2973,6 +2979,8 @@ export function useGameState() {
           setContinuousBoosts,
           addToHistory
         ) || {};
+        
+        console.log('[EFFECT DEBUG] Efeito imediato executado:', effect);
       }
       
       // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
@@ -3001,15 +3009,15 @@ export function useGameState() {
       console.log('[RESOURCES DEBUG] Custo da carta construída:', selectedCard.cost);
       console.log('[RESOURCES DEBUG] Efeito da carta construída:', effect);
       
-      // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
+      // Aplicar o custo da carta E os efeitos imediatos
       const newResources: Resources = {
-        coins: g.resources.coins - (selectedCard.cost.coins ?? 0),
-        food: g.resources.food - (selectedCard.cost.food ?? 0),
-        materials: g.resources.materials - (selectedCard.cost.materials ?? 0),
-        population: g.resources.population - (selectedCard.cost.population ?? 0),
+        coins: g.resources.coins - (selectedCard.cost.coins ?? 0) + (effect.coins ?? 0),
+        food: g.resources.food - (selectedCard.cost.food ?? 0) + (effect.food ?? 0),
+        materials: g.resources.materials - (selectedCard.cost.materials ?? 0) + (effect.materials ?? 0),
+        population: g.resources.population - (selectedCard.cost.population ?? 0) + (effect.population ?? 0),
       };
       
-      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
+      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo + efeito:', newResources);
       
       /*console.log('🏗️ Recursos atualizados:', {
         antes: g.resources,
@@ -3550,8 +3558,8 @@ export function useGameState() {
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar executeCardEffects com força total (ignora tracking de frequência) para produção
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id, undefined, undefined, undefined, undefined, true) : {};
+        // Usar executeCardEffects para produção normal (sem forçar execução)
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id) : {};
         
         console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {
           effect_logic: card.effect_logic,
