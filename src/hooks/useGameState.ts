@@ -2969,7 +2969,7 @@ export function useGameState() {
         console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
         // Não executar o efeito agora, retornar objeto vazio
       } else if (selectedCard.effect_logic) {
-        // Para outros efeitos, executar normalmente
+        // Para outros efeitos, executar normalmente (forçando execução para build phase)
         effect = executeCardEffects(
           selectedCard.effect_logic,
           g,
@@ -2977,7 +2977,8 @@ export function useGameState() {
           undefined, // diceNumber
           setTemporaryBoosts,
           setContinuousBoosts,
-          addToHistory
+          addToHistory,
+          true // forceExecution: true for construction phase
         ) || {};
         
         console.log('[EFFECT DEBUG] Efeito imediato executado:', effect);
@@ -3558,7 +3559,7 @@ export function useGameState() {
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar executeCardEffects para produção normal (sem forçar execução)
+        // Usar executeCardEffects para produção normal (sem forçar execução - PRODUCE_* só executa aqui)
         const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id, undefined, setTemporaryBoosts, setContinuousBoosts, addToHistory, false) : {};
         
         console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {

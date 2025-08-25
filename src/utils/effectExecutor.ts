@@ -30,25 +30,25 @@ function canExecuteEffect(
   gameState: GameState,
   forceExecution?: boolean
 ): boolean {
-  // Se execução forçada, ignora todas as verificações de tracking
-  if (forceExecution) {
-    return true;
-  }
-  
-  // PHASE-BASED RESTRICTIONS: PRODUCE_* effects should only run during production phase
+  // CRITICAL FIX: PRODUCE_* effects NEVER run during build phase, even with forceExecution
   if (effect.type.startsWith('PRODUCE_')) {
     if (gameState.phase !== 'production') {
-      console.log(`[EFFECT TRACKING] PRODUCE_ effect ${effect.type} blocked in ${gameState.phase} phase`);
+      console.log(`[EFFECT TRACKING] PRODUCE_ effect ${effect.type} BLOCKED in ${gameState.phase} phase (preventing duplication)`);
       return false;
     }
   }
 
-  // GAIN_* effects should only run during build phase
+  // GAIN_* effects should only run during build phase  
   if (effect.type.startsWith('GAIN_')) {
     if (gameState.phase !== 'build') {
       console.log(`[EFFECT TRACKING] GAIN_ effect ${effect.type} blocked in ${gameState.phase} phase`);
       return false;
     }
+  }
+
+  // If forced execution and not a PRODUCE_* effect, allow it
+  if (forceExecution && !effect.type.startsWith('PRODUCE_')) {
+    return true;
   }
   
   const currentTurn = gameState.turn;
@@ -632,67 +632,25 @@ export function executeSimpleEffect(
       }
       break;
     }
-    case 'BOOST_ALL_FARMS': {
+    // Duplicate cases removed - these are handled earlier in the function
+    case 'BOOST_ALL_CITIES_MATERIALS': {
       // Para efeitos PER_TURN, criar boost contínuo durante construção
       if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
         if (setContinuousBoosts) {
           setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS',
+            type: 'BOOST_ALL_CITIES_MATERIALS',
             amount: effect.amount,
             cardId: cardId,
             cardName: `Carta ${cardId}`,
             isActive: true
           }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
-        changes.food = (changes.food || 0) + effect.amount * farmCount;
-      }
-      break;
-    }
-    case 'BOOST_ALL_CITIES': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CITIES',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES';
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_MATERIALS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_MATERIALS';
         }
       } else {
         // Para efeitos não PER_TURN, aplicar diretamente
         const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-        changes.coins = (changes.coins || 0) + effect.amount * cityCount;
         changes.materials = (changes.materials || 0) + effect.amount * cityCount;
-      }
-      break;
-    }
-    case 'BOOST_ALL_CONSTRUCTIONS': {
-      // Para efeitos PER_TURN, criar boost contínuo durante construção
-      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_CONSTRUCTIONS',
-            amount: effect.amount,
-            cardId: cardId,
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS:${effect.amount} da carta ${cardId}`);
-          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS';
-        }
-      } else {
-        // Para efeitos não PER_TURN, aplicar diretamente
-        (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
-        (changes as any).constructionsBoost += effect.amount;
       }
       break;
     }
@@ -1789,6 +1747,37 @@ export function processProductionBoosts(
         }
         break;
         
+      case 'BOOST_ALL_CITIES':
+        const cityCountAll = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
+        if (cityCountAll > 0) {
+          prod.coins += cityCountAll * boost.amount;
+          prod.materials += cityCountAll * boost.amount;
+          details.push(`🏙️ ${boost.cardName}: +${boost.amount} moeda e materiais para ${cityCountAll} cidade(s)`);
+        }
+        break;
+        
+      case 'BOOST_ALL_FARMS':
+        const farmCountAll = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
+        if (farmCountAll > 0) {
+          prod.food += farmCountAll * boost.amount;
+          details.push(`🌾 ${boost.cardName}: +${boost.amount} comida para ${farmCountAll} fazenda(s)`);
+        }
+        break;
+        
+      case 'BOOST_ALL_CONSTRUCTIONS':
+        const farmCountConst = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
+        const cityCountConst = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
+        const landmarkCountConst = gameState.landmarksGrid.flat().filter((cell: any) => cell.card).length;
+        const totalConstructionsConst = farmCountConst + cityCountConst + landmarkCountConst;
+        
+        if (totalConstructionsConst > 0) {
+          prod.coins += totalConstructionsConst * boost.amount;
+          prod.food += totalConstructionsConst * boost.amount;
+          prod.materials += totalConstructionsConst * boost.amount;
+          details.push(`🏗️ ${boost.cardName}: +${boost.amount} recursos para ${totalConstructionsConst} construção(ões)`);
+        }
+        break;
+        
       case 'BOOST_ALL_CITIES_MATERIALS':
         const cityCountMaterials = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
         if (cityCountMaterials > 0) {
@@ -1818,6 +1807,23 @@ export function processProductionBoosts(
         if (cityCount > 0) {
           prod.coins += cityCount * boost.amount;
           details.push(`🏙️ Boost de cidade: +${boost.amount} moeda para ${cityCount} cidade(s)`);
+        }
+        break;
+        
+      case 'BOOST_ALL_CITIES':
+        const cityCountAll2 = gameState.cityGrid.flat().filter((cell: any) => cell.card).length;
+        if (cityCountAll2 > 0) {
+          prod.coins += cityCountAll2 * boost.amount;
+          prod.materials += cityCountAll2 * boost.amount;
+          details.push(`🏙️ Boost de cidade (completo): +${boost.amount} moeda e materiais para ${cityCountAll2} cidade(s)`);
+        }
+        break;
+        
+      case 'BOOST_ALL_FARMS':
+        const farmCountAll2 = gameState.farmGrid.flat().filter((cell: any) => cell.card).length;
+        if (farmCountAll2 > 0) {
+          prod.food += farmCountAll2 * boost.amount;
+          details.push(`🌾 Boost de fazenda (completo): +${boost.amount} comida para ${farmCountAll2} fazenda(s)`);
         }
         break;
         
