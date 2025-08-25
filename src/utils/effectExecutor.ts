@@ -64,6 +64,14 @@ function canExecuteEffect(
       break;
       
     case 'PER_TURN':
+      // Efeitos BOOST_ALL_* com PER_TURN podem executar durante construção para criar boosts contínuos
+      const isBoostAllEffect = effect.type.startsWith('BOOST_ALL_');
+      
+      if (isBoostAllEffect && gameState.phase === 'build') {
+        // Durante construção, boosts contínuos só executam uma vez para criar o boost
+        return !tracking || tracking.executionCount < 1;
+      }
+      
       // Efeito por turno: executa apenas durante a fase de produção
       if (gameState.phase !== 'production') {
         return false;
@@ -158,8 +166,16 @@ export function executeSimpleEffect(
   addToHistory?: (message: string) => void,
   forceExecution?: boolean
 ): Partial<Resources> {
+  // Debug log para efeitos BOOST_ALL_*
+  if (effect.type.startsWith('BOOST_ALL_')) {
+    console.log(`[EFFECT EXECUTOR] Tentando executar: ${effect.type}:${effect.amount} (frequência: ${effect.frequency}) da carta ${cardId} na fase ${gameState.phase}`);
+  }
+  
   // Verificar se o efeito pode ser executado
   if (!canExecuteEffect(effect, cardId, gameState, forceExecution)) {
+    if (effect.type.startsWith('BOOST_ALL_')) {
+      console.log(`[EFFECT EXECUTOR] Efeito ${effect.type} não pode ser executado (canExecuteEffect retornou false)`);
+    }
     return {};
   }
   
@@ -260,30 +276,60 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_FARMS_FOOD': {
-      // Adicionar aos boosts temporários em vez de aplicar diretamente
-      if (setTemporaryBoosts) {
-        setTemporaryBoosts(prev => [...prev, {
-          type: 'BOOST_ALL_FARMS_FOOD',
-          amount: effect.amount,
-          duration: 1, // Dura apenas este turno
-          cardName: `Carta ${cardId}`,
-          isActive: true
-        }]);
-        (changes as any).farmsBoost = effect.amount; // Para logging
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_FARMS_FOOD',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS_FOOD:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS_FOOD';
+        }
+      } else {
+        // Para efeitos não PER_TURN, usar boost temporário
+        if (setTemporaryBoosts) {
+          setTemporaryBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_FARMS_FOOD',
+            amount: effect.amount,
+            duration: 1,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          (changes as any).farmsBoost = effect.amount;
+        }
       }
       break;
     }
     case 'BOOST_ALL_CITIES_COINS': {
-      // Adicionar aos boosts temporários em vez de aplicar diretamente
-      if (setTemporaryBoosts) {
-        setTemporaryBoosts(prev => [...prev, {
-          type: 'BOOST_ALL_CITIES_COINS',
-          amount: effect.amount,
-          duration: 1, // Dura apenas este turno
-          cardName: `Carta ${cardId}`,
-          isActive: true
-        }]);
-        (changes as any).citiesBoost = effect.amount; // Para logging
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CITIES_COINS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_COINS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_COINS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, usar boost temporário
+        if (setTemporaryBoosts) {
+          setTemporaryBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CITIES_COINS',
+            amount: effect.amount,
+            duration: 1,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          (changes as any).citiesBoost = effect.amount;
+        }
       }
       break;
     }
@@ -310,28 +356,73 @@ export function executeSimpleEffect(
       (changes as any).optionalMagicCard = effect.amount;
       break;
     case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE': {
-      // Boost duplo para todas as construções
-      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
-      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-      const landmarkCount = gameState.landmarksGrid.flat().filter(cell => cell.card).length;
-      const totalBoost = (farmCount + cityCount + landmarkCount) * effect.amount * 2;
-      
-      changes.food = (changes.food || 0) + Math.floor(totalBoost / 3);
-      changes.coins = (changes.coins || 0) + Math.floor(totalBoost / 3);
-      changes.materials = (changes.materials || 0) + Math.ceil(totalBoost / 3);
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CONSTRUCTIONS_DOUBLE',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS_DOUBLE:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS_DOUBLE';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+        const landmarkCount = gameState.landmarksGrid.flat().filter(cell => cell.card).length;
+        const totalBoost = (farmCount + cityCount + landmarkCount) * effect.amount * 2;
+        
+        changes.food = (changes.food || 0) + Math.floor(totalBoost / 3);
+        changes.coins = (changes.coins || 0) + Math.floor(totalBoost / 3);
+        changes.materials = (changes.materials || 0) + Math.ceil(totalBoost / 3);
+      }
       break;
     }
     case 'BOOST_ALL_CITIES': {
-      // Boost geral para todas as cidades
-      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-      changes.coins = (changes.coins || 0) + effect.amount * cityCount;
-      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CITIES',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+        changes.coins = (changes.coins || 0) + effect.amount * cityCount;
+        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+      }
       break;
     }
     case 'BOOST_ALL_FARMS': {
-      // Boost para todas as fazendas
-      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
-      changes.food = (changes.food || 0) + effect.amount * farmCount;
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_FARMS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente  
+        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+        changes.food = (changes.food || 0) + effect.amount * farmCount;
+      }
       break;
     }
     case 'TRADE_MATERIALS_FOR_FOOD': {
@@ -422,9 +513,24 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_CONSTRUCTIONS': {
-      // Aplica boost para todas as construções (farm, city, landmark)
-      (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
-      (changes as any).constructionsBoost += effect.amount;
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CONSTRUCTIONS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
+        (changes as any).constructionsBoost += effect.amount;
+      }
       break;
     }
     case 'ON_PLAY_FARM': {
@@ -488,9 +594,88 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_CITIES_MATERIALS': {
-      // Boost de materiais para todas as cidades
-      const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
-      changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CITIES_MATERIALS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES_MATERIALS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES_MATERIALS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+      }
+      break;
+    }
+    case 'BOOST_ALL_FARMS': {
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_FARMS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_FARMS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_FARMS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+        changes.food = (changes.food || 0) + effect.amount * farmCount;
+      }
+      break;
+    }
+    case 'BOOST_ALL_CITIES': {
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CITIES',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CITIES:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CITIES';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        const cityCount = gameState.cityGrid.flat().filter(cell => cell.card).length;
+        changes.coins = (changes.coins || 0) + effect.amount * cityCount;
+        changes.materials = (changes.materials || 0) + effect.amount * cityCount;
+      }
+      break;
+    }
+    case 'BOOST_ALL_CONSTRUCTIONS': {
+      // Para efeitos PER_TURN, criar boost contínuo durante construção
+      if (effect.frequency === 'PER_TURN' && gameState.phase === 'build') {
+        if (setContinuousBoosts) {
+          setContinuousBoosts(prev => [...prev, {
+            type: 'BOOST_ALL_CONSTRUCTIONS',
+            amount: effect.amount,
+            cardId: cardId,
+            cardName: `Carta ${cardId}`,
+            isActive: true
+          }]);
+          console.log(`[EFFECT EXECUTOR] Boost contínuo criado: BOOST_ALL_CONSTRUCTIONS:${effect.amount} da carta ${cardId}`);
+          (changes as any).continuousBoostCreated = 'BOOST_ALL_CONSTRUCTIONS';
+        }
+      } else {
+        // Para efeitos não PER_TURN, aplicar diretamente
+        (changes as any).constructionsBoost = (changes as any).constructionsBoost || 0;
+        (changes as any).constructionsBoost += effect.amount;
+      }
       break;
     }
     case 'OPTIONAL_PAY_COINS': {
@@ -657,6 +842,13 @@ export function executeSimpleEffect(
   // Atualizar tracking se o efeito foi executado (exceto para cálculos forçados)
   if (Object.keys(changes).length > 0 && !forceExecution) {
     updateEffectTracking(effect, cardId, gameState);
+    
+    // Debug log para efeitos BOOST_ALL_*
+    if (effect.type.startsWith('BOOST_ALL_')) {
+      console.log(`[EFFECT EXECUTOR] Efeito ${effect.type}:${effect.amount} executado com sucesso da carta ${cardId}. Mudanças:`, changes);
+    }
+  } else if (effect.type.startsWith('BOOST_ALL_') && Object.keys(changes).length === 0) {
+    console.log(`[EFFECT EXECUTOR] ⚠️ Efeito ${effect.type}:${effect.amount} foi processado mas não gerou mudanças detectáveis`);
   }
   
   return changes;

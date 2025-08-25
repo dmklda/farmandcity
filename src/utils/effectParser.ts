@@ -47,6 +47,11 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
     // Determinar frequência baseada no tipo de efeito
     effect.frequency = determineEffectFrequency(effectType, params);
     
+    // Debug log para efeitos BOOST_ALL_*
+    if (effectType.startsWith('BOOST_ALL_')) {
+      console.log(`[PARSER DEBUG] Parseando efeito BOOST_ALL: ${effectType}:${amount}${params.length > 1 ? ':' + params.slice(1).join(':') : ''} -> Frequência: ${effect.frequency}`);
+    }
+    
     // Processar parâmetros adicionais
     if (params.length > 1) {
       const secondParam = params[1];
@@ -71,7 +76,10 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
       // Processar terceiro parâmetro se existir
       if (params.length > 2) {
         const thirdParam = params[2];
-        if (!isNaN(parseInt(thirdParam))) {
+        if (thirdParam === 'PER_TURN' || thirdParam === 'ONCE' || thirdParam === 'TEMPORARY') {
+          // Já foi processado em determineEffectFrequency
+          console.log(`[PARSER DEBUG] Frequência explícita detectada: ${thirdParam} para efeito ${effectType}`);
+        } else if (!isNaN(parseInt(thirdParam))) {
           effect.duration = parseInt(thirdParam);
         }
       }
@@ -92,6 +100,23 @@ export function parseSimpleEffectLogic(effectLogic: string): SimpleEffect[] {
  * Determina a frequência de um efeito baseado no tipo
  */
 function determineEffectFrequency(effectType: SimpleEffectType, params: string[]): EffectFrequency {
+  // Verificar primeiro se há especificação explícita de frequência nos parâmetros
+  if (params.length > 1) {
+    const lastParam = params[params.length - 1];
+    if (lastParam === 'PER_TURN') {
+      return 'PER_TURN';
+    }
+    if (lastParam === 'ONCE') {
+      return 'ONCE';
+    }
+    if (lastParam === 'TEMPORARY') {
+      return 'TEMPORARY';
+    }
+    if (lastParam === 'CONTINUOUS') {
+      return 'CONTINUOUS';
+    }
+  }
+  
   // Efeitos que executam apenas uma vez
   if (effectType.startsWith('GAIN_') || 
       effectType.startsWith('LOSE_') || 
