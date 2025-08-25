@@ -143,8 +143,8 @@ export function executeSimpleEffect(
   addToHistory?: (message: string) => void,
   forceExecution?: boolean
 ): Partial<Resources> {
-  // Verificar se o efeito pode ser executado (exceto se forçado para cálculos)
-  if (!forceExecution && !canExecuteEffect(effect, cardId, gameState, forceExecution)) {
+  // Verificar se o efeito pode ser executado
+  if (!canExecuteEffect(effect, cardId, gameState, forceExecution)) {
     return {};
   }
   
