@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthGuard } from './components/auth/AuthGuard';
 import { AppProvider } from './contexts/AppContext';
@@ -8,7 +8,17 @@ import { AdminPage } from './pages/AdminPage';
 import { AdminDebugPage } from './pages/AdminDebugPage';
 import { AdminAuthGuard } from './components/auth/AdminAuthGuard';
 
+// Import verification system for global access
+import { runCompleteVerification } from './utils/cardVerification';
+
 function App() {
+  useEffect(() => {
+    // Expor sistema de verificação globalmente para debug
+    if (typeof window !== 'undefined') {
+      (window as any).runCardVerification = runCompleteVerification;
+    }
+  }, []);
+
   return (
     <Router>
       <DialogProvider>
