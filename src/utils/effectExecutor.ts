@@ -22,6 +22,22 @@ import { parseEffectLogic, extractRestrictions } from './effectParser';
 // ===== SISTEMA DE TRACKING DE EXECUÇÃO =====
 
 /**
+ * Conta construções de um tipo específico no tabuleiro
+ */
+function getConstructionCount(gameState: GameState, type: 'farm' | 'city' | 'landmark'): number {
+  switch (type) {
+    case 'farm':
+      return gameState.farmGrid.flat().filter(cell => cell.card).length;
+    case 'city':
+      return gameState.cityGrid.flat().filter(cell => cell.card).length;
+    case 'landmark':
+      return gameState.landmarksGrid.flat().filter(cell => cell.card).length;
+    default:
+      return 0;
+  }
+}
+
+/**
  * Verifica se um efeito pode ser executado baseado na frequência e tracking
  */
 function canExecuteEffect(
@@ -614,6 +630,52 @@ export function executeSimpleEffect(
     case 'CREATE_CITY_CARD': {
       // Cria uma carta de cidade
       (changes as any).createCityCard = effect.amount;
+      break;
+    }
+    case 'BOOST_CONSTRUCTIONS': {
+      // Boost específico para tipos de construções com recursos específicos
+      // Formato: BOOST_CONSTRUCTIONS:food:3:farm,city,landmark
+      const description = effect.description || '';
+      const parts = description.split(':');
+      
+      if (parts.length >= 3) {
+        const [resourceType, amountStr, targetTypesStr] = parts;
+        const boostAmount = parseInt(amountStr) || effect.amount;
+        const types = targetTypesStr ? targetTypesStr.split(',') : ['farm', 'city', 'landmark'];
+        
+        // Aplicar boost imediatamente para teste
+        let totalBoost = 0;
+        types.forEach((type: string) => {
+          const count = getConstructionCount(gameState, type as 'farm' | 'city' | 'landmark');
+          totalBoost += count * boostAmount;
+        });
+        
+        // Aplicar boost ao recurso especificado
+        if (resourceType === 'food') {
+          changes.food = (changes.food || 0) + totalBoost;
+        } else if (resourceType === 'coins') {
+          changes.coins = (changes.coins || 0) + totalBoost;  
+        } else if (resourceType === 'materials') {
+          changes.materials = (changes.materials || 0) + totalBoost;
+        }
+        
+        // Também criar efeito especial para tracking
+        (changes as any).boostConstructions = {
+          resourceType,
+          amount: boostAmount,
+          targetTypes: types,
+          totalApplied: totalBoost,
+          duration: 1
+        };
+        
+        console.log(`[BOOST_CONSTRUCTIONS] Aplicado boost: +${totalBoost} ${resourceType} para ${types.join(', ')}`);
+      }
+      break;
+    }
+    case 'BOOST_CITY_COST_REDUCTION': {
+      // Reduz custo de construção de cidades
+      (changes as any).cityCostReduction = effect.amount;
+      (changes as any).cityCostReductionDuration = effect.duration || 1;
       break;
     }
     case 'BOOST_CONSTRUCTION_COST_REDUCTION': {

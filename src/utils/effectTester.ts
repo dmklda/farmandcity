@@ -9,15 +9,92 @@ import { Card } from '../types/card';
  * Estado de jogo mock para testes
  */
 export function createMockGameState(): GameState {
+  const mockCards = {
+    fazenda: { 
+      id: 'mock-fazenda', 
+      name: 'Fazenda Mock', 
+      type: 'farm' as const,
+      cost_coins: 3,
+      cost_food: 0, 
+      cost_materials: 1,
+      cost_population: 0,
+      effect: 'Fazenda de teste',
+      effect_logic: 'PRODUCE_FOOD:1',
+      rarity: 'common' as const,
+      phase: 'production' as const,
+      slug: 'mock-fazenda',
+      is_active: true
+    },
+    cidade: { 
+      id: 'mock-cidade', 
+      name: 'Cidade Mock', 
+      type: 'city' as const,
+      cost_coins: 5,
+      cost_food: 0,
+      cost_materials: 2,  
+      cost_population: 1,
+      effect: 'Cidade de teste',
+      effect_logic: 'PRODUCE_COINS:1',
+      rarity: 'common' as const,
+      phase: 'production' as const,
+      slug: 'mock-cidade', 
+      is_active: true
+    },
+    oficina: { 
+      id: 'mock-oficina', 
+      name: 'Oficina Mock', 
+      type: 'city' as const,
+      cost_coins: 4,
+      cost_food: 0,
+      cost_materials: 2,
+      cost_population: 1,
+      effect: 'Oficina de teste',
+      effect_logic: 'PRODUCE_MATERIALS:1',
+      rarity: 'common' as const,
+      phase: 'production' as const,
+      slug: 'mock-oficina',
+      is_active: true,
+      tags: ['workshop']
+    },
+    templo: { 
+      id: 'mock-templo', 
+      name: 'Templo Mock', 
+      type: 'landmark' as const,
+      cost_coins: 8,
+      cost_food: 0,
+      cost_materials: 3,
+      cost_population: 2,
+      effect: 'Templo de teste',
+      effect_logic: 'GAIN_REPUTATION:2',
+      rarity: 'rare' as const,
+      phase: 'production' as const,
+      slug: 'mock-templo',
+      is_active: true,
+      tags: ['sagrado', 'templo']
+    }
+  };
+
+  const farmGrid = Array(3).fill(null).map(() => Array(4).fill({ card: null }));
+  const cityGrid = Array(3).fill(null).map(() => Array(4).fill({ card: null }));
+  const landmarksGrid = Array(2).fill(null).map(() => Array(2).fill({ card: null }));
+  const eventGrid = Array(1).fill(null).map(() => Array(1).fill({ card: null }));
+
+  // Adicionar algumas cartas mock aos grids para testes condicionais
+  farmGrid[0][0] = { card: mockCards.fazenda };
+  farmGrid[0][1] = { card: mockCards.fazenda };
+  cityGrid[0][0] = { card: mockCards.cidade };
+  cityGrid[0][1] = { card: mockCards.oficina };
+  landmarksGrid[0][0] = { card: mockCards.templo };
+
   return {
     turn: 1,
     phase: 'production' as GamePhase,
     resources: { coins: 10, food: 10, materials: 10, population: 10 },
-    playerStats: { reputation: 0, totalProduction: 0, buildings: 0, landmarks: 0 },
-    farmGrid: Array(3).fill(null).map(() => Array(4).fill({ card: null })),
-    cityGrid: Array(3).fill(null).map(() => Array(4).fill({ card: null })),
-    landmarksGrid: Array(2).fill(null).map(() => Array(2).fill({ card: null })),
-    eventGrid: Array(1).fill(null).map(() => Array(1).fill({ card: null })),
+    playerStats: { reputation: 0, totalProduction: 0, buildings: 3, landmarks: 1 },
+    farmGrid,
+    cityGrid,
+    landmarksGrid,
+    eventGrid,
     hand: [],
     deck: [],
     activeEvents: [],
@@ -135,6 +212,9 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
       executionResultAny.randomElemental !== undefined ||
       executionResultAny.optionalMagicCard !== undefined ||
       executionResultAny.optionalGainMaterials !== undefined ||
+      // Novos efeitos adicionados
+      executionResultAny.boostConstructions !== undefined ||
+      executionResultAny.cityCostReduction !== undefined ||
       // Verificar efeitos não implementados também
       Object.keys(executionResultAny).some(key => key.startsWith('unimplemented_'))
     );

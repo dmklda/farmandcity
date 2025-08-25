@@ -8,14 +8,17 @@ import { AdminPage } from './pages/AdminPage';
 import { AdminDebugPage } from './pages/AdminDebugPage';
 import { AdminAuthGuard } from './components/auth/AdminAuthGuard';
 
-// Import verification system for global access
+import { testCardEffect } from './utils/effectTester';
+import { testProblematicCardsDetailed } from './utils/testSpecificCards';
 import { runCompleteVerification } from './utils/cardVerification';
 
 function App() {
   useEffect(() => {
-    // Expor sistema de verificação globalmente para debug
+    // Expor sistemas de verificação globalmente para debug
     if (typeof window !== 'undefined') {
       (window as any).runCardVerification = runCompleteVerification;
+      (window as any).testProblematicCards = testProblematicCardsDetailed;
+      (window as any).testSingleCard = testCardEffect;
     }
   }, []);
 

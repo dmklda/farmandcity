@@ -44,7 +44,8 @@ export type SimpleEffectType =
   | 'ON_PLAY_FARM' | 'ON_PLAY_CITY' | 'ON_PLAY_MAGIC' | 'DRAW_CARD' | 'DRAW_CITY_CARD'
   | 'BOOST_ALL_CONSTRUCTIONS' | 'DUPLICATE_MAGIC_EFFECTS' | 'BOOST_ALL_CITIES_MATERIALS_TEMP'
   | 'RESTRICT_FARM_ACTIVATION' | 'OPTIONAL_PAY_COINS'
-  | 'BOOST_MAGIC_COST_REDUCTION' | 'BOOST_MAGIC_COST_REDUCTION_TEMP' | 'PROTECT_FARMS';
+  | 'BOOST_MAGIC_COST_REDUCTION' | 'BOOST_MAGIC_COST_REDUCTION_TEMP' | 'PROTECT_FARMS'
+  | 'BOOST_CONSTRUCTIONS' | 'BOOST_CITY_COST_REDUCTION';
 
 // Tipos de frequência para efeitos
 export type EffectFrequency = 
@@ -66,6 +67,7 @@ export interface SimpleEffect {
   condition?: string;           // Condição para execução
   target?: string;              // Alvo do efeito
   maxExecutions?: number;       // Máximo de execuções (para efeitos únicos)
+  description?: string;         // Descrição adicional para efeitos complexos (ex: BOOST_CONSTRUCTIONS:food:3:farm,city)
 }
 
 // Interface para efeitos condicionais
