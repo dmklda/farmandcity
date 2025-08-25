@@ -35,6 +35,22 @@ function canExecuteEffect(
     return true;
   }
   
+  // PHASE-BASED RESTRICTIONS: PRODUCE_* effects should only run during production phase
+  if (effect.type.startsWith('PRODUCE_')) {
+    if (gameState.phase !== 'production') {
+      console.log(`[EFFECT TRACKING] PRODUCE_ effect ${effect.type} blocked in ${gameState.phase} phase`);
+      return false;
+    }
+  }
+
+  // GAIN_* effects should only run during build phase
+  if (effect.type.startsWith('GAIN_')) {
+    if (gameState.phase !== 'build') {
+      console.log(`[EFFECT TRACKING] GAIN_ effect ${effect.type} blocked in ${gameState.phase} phase`);
+      return false;
+    }
+  }
+  
   const currentTurn = gameState.turn;
   
   // Se não há tracking, criar um novo
@@ -566,7 +582,7 @@ export function executeSimpleEffect(
       (changes as any).duplicateMagicEffectsDuration = effect.duration || 1;
       
       // Adicionar boost temporário se as funções estiverem disponíveis
-      if (setTemporaryBoosts && addToHistory) {
+      if (setTemporaryBoosts) {
         const duration = effect.duration || 1;
         const boostId = `magic_boost_${Date.now()}_${Math.random()}`;
         setTemporaryBoosts(prev => [...prev, {
@@ -577,7 +593,9 @@ export function executeSimpleEffect(
           appliedAt: gameState.turn,
           isActive: true
         }]);
-        addToHistory(`⚡ Efeitos de magia duplicados por ${duration} turno(s)!`);
+        if (addToHistory) {
+          addToHistory(`⚡ Efeitos de magia duplicados por ${duration} turno(s)!`);
+        }
       }
       break;
     }
@@ -717,15 +735,18 @@ export function executeSimpleEffect(
       (changes as any).extraBuildCity = effect.amount;
       
       // Adicionar boost temporário se as funções estiverem disponíveis
-      if (setTemporaryBoosts && addToHistory) {
+      if (setTemporaryBoosts) {
         const duration = effect.duration || 1;
         setTemporaryBoosts(prev => [...prev, {
           type: 'EXTRA_BUILD_CITY',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn
+          appliedAt: gameState.turn,
+          isActive: true
         }]);
-        addToHistory(`Você pode construir ${effect.amount} cidade(s) extra(s) neste turno`);
+        if (addToHistory) {
+          addToHistory(`Você pode construir ${effect.amount} cidade(s) extra(s) neste turno`);
+        }
       }
       break;
     }
@@ -774,18 +795,22 @@ export function executeSimpleEffect(
       const boostAmount = farmCount * effect.amount;
       const duration = effect.duration || 2;
       
-      if (setTemporaryBoosts && addToHistory) {
+      if (setTemporaryBoosts) {
         setTemporaryBoosts(prev => [...prev, {
           type: 'BOOST_ALL_FARMS_FOOD_TEMP',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn
+          appliedAt: gameState.turn,
+          isActive: true
         }]);
-        addToHistory(`Boost temporário aplicado: +${effect.amount} alimento por fazenda por ${duration} turnos (${farmCount} fazendas)`);
+        if (addToHistory) {
+          addToHistory(`Boost temporário aplicado: +${effect.amount} alimento por fazenda por ${duration} turnos (${farmCount} fazendas)`);
+        }
       }
       
       // Retornar mudança detectável para indicar que o efeito foi executado
       (changes as any).temporaryBoostApplied = true;
+      (changes as any).tempFarmsFoodBoost = effect.amount;
       break;
     }
     case 'BOOST_ALL_FARMS_MATERIALS_TEMP': {
@@ -794,18 +819,22 @@ export function executeSimpleEffect(
       const boostAmount = farmCount * effect.amount;
       const duration = effect.duration || 2;
       
-      if (setTemporaryBoosts && addToHistory) {
+      if (setTemporaryBoosts) {
         setTemporaryBoosts(prev => [...prev, {
           type: 'BOOST_ALL_FARMS_MATERIALS_TEMP',
           amount: effect.amount,
           duration: duration,
-          appliedAt: gameState.turn
+          appliedAt: gameState.turn,
+          isActive: true
         }]);
-        addToHistory(`Boost temporário aplicado: +${effect.amount} materiais por fazenda por ${duration} turnos (${farmCount} fazendas)`);
+        if (addToHistory) {
+          addToHistory(`Boost temporário aplicado: +${effect.amount} materiais por fazenda por ${duration} turnos (${farmCount} fazendas)`);
+        }
       }
       
       // Retornar mudança detectável para indicar que o efeito foi executado
       (changes as any).temporaryBoostApplied = true;
+      (changes as any).tempFarmsMaterialsBoost = effect.amount;
       break;
     }
     // EXTRA_CARD_PLAY case handled elsewhere

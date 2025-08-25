@@ -3559,7 +3559,7 @@ export function useGameState() {
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
         // Usar executeCardEffects para produção normal (sem forçar execução)
-        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id) : {};
+        const p = card.effect_logic ? executeCardEffects(card.effect_logic, tempGameState, card.id, undefined, setTemporaryBoosts, setContinuousBoosts, addToHistory, false) : {};
         
         console.log(`[PRODUCTION DEBUG] Executando produção para: ${card.name}`, {
           effect_logic: card.effect_logic,
