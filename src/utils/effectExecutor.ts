@@ -309,8 +309,8 @@ export function executeSimpleEffect(
       console.log('[BOOST DEBUG] Fazendas encontradas no tabuleiro:', farmCount);
       console.log('[BOOST DEBUG] Grid de fazendas:', gameState.farmGrid.flat().map(cell => ({ hasCard: !!cell.card, cardName: cell.card?.name })));
       
-      // CORREÇÃO: Para cartas de ação, aplicar o boost imediatamente como ganho de recursos
-      if (gameState.phase === 'action') {
+      // CORREÇÃO: Para cartas de ação OU magia, aplicar o boost imediatamente como ganho de recursos
+      if (gameState.phase === 'action' || gameState.phase === 'build') {
         const immediateFood = farmCount * effect.amount;
         console.log('[BOOST DEBUG] ✅ APLICANDO BOOST IMEDIATO na fase ACTION');
         console.log('[BOOST DEBUG] Comida imediata calculada:', immediateFood, '(', farmCount, 'fazendas ×', effect.amount, 'cada)');
