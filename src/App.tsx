@@ -15,6 +15,8 @@ import { debugProblematicCards, debugTempBoosts, debugConditionals } from './uti
 import { quickFixTest } from './utils/quickFixCards';
 import { debugConstructionRapida, testConstructionReduction } from './utils/fixConstructionRapida';
 import { testConstructionRapidaFinal } from './utils/testConstructionRapidaFix';
+import { verifyInGameEffects, testProductionCards } from './utils/verifyEffectFixes';
+import { runFinalEffectTest } from './utils/finalEffectVerification';
 
 function App() {
   useEffect(() => {
@@ -30,6 +32,8 @@ function App() {
       (window as any).debugConstructionRapida = debugConstructionRapida;
       (window as any).testConstructionReduction = testConstructionReduction;
       (window as any).testConstructionRapidaFinal = testConstructionRapidaFinal;
+      (window as any).verifyInGameEffects = verifyInGameEffects;
+      (window as any).runFinalEffectTest = runFinalEffectTest;
     }
   }, []);
 

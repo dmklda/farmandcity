@@ -2884,10 +2884,15 @@ export function useGameState() {
     }
     
     // Adicionar logs para rastrear mudanças de recursos ao construir
-    console.log('[RESOURCES TRACKING] Antes de construir:', 
+    console.log('[CONSTRUCTION DEBUG] ===== INICIANDO CONSTRUÇÃO =====');
+    console.log('[CONSTRUCTION DEBUG] Recursos antes de construir:', 
                 {coins: game.resources.coins, food: game.resources.food, materials: game.resources.materials});
+    console.log('[CONSTRUCTION DEBUG] Carta selecionada:', selectedCard.name, 'com effect_logic:', selectedCard.effect_logic);
     
     setGame((g) => {
+      // MUDANÇA CRÍTICA: Criar cópia do state para aplicar efeitos sem afetar o original
+      const constructionGameState = JSON.parse(JSON.stringify(g));
+      
       const newGrid = grid.map((row, iy) =>
         row.map((cell, ix) => {
           if (ix === x && iy === y) {
@@ -2952,17 +2957,18 @@ export function useGameState() {
       // ===== EXECUÇÃO UNIFICADA DE EFEITOS =====
       let effect: Partial<Resources> = {};
       if (targetCell.level && targetCell.level > 1) {
-        effect = calculateStackedEffect(cards, g);
+        effect = calculateStackedEffect(cards, constructionGameState);
       } else if (selectedCard.effect_logic && selectedCard.effect_logic.includes('ON_DICE')) {
         // Para efeitos ON_DICE, não executamos imediatamente - serão executados quando o dado for rolado
         console.log('[DICE DEBUG] Carta com efeito de dado detectada na construção:', selectedCard.name);
         console.log('[DICE DEBUG] Efeito será executado apenas quando o dado for rolado');
         // Não executar o efeito agora, retornar objeto vazio
       } else if (selectedCard.effect_logic) {
-        // Para outros efeitos, executar normalmente durante construção
+        // Para outros efeitos, executar normalmente durante construção usando a cópia
+        console.log('[CONSTRUCTION DEBUG] Executando efeitos da carta:', selectedCard.name);
         effect = executeCardEffects(
           selectedCard.effect_logic,
-          g,
+          constructionGameState, // MUDANÇA: Usar cópia do state
           selectedCard.id,
           undefined, // diceNumber
           setTemporaryBoosts,
@@ -2970,6 +2976,7 @@ export function useGameState() {
           addToHistory,
           true // forceExecution: true para permitir efeitos GAIN_, LOSE_, COST_ e BOOST_ durante build
         ) || {};
+        console.log('[CONSTRUCTION DEBUG] Efeitos executados:', effect);
       }
       
       // ===== DETECÇÃO DE EFEITOS OPCIONAIS =====
@@ -2994,19 +3001,21 @@ export function useGameState() {
         empilhada: targetCell.level && targetCell.level > 1
       });*/
       
-      console.log('[RESOURCES DEBUG] Recursos antes de construir:', g.resources);
-      console.log('[RESOURCES DEBUG] Custo da carta construída:', selectedCard.cost);
-      console.log('[RESOURCES DEBUG] Efeito da carta construída:', effect);
+      console.log('[CONSTRUCTION DEBUG] Recursos antes de construir (original):', g.resources);
+      console.log('[CONSTRUCTION DEBUG] Recursos depois de efeitos (cópia):', constructionGameState.resources);
+      console.log('[CONSTRUCTION DEBUG] Custo da carta construída:', selectedCard.cost);
+      console.log('[CONSTRUCTION DEBUG] Efeito da carta construída:', effect);
       
-      // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
+      // MUDANÇA CRÍTICA: Os recursos já foram aplicados em constructionGameState
+      // Agora só precisamos subtrair os custos dos recursos atualizados
       const newResources: Resources = {
-        coins: g.resources.coins - (selectedCard.cost.coins ?? 0),
-        food: g.resources.food - (selectedCard.cost.food ?? 0),
-        materials: g.resources.materials - (selectedCard.cost.materials ?? 0),
-        population: g.resources.population - (selectedCard.cost.population ?? 0),
+        coins: constructionGameState.resources.coins - (selectedCard.cost.coins ?? 0),
+        food: constructionGameState.resources.food - (selectedCard.cost.food ?? 0),
+        materials: constructionGameState.resources.materials - (selectedCard.cost.materials ?? 0),
+        population: constructionGameState.resources.population - (selectedCard.cost.population ?? 0),
       };
       
-      console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
+      console.log('[CONSTRUCTION DEBUG] Recursos finais após construção:', newResources);
       
       /*console.log('🏗️ Recursos atualizados:', {
         antes: g.resources,
@@ -3529,6 +3538,7 @@ export function useGameState() {
   }, [game.phase]);
 
   const handleProduction = useCallback(() => {
+    console.log('[PRODUCTION DEBUG] ===== INICIANDO FASE DE PRODUÇÃO =====');
     let prod: Resources = { coins: 0, food: 0, materials: 0, population: 0 };
     let details: string[] = [];
     const allCards = [
@@ -3538,26 +3548,39 @@ export function useGameState() {
     
     // Filtrar apenas cartas não desativadas
     const activeCards = allCards.filter(card => !card.deactivated);
+    console.log('[PRODUCTION DEBUG] Cartas ativas para produção:', activeCards.length);
+    
+    // MUDANÇA CRÍTICA: Criar uma cópia do game state para não afetar o original até o final
+    const productionGameState = JSON.parse(JSON.stringify(game));
     
     activeCards.forEach((card) => {
       // Só produz se não for produção baseada em dado
       // Verificar explicitamente que não é um efeito ON_DICE
       if (!(card.effect_logic && card.effect_logic.includes('ON_DICE')) && 
           !(card.effect && card.effect.description && card.effect.description.toLowerCase().includes('dado'))) {
-        // Usar diretamente executeCardEffects durante produção
+        console.log('[PRODUCTION DEBUG] Processando carta:', card.name, 'com effect_logic:', card.effect_logic);
+        
+        // MUDANÇA CRÍTICA: Usar executeCardEffects sem aplicar automaticamente ao gameState
+        // Passamos productionGameState para cálculos mas não deixamos aplicar mudanças automaticamente
         const p = card.effect_logic ? executeCardEffects(
           card.effect_logic, 
-          game, 
+          productionGameState, // Usar cópia para cálculos
           card.id, 
           undefined, // diceNumber
-          undefined, // setTemporaryBoosts (não necessário durante produção)
-          undefined, // setContinuousBoosts (não necessário durante produção) 
-          undefined, // addToHistory (não necessário durante produção)
+          setTemporaryBoosts, // Permitir boosts temporários
+          setContinuousBoosts, // Permitir boosts contínuos
+          addToHistory, // Permitir histórico
           false // forceExecution: false para executar apenas efeitos PER_TURN durante production
         ) : {};
+        
+        console.log('[PRODUCTION DEBUG] Efeitos calculados para', card.name, ':', p);
+        
+        // Somar apenas os recursos básicos retornados
         Object.entries(p).forEach(([key, value]) => {
-          prod[key as keyof Resources] += value || 0;
-          if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
+          if (key === 'coins' || key === 'food' || key === 'materials' || key === 'population') {
+            prod[key as keyof Resources] += value || 0;
+            if (value && value > 0) details.push(`${card.name}: +${value} ${key}`);
+          }
         });
       }
     });
@@ -3627,15 +3650,26 @@ export function useGameState() {
       if (originalProd.population > prod.population) details.push(`🌪️ Catástrofe: -${originalProd.population - prod.population} population`);
     }
     
+    console.log('[PRODUCTION DEBUG] Recursos calculados para produção:', prod);
+    console.log('[PRODUCTION DEBUG] Detalhes:', details);
+    
+    // MUDANÇA CRÍTICA: Aplicar os recursos calculados diretamente
+    // Não somar com recursos existentes porque executeCardEffects já aplicou internamente
+    // Precisamos pegar os recursos da cópia atualizada do productionGameState
+    const finalResources = {
+      coins: Math.max(0, productionGameState.resources.coins),
+      food: Math.max(0, productionGameState.resources.food), 
+      materials: Math.max(0, productionGameState.resources.materials),
+      population: Math.max(0, productionGameState.resources.population)
+    };
+    
+    console.log('[PRODUCTION DEBUG] Recursos finais após produção:', finalResources);
+    console.log('[PRODUCTION DEBUG] Recursos antes da produção:', game.resources);
+    
     // Atualiza produção total
     setGame((g) => ({
       ...g,
-      resources: {
-        coins: g.resources.coins + prod.coins,
-        food: g.resources.food + prod.food,
-        materials: g.resources.materials + prod.materials,
-        population: g.resources.population + prod.population,
-      },
+      resources: finalResources,
       playerStats: {
         ...g.playerStats,
         totalProduction: g.playerStats.totalProduction + prod.coins + prod.food + prod.materials + prod.population,

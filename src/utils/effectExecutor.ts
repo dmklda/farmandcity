@@ -1434,18 +1434,18 @@ export function executeCardEffects(
   console.log('[EFFECT DEBUG] Total de mudanças acumuladas:', totalChanges);
   console.log('[EFFECT DEBUG] Chaves das mudanças:', Object.keys(totalChanges));
 
-  // Aplicar as mudanças ao gameState apenas se não for efeito de dado
-  // Para efeitos de dado, os recursos são aplicados pela função handleDiceRoll
-  if (diceNumber === undefined) {
-    console.log('[EFFECT DEBUG] Aplicando mudanças ao gameState...');
-    applyResourceChanges(gameState, totalChanges);
-    
-    // Log final de recursos antes/depois apenas quando aplicamos
-    const after = { ...gameState.resources };
-    console.log('[EFFECT] Resultado dos efeitos da carta', cardId, '\nRecursos antes:', before, '\nMudanças:', totalChanges, '\nRecursos depois:', after);
-  } else {
-    // Para efeitos de dado, apenas log das mudanças calculadas
-    console.log('[EFFECT] Efeito de dado calculado para carta', cardId, '\nMudanças:', totalChanges);
+  // MUDANÇA CRÍTICA: Sempre aplicar as mudanças ao gameState fornecido
+  // Isso permite que handleProduction e handleConstruction controlem quando aplicar
+  console.log('[EFFECT DEBUG] Aplicando mudanças ao gameState...');
+  applyResourceChanges(gameState, totalChanges);
+  
+  // Log final de recursos antes/depois
+  const after = { ...gameState.resources };
+  console.log('[EFFECT] Resultado dos efeitos da carta', cardId, '\nRecursos antes:', before, '\nMudanças:', totalChanges, '\nRecursos depois:', after);
+  
+  // Para efeitos de dado, adicionar log especial
+  if (diceNumber !== undefined) {
+    console.log('[EFFECT] Efeito de dado aplicado para carta', cardId, 'com dado', diceNumber);
   }
 
   console.log('[EFFECT DEBUG] ===== FINALIZANDO EXECUÇÃO DE EFEITOS =====');
