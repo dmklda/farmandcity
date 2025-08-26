@@ -222,7 +222,7 @@ function testDiceEffects(): { success: boolean; message: string; details: string
   try {
     const state1 = createCompleteTestState();
     
-    const result1 = executeCardEffects('ON_DICE:4:PRODUCE_FOOD:1', state1, 'test-dice-1', undefined, undefined, undefined, false, 4);
+    const result1 = executeCardEffects('ON_DICE:4:PRODUCE_FOOD:1', state1, 'test-dice-1', 4, undefined, undefined, undefined, false);
     
     if (result1.food && result1.food > 0) {
       results.push('✅ ON_DICE:4 com dado correto: PASSOU');
@@ -239,7 +239,7 @@ function testDiceEffects(): { success: boolean; message: string; details: string
   try {
     const state2 = createCompleteTestState();
     
-    const result2 = executeCardEffects('ON_DICE:4:PRODUCE_FOOD:1', state2, 'test-dice-2', undefined, undefined, undefined, false, 2);
+    const result2 = executeCardEffects('ON_DICE:4:PRODUCE_FOOD:1', state2, 'test-dice-2', 2, undefined, undefined, undefined, false);
     
     if (!result2.food || result2.food === 0) {
       results.push('✅ ON_DICE:4 com dado errado: PASSOU');
@@ -256,7 +256,7 @@ function testDiceEffects(): { success: boolean; message: string; details: string
   try {
     const state3 = createCompleteTestState();
     
-    const result3 = executeCardEffects('GAIN_FOOD:1:ON_DICE:1', state3, 'test-dice-3', undefined, undefined, undefined, false, 1);
+    const result3 = executeCardEffects('GAIN_FOOD:1:ON_DICE:1', state3, 'test-dice-3', 1, undefined, undefined, undefined, false);
     
     if (result3.food && result3.food > 0) {
       results.push('✅ GAIN_FOOD:1:ON_DICE:1 com dado 1: PASSOU');
@@ -288,8 +288,8 @@ function testFrequencyEffects(): { success: boolean; message: string; details: s
   try {
     const state1 = createCompleteTestState();
     
-    const result1a = executeCardEffects('GAIN_FOOD:3:ONCE', state1, 'test-freq-1', undefined, undefined, undefined, true);
-    const result1b = executeCardEffects('GAIN_FOOD:3:ONCE', state1, 'test-freq-1', undefined, undefined, undefined, true);
+    const result1a = executeCardEffects('GAIN_FOOD:3:ONCE', state1, 'test-freq-1', undefined, undefined, undefined, undefined, true);
+    const result1b = executeCardEffects('GAIN_FOOD:3:ONCE', state1, 'test-freq-1', undefined, undefined, undefined, undefined, true);
     
     if (result1a.food && result1a.food > 0 && (!result1b.food || result1b.food === 0)) {
       results.push('✅ Efeito ONCE (executou uma vez apenas): PASSOU');
