@@ -18,6 +18,7 @@ import { testConstructionRapidaFinal } from './utils/testConstructionRapidaFix';
 import { verifyInGameEffects, testProductionCards } from './utils/verifyEffectFixes';
 import { runFinalEffectTest } from './utils/finalEffectVerification';
 import { runComprehensiveEffectTest } from './utils/comprehensiveEffectTest';
+import { testColheitaCard, testColheitaInGameApplication } from './utils/testColheitaCard';
 
 function App() {
   useEffect(() => {
@@ -36,6 +37,8 @@ function App() {
       (window as any).testProductionCards = testProductionCards;
       (window as any).runFinalEffectTest = runFinalEffectTest;
       (window as any).runComprehensiveEffectTest = runComprehensiveEffectTest;
+      (window as any).testColheitaCard = testColheitaCard;
+      (window as any).testColheitaInGameApplication = testColheitaInGameApplication;
     }
   }, []);
 
