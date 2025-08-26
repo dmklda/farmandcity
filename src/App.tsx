@@ -19,6 +19,7 @@ import { verifyInGameEffects, testProductionCards } from './utils/verifyEffectFi
 import { runFinalEffectTest } from './utils/finalEffectVerification';
 import { runComprehensiveEffectTest } from './utils/comprehensiveEffectTest';
 import { testColheitaCard, testColheitaInGameApplication } from './utils/testColheitaCard';
+import { testBencaoTerra, testBencaoTerraMultiplasFazendas } from './utils/testBencaoTerra';
 
 function App() {
   useEffect(() => {
@@ -39,6 +40,8 @@ function App() {
       (window as any).runComprehensiveEffectTest = runComprehensiveEffectTest;
       (window as any).testColheitaCard = testColheitaCard;
       (window as any).testColheitaInGameApplication = testColheitaInGameApplication;
+      (window as any).testBencaoTerra = testBencaoTerra;
+      (window as any).testBencaoTerraMultiplasFazendas = testBencaoTerraMultiplasFazendas;
     }
   }, []);
 

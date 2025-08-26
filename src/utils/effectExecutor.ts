@@ -298,35 +298,59 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_FARMS_FOOD': {
-      // Boost contínuo para fazendas (baseado na frequência do efeito)
-      if (effect.frequency === 'PER_TURN' || effect.frequency === 'CONTINUOUS') {
-        // Criar boost contínuo
-        if (setContinuousBoosts) {
-          setContinuousBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS_FOOD',
-            amount: effect.amount,
-            cardName: `Carta ${cardId}`,
-            cardId: cardId,
-            isActive: true,
-            appliedAt: gameState.turn,
-            duration: effect.frequency === 'CONTINUOUS' ? -1 : undefined // -1 significa permanente
-          }]);
-          console.log('[SIMPLE EFFECT DEBUG] BOOST_ALL_FARMS_FOOD contínuo criado:', effect.amount);
-        }
-        (changes as any).farmsBoostContinuous = effect.amount;
-      } else {
-        // Boost temporário
-        if (setTemporaryBoosts) {
+      console.log('[BOOST DEBUG] Processando BOOST_ALL_FARMS_FOOD com amount:', effect.amount);
+      
+      // Contar fazendas no tabuleiro
+      const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
+      console.log('[BOOST DEBUG] Fazendas encontradas no tabuleiro:', farmCount);
+      
+      // Para cartas de ação, aplicar o boost imediatamente como ganho de recursos
+      if (gameState.phase === 'action') {
+        const immediateFood = farmCount * effect.amount;
+        console.log('[BOOST DEBUG] Aplicando boost imediato:', immediateFood, 'comida (', farmCount, '×', effect.amount, ')');
+        changes.food = (changes.food || 0) + immediateFood;
+        
+        // Também criar boost temporário para futuras produções se necessário
+        if (setTemporaryBoosts && effect.duration && effect.duration > 1) {
           setTemporaryBoosts(prev => [...prev, {
             type: 'BOOST_ALL_FARMS_FOOD',
             amount: effect.amount,
-            duration: effect.duration || 1,
+            duration: (effect.duration || 2) - 1, // -1 porque já aplicamos uma vez
             cardName: `Carta ${cardId}`,
             isActive: true
           }]);
-          console.log('[SIMPLE EFFECT DEBUG] BOOST_ALL_FARMS_FOOD temporário criado:', effect.amount);
         }
-        (changes as any).farmsBoost = effect.amount;
+      } else {
+        // Durante produção, criar boost normal
+        if (effect.frequency === 'PER_TURN' || effect.frequency === 'CONTINUOUS') {
+          // Criar boost contínuo
+          if (setContinuousBoosts) {
+            setContinuousBoosts(prev => [...prev, {
+              type: 'BOOST_ALL_FARMS_FOOD',
+              amount: effect.amount,
+              cardName: `Carta ${cardId}`,
+              cardId: cardId,
+              isActive: true,
+              appliedAt: gameState.turn,
+              duration: effect.frequency === 'CONTINUOUS' ? -1 : undefined
+            }]);
+            console.log('[BOOST DEBUG] BOOST_ALL_FARMS_FOOD contínuo criado:', effect.amount);
+          }
+          (changes as any).farmsBoostContinuous = effect.amount;
+        } else {
+          // Boost temporário
+          if (setTemporaryBoosts) {
+            setTemporaryBoosts(prev => [...prev, {
+              type: 'BOOST_ALL_FARMS_FOOD',
+              amount: effect.amount,
+              duration: effect.duration || 1,
+              cardName: `Carta ${cardId}`,
+              isActive: true
+            }]);
+            console.log('[BOOST DEBUG] BOOST_ALL_FARMS_FOOD temporário criado:', effect.amount);
+          }
+          (changes as any).farmsBoost = effect.amount;
+        }
       }
       break;
     }
