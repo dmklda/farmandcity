@@ -298,30 +298,36 @@ export function executeSimpleEffect(
       break;
     }
     case 'BOOST_ALL_FARMS_FOOD': {
-      console.log('[BOOST DEBUG] Processando BOOST_ALL_FARMS_FOOD com amount:', effect.amount);
+      console.log('[BOOST DEBUG] ===== PROCESSANDO BOOST_ALL_FARMS_FOOD =====');
+      console.log('[BOOST DEBUG] Fase atual:', gameState.phase);
+      console.log('[BOOST DEBUG] Amount:', effect.amount);
+      console.log('[BOOST DEBUG] Frequency:', effect.frequency);
+      console.log('[BOOST DEBUG] Duration:', effect.duration);
       
       // Contar fazendas no tabuleiro
       const farmCount = gameState.farmGrid.flat().filter(cell => cell.card).length;
       console.log('[BOOST DEBUG] Fazendas encontradas no tabuleiro:', farmCount);
+      console.log('[BOOST DEBUG] Grid de fazendas:', gameState.farmGrid.flat().map(cell => ({ hasCard: !!cell.card, cardName: cell.card?.name })));
       
-      // Para cartas de ação, aplicar o boost imediatamente como ganho de recursos
+      // CORREÇÃO: Para cartas de ação, aplicar o boost imediatamente como ganho de recursos
       if (gameState.phase === 'action') {
         const immediateFood = farmCount * effect.amount;
-        console.log('[BOOST DEBUG] Aplicando boost imediato:', immediateFood, 'comida (', farmCount, '×', effect.amount, ')');
-        changes.food = (changes.food || 0) + immediateFood;
+        console.log('[BOOST DEBUG] ✅ APLICANDO BOOST IMEDIATO na fase ACTION');
+        console.log('[BOOST DEBUG] Comida imediata calculada:', immediateFood, '(', farmCount, 'fazendas ×', effect.amount, 'cada)');
         
-        // Também criar boost temporário para futuras produções se necessário
-        if (setTemporaryBoosts && effect.duration && effect.duration > 1) {
-          setTemporaryBoosts(prev => [...prev, {
-            type: 'BOOST_ALL_FARMS_FOOD',
-            amount: effect.amount,
-            duration: (effect.duration || 2) - 1, // -1 porque já aplicamos uma vez
-            cardName: `Carta ${cardId}`,
-            isActive: true
-          }]);
-        }
+        changes.food = (changes.food || 0) + immediateFood;
+        console.log('[BOOST DEBUG] ✅ COMIDA ADICIONADA AO CHANGES:', changes.food);
+        
+        // Marcar que foi aplicado imediatamente
+        (changes as any).immediateBoostApplied = true;
+        (changes as any).farmCount = farmCount;
+        (changes as any).boostAmount = effect.amount;
+        
+        console.log('[BOOST DEBUG] ✅ BOOST IMEDIATO FINALIZADO');
       } else {
-        // Durante produção, criar boost normal
+        console.log('[BOOST DEBUG] ❌ NÃO é fase ACTION, criando boost normal para fase:', gameState.phase);
+        
+        // Durante produção ou outras fases, criar boost normal
         if (effect.frequency === 'PER_TURN' || effect.frequency === 'CONTINUOUS') {
           // Criar boost contínuo
           if (setContinuousBoosts) {
@@ -352,6 +358,9 @@ export function executeSimpleEffect(
           (changes as any).farmsBoost = effect.amount;
         }
       }
+      
+      console.log('[BOOST DEBUG] ===== FIM BOOST_ALL_FARMS_FOOD =====');
+      console.log('[BOOST DEBUG] Changes finais:', changes);
       break;
     }
     case 'BOOST_ALL_CITIES_COINS': {
