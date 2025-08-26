@@ -11,6 +11,8 @@ import { AdminAuthGuard } from './components/auth/AdminAuthGuard';
 import { testCardEffect } from './utils/effectTester';
 import { testProblematicCardsDetailed } from './utils/testSpecificCards';
 import { runCompleteVerification } from './utils/cardVerification';
+import { debugProblematicCards, debugTempBoosts, debugConditionals } from './utils/debugCards';
+import { quickFixTest } from './utils/quickFixCards';
 
 function App() {
   useEffect(() => {
@@ -19,6 +21,10 @@ function App() {
       (window as any).runCardVerification = runCompleteVerification;
       (window as any).testProblematicCards = testProblematicCardsDetailed;
       (window as any).testSingleCard = testCardEffect;
+      (window as any).debugProblematicCards = debugProblematicCards;
+      (window as any).debugTempBoosts = debugTempBoosts;
+      (window as any).debugConditionals = debugConditionals;
+      (window as any).quickFixTest = quickFixTest;
     }
   }, []);
 

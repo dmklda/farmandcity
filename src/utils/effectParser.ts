@@ -257,7 +257,20 @@ function parseSimpleEffect(statement: string, result: CardEffectLogic): void {
     case 'REDUCE_CITY_COST':
     case 'DISCARD_CARD':
     case 'CREATE_CITY_CARD':
-    case 'BOOST_CONSTRUCTION_COST_REDUCTION':
+    case 'BOOST_CONSTRUCTIONS':
+    case 'BOOST_CITY_COST_REDUCTION':
+      if (!result.simple) result.simple = [];
+      const specialEffect = {
+        type: effectType as SimpleEffectType,
+        amount: parseInt(params[0]) || 0,
+        frequency: determineEffectFrequency(effectType as SimpleEffectType),
+        duration: params[1] ? parseInt(params[1]) : undefined,
+        turnInterval: params[2] ? parseInt(params[2]) : undefined,
+        description: statement // Guardar statement completo para efeitos complexos
+      };
+      result.simple.push(specialEffect);
+      console.log('[PARSER DEBUG] Efeito especial adicionado:', specialEffect);
+      break;
     case 'BOOST_MAGIC_COST_REDUCTION_TEMP':
     case 'RESTRICT_ACTION_CARDS':
     case 'RESTRICT_MAGIC_CARDS':
@@ -341,6 +354,32 @@ function parseSimpleEffectLogic(logic: string): SimpleEffect | null {
     return null;
   }
   
+  // Tratamento especial para BOOST_CONSTRUCTIONS
+  if (logic.includes('BOOST_CONSTRUCTIONS:')) {
+    console.log('[PARSER DEBUG] Detectado BOOST_CONSTRUCTIONS, parsing especial');
+    const [effectType, resourceType, amount, targetTypes] = logic.split(':');
+    
+    return {
+      type: effectType as SimpleEffectType,
+      amount: parseInt(amount) || 1,
+      frequency: determineEffectFrequency(effectType as SimpleEffectType),
+      description: logic // Guardar a string completa para usar na execução
+    };
+  }
+  
+  // Tratamento especial para BOOST_CITY_COST_REDUCTION
+  if (logic.includes('BOOST_CITY_COST_REDUCTION:')) {
+    console.log('[PARSER DEBUG] Detectado BOOST_CITY_COST_REDUCTION, parsing especial');
+    const [effectType, amount, duration] = logic.split(':');
+    
+    return {
+      type: effectType as SimpleEffectType,
+      amount: parseInt(amount) || 1,
+      duration: parseInt(duration) || 1,
+      frequency: determineEffectFrequency(effectType as SimpleEffectType)
+    };
+  }
+  
   const [effectType, amount, duration] = logic.split(':');
   console.log('[PARSER DEBUG] EffectType:', effectType, 'Amount:', amount, 'Duration:', duration);
   
@@ -376,6 +415,7 @@ function determineEffectFrequency(effectType: SimpleEffectType): EffectFrequency
     case 'BOOST_ALL_CITIES_COINS_TEMP':
     case 'BOOST_ALL_FARMS_FOOD_TEMP':
     case 'BOOST_ALL_FARMS_MATERIALS_TEMP':
+    case 'BOOST_CITY_COST_REDUCTION':
       frequency = 'TEMPORARY';
       break;
     case 'BOOST_ALL_FARMS_FOOD':
@@ -388,6 +428,7 @@ function determineEffectFrequency(effectType: SimpleEffectType): EffectFrequency
     case 'BOOST_ALL_CONSTRUCTIONS_DOUBLE':
     case 'BOOST_ALL_CITIES':
     case 'BOOST_ALL_FARMS':
+    case 'BOOST_CONSTRUCTIONS':
       frequency = 'CONTINUOUS';
       break;
     default:

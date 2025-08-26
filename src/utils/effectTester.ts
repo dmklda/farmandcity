@@ -79,18 +79,25 @@ export function createMockGameState(): GameState {
   const landmarksGrid = Array(2).fill(null).map(() => Array(2).fill({ card: null }));
   const eventGrid = Array(1).fill(null).map(() => Array(1).fill({ card: null }));
 
-  // Adicionar algumas cartas mock aos grids para testes condicionais
+  // Adicionar cartas mock aos grids para testes condicionais mais completos
   farmGrid[0][0] = { card: mockCards.fazenda };
-  farmGrid[0][1] = { card: mockCards.fazenda };
+  farmGrid[0][1] = { card: mockCards.fazenda };  
+  farmGrid[0][2] = { card: mockCards.fazenda }; // 3 fazendas para IF_FARMS_GE_3
+  farmGrid[1][0] = { card: mockCards.fazenda }; // 4 fazendas total
+  
   cityGrid[0][0] = { card: mockCards.cidade };
   cityGrid[0][1] = { card: mockCards.oficina };
+  cityGrid[0][2] = { card: mockCards.oficina }; // 2 oficinas para IF_WORKSHOPS_GE_2
+  cityGrid[1][0] = { card: mockCards.cidade };   // 3 cidades para IF_CITY_GE_3
+  cityGrid[1][1] = { card: mockCards.cidade };   // 4 cidades total
+  
   landmarksGrid[0][0] = { card: mockCards.templo };
 
   return {
     turn: 1,
     phase: 'production' as GamePhase,
     resources: { coins: 10, food: 10, materials: 10, population: 10 },
-    playerStats: { reputation: 0, totalProduction: 0, buildings: 3, landmarks: 1 },
+    playerStats: { reputation: 0, totalProduction: 0, buildings: 7, landmarks: 1 },
     farmGrid,
     cityGrid,
     landmarksGrid,
@@ -215,6 +222,11 @@ export function testCardEffect(effectLogic: string, cardName: string = 'Teste'):
       // Novos efeitos adicionados
       executionResultAny.boostConstructions !== undefined ||
       executionResultAny.cityCostReduction !== undefined ||
+      executionResultAny.citiesMaterialsBoostTemp !== undefined ||
+      executionResultAny.citiesCoinsBoostTemp !== undefined ||
+      executionResultAny.farmsBoostTemp !== undefined ||
+      executionResultAny.citiesBoostTemp !== undefined ||
+      executionResultAny.constructionCostReduction !== undefined ||
       // Verificar efeitos não implementados também
       Object.keys(executionResultAny).some(key => key.startsWith('unimplemented_'))
     );
