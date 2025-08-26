@@ -17,6 +17,7 @@ import { debugConstructionRapida, testConstructionReduction } from './utils/fixC
 import { testConstructionRapidaFinal } from './utils/testConstructionRapidaFix';
 import { verifyInGameEffects, testProductionCards } from './utils/verifyEffectFixes';
 import { runFinalEffectTest } from './utils/finalEffectVerification';
+import { runComprehensiveEffectTest } from './utils/comprehensiveEffectTest';
 
 function App() {
   useEffect(() => {
@@ -32,8 +33,9 @@ function App() {
       (window as any).debugConstructionRapida = debugConstructionRapida;
       (window as any).testConstructionReduction = testConstructionReduction;
       (window as any).testConstructionRapidaFinal = testConstructionRapidaFinal;
-      (window as any).verifyInGameEffects = verifyInGameEffects;
+      (window as any).testProductionCards = testProductionCards;
       (window as any).runFinalEffectTest = runFinalEffectTest;
+      (window as any).runComprehensiveEffectTest = runComprehensiveEffectTest;
     }
   }, []);
 
