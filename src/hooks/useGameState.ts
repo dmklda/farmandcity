@@ -2572,15 +2572,15 @@ export function useGameState() {
         console.log('[RESOURCES DEBUG] Custo da carta:', card.cost);
         console.log('[RESOURCES DEBUG] Efeito a aplicar:', effect);
         
-        // Apenas aplicar o custo da carta, o efeito já foi aplicado em executeCardEffects
+        // CORREÇÃO: Aplicar tanto o custo quanto o efeito da carta
         const newResources: Resources = {
-          coins: g.resources.coins - (card.cost.coins ?? 0),
-          food: g.resources.food - (card.cost.food ?? 0),
-          materials: g.resources.materials - (card.cost.materials ?? 0),
-          population: g.resources.population - (card.cost.population ?? 0),
+          coins: Math.max(0, g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0)),
+          food: Math.max(0, g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0)),
+          materials: Math.max(0, g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0)),
+          population: Math.max(0, g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0)),
         };
         
-        console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo:', newResources);
+        console.log('[RESOURCES DEBUG] Recursos depois de aplicar custo E efeito:', newResources);
         
         return {
           ...g,
