@@ -13,6 +13,8 @@ import { testProblematicCardsDetailed } from './utils/testSpecificCards';
 import { runCompleteVerification } from './utils/cardVerification';
 import { debugProblematicCards, debugTempBoosts, debugConditionals } from './utils/debugCards';
 import { quickFixTest } from './utils/quickFixCards';
+import { debugConstructionRapida, testConstructionReduction } from './utils/fixConstructionRapida';
+import { testConstructionRapidaFinal } from './utils/testConstructionRapidaFix';
 
 function App() {
   useEffect(() => {
@@ -25,6 +27,9 @@ function App() {
       (window as any).debugTempBoosts = debugTempBoosts;
       (window as any).debugConditionals = debugConditionals;
       (window as any).quickFixTest = quickFixTest;
+      (window as any).debugConstructionRapida = debugConstructionRapida;
+      (window as any).testConstructionReduction = testConstructionReduction;
+      (window as any).testConstructionRapidaFinal = testConstructionRapidaFinal;
     }
   }, []);
 
