@@ -78,7 +78,7 @@ export const ShopItemsPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItems(data || []);
+      setItems((data || []) as ShopItem[]);
     } catch (error) {
       console.error('Error fetching shop items:', error);
     } finally {

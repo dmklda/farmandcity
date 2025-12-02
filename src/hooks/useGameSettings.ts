@@ -159,10 +159,11 @@ export const useGameSettings = () => {
 
       // Processar preferências do usuário (prioridade sobre configurações globais)
       if (userGamePreferences) {
+        const prefs = userGamePreferences as { victoryMode?: string; victoryValue?: number };
         defaultSettings = {
           ...defaultSettings,
-          victoryMode: userGamePreferences.victoryMode || defaultSettings.victoryMode,
-          victoryValue: userGamePreferences.victoryValue || defaultSettings.victoryValue,
+          victoryMode: (prefs.victoryMode as typeof defaultSettings.victoryMode) || defaultSettings.victoryMode,
+          victoryValue: prefs.victoryValue || defaultSettings.victoryValue,
         };
         //console.log('🎮 Aplicando modo:', userGamePreferences.victoryMode, 'valor:', userGamePreferences.victoryValue);
       } else {

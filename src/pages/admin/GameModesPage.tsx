@@ -367,7 +367,7 @@ export const GameModesPage: React.FC = () => {
           updated_at: mode.updated_at
         }));
         console.log('Mapped modes:', mappedModes);
-        setGameModes(mappedModes);
+        setGameModes(mappedModes as GameMode[]);
       } else {
         console.log('No game modes found, saving defaults...');
         // Se não há modos salvos, usar os padrões
@@ -387,7 +387,18 @@ export const GameModesPage: React.FC = () => {
       if (!user) return;
 
       const modesToSave = DEFAULT_MODES.map(mode => ({
-        ...mode,
+        id: mode.id,
+        name: mode.name,
+        description: mode.description,
+        detailed_description: mode.detailedDescription,
+        victory_mode: mode.victoryMode,
+        victory_value: mode.victoryValue,
+        icon: mode.icon,
+        color: mode.color,
+        difficulty: mode.difficulty,
+        category: mode.category,
+        tips: mode.tips,
+        requirements: mode.requirements,
         is_active: mode.isActive,
         is_test_mode: mode.isTestMode,
         created_by: user.id
@@ -539,28 +550,45 @@ export const GameModesPage: React.FC = () => {
         return;
       }
 
-      const modeToSave = {
-        ...modeData,
+      const modeToSave: Record<string, any> = {
+        name: modeData.name || '',
+        description: modeData.description || '',
+        detailed_description: modeData.detailedDescription || '',
+        victory_mode: modeData.victoryMode || 'classic',
+        victory_value: modeData.victoryValue || 0,
+        icon: modeData.icon || '🎮',
+        color: modeData.color || 'amber',
+        difficulty: modeData.difficulty || 'medium',
+        category: modeData.category || 'main',
+        tips: modeData.tips || [],
+        requirements: modeData.requirements || [],
         is_active: modeData.isActive || false,
         is_test_mode: modeData.isTestMode || false,
-        created_by: user.id,
         updated_by: user.id,
         updated_at: new Date().toISOString()
       };
+      
+      if (modeData.id) {
+        modeToSave.id = modeData.id;
+      }
+      
+      if (isNew) {
+        modeToSave.created_by = user.id;
+      }
 
       let result;
       if (isNew) {
         // Criar novo modo
         result = await supabase
           .from('game_modes')
-          .insert([modeToSave])
+          .insert([modeToSave as any])
           .select();
       } else {
         // Atualizar modo existente
         result = await supabase
           .from('game_modes')
-          .update(modeToSave)
-          .eq('id', modeData.id)
+          .update(modeToSave as any)
+          .eq('id', modeData.id!)
           .select();
       }
 
