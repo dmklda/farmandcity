@@ -47,8 +47,9 @@ export const useStarterPack = () => {
         return;
       }
 
-      console.log('🎁 Pacote iniciante verificado:', data?.can_purchase ? 'disponível' : 'já adquirido');
-      setPackInfo(data);
+      const packData = data as unknown as StarterPackInfo | null;
+      console.log('🎁 Pacote iniciante verificado:', packData?.can_purchase ? 'disponível' : 'já adquirido');
+      setPackInfo(packData);
     } catch (err) {
       console.error('Erro inesperado ao buscar pacote iniciante:', err);
       setError('Erro inesperado ao carregar pacote iniciante');
@@ -76,7 +77,7 @@ export const useStarterPack = () => {
       // Atualizar informações do pacote após a compra
       await fetchStarterPackInfo();
 
-      return data;
+      return data as unknown as PurchaseResult;
     } catch (err) {
       console.error('Erro inesperado ao comprar pacote iniciante:', err);
       return {

@@ -74,7 +74,7 @@ export const AnnouncementManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      setAnnouncements((data || []) as Announcement[]);
     } catch (error) {
       console.error('Erro ao carregar avisos:', error);
       showToast('Erro ao carregar avisos', 'error');

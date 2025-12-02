@@ -83,7 +83,7 @@ export const GlobalAnnouncementManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAnnouncements(data || []);
+      setAnnouncements((data || []) as GlobalAnnouncement[]);
     } catch (error) {
       console.error('Erro ao carregar anúncios globais:', error);
       showToast('Erro ao carregar anúncios globais', 'error');

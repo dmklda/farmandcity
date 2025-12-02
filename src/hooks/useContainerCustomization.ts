@@ -81,7 +81,7 @@ export const useContainerCustomization = () => {
       };
 
       customizations.forEach(uc => {
-        if (uc.is_equipped && uc.customization) {
+        if (uc.is_equipped && uc.customization && uc.container_type) {
           equipped[uc.container_type] = uc.customization as ContainerCustomization;
         }
       });

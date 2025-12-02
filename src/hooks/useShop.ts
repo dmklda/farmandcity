@@ -792,12 +792,12 @@ export const useShop = () => {
           for (const customizationId of item.included_customizations) {
             // Adicionar customização ao jogador
             const { error } = await supabase
-              .from('player_customizations')
+              .from('user_customizations')
               .upsert([{
-                player_id: (await supabase.auth.getUser()).data.user?.id,
+                user_id: (await supabase.auth.getUser()).data.user?.id,
                 customization_id: customizationId,
                 is_equipped: false,
-                acquired_at: new Date().toISOString()
+                purchased_at: new Date().toISOString()
               }]);
             
             if (!error) {

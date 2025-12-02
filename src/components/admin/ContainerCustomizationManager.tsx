@@ -100,9 +100,15 @@ export const ContainerCustomizationManager: React.FC = () => {
       const { data, error } = await supabase
         .from('container_customizations')
         .insert({
-          ...newCustomization,
-          is_active: true,
-          created_at: new Date().toISOString()
+          name: newCustomization.name,
+          description: newCustomization.description || null,
+          image_url: newCustomization.image_url || null,
+          container_type: newCustomization.container_type,
+          rarity: newCustomization.rarity || null,
+          price_coins: newCustomization.price_coins || null,
+          price_gems: newCustomization.price_gems || null,
+          currency_type: newCustomization.currency_type || null,
+          is_special: newCustomization.is_special || null
         })
         .select()
         .single();

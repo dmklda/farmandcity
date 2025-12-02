@@ -49,7 +49,7 @@ export interface BattlefieldCustomization {
   id: string;
   name: string;
   description: string | null;
-  image_url: string;
+  image_url: string | null;
   rarity: string | null;
   price_coins: number | null;
   price_gems: number | null;
@@ -100,7 +100,7 @@ export const useUserSettings = () => {
 
       if (existingSettings && existingSettings.length > 0) {
         // Se existem configurações, usar a primeira (deve ser única devido à constraint)
-        console.log('fetchUserSettings: Using existing settings, is_admin:', existingSettings[0].game_preferences?.is_admin);
+        console.log('fetchUserSettings: Using existing settings, is_admin:', (existingSettings[0].game_preferences as any)?.is_admin);
         setSettings(existingSettings[0]);
       } else {
         // Criar configurações padrão se não existirem
