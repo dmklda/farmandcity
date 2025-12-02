@@ -1170,7 +1170,7 @@ export function useGameState() {
   const [deckReshuffled, setDeckReshuffled] = useState(false); // Para rastrear se o deck foi rebaralhado no modo infinito
 
   // Função para adicionar entrada ao histórico removendo duplicatas
-  const addToHistory = (entry: string) => {
+  const addToHistory = useCallback((entry: string) => {
     setHistory(prev => {
       const newHistory = [...prev, entry];
       // Remover duplicatas consecutivas
@@ -1181,7 +1181,7 @@ export function useGameState() {
       // Manter apenas as últimas 10 entradas para evitar lista muito longa
       return filteredHistory.slice(-10);
     });
-  };
+  }, []);
   const [builtCountThisTurn, setBuiltCountThisTurn] = useState(0);
   const [discardedThisTurn, setDiscardedThisTurn] = useState(false);
   const [lastDrawn, setLastDrawn] = useState<string | undefined>(undefined);
@@ -3241,13 +3241,12 @@ export function useGameState() {
         ? [...g.hand.slice(0, cardIndex), ...g.hand.slice(cardIndex + 1)]
         : g.hand;
       
-      // Os recursos já foram aplicados pelo executeCardEffects
-      // Aplicar apenas o custo da carta
+      // Aplicar custo da carta E adicionar os efeitos calculados
       const newResources: Resources = {
-        coins: g.resources.coins - (card.cost.coins ?? 0),
-        food: g.resources.food - (card.cost.food ?? 0),
-        materials: g.resources.materials - (card.cost.materials ?? 0),
-        population: g.resources.population - (card.cost.population ?? 0),
+        coins: Math.max(0, g.resources.coins - (card.cost.coins ?? 0) + (effect.coins ?? 0)),
+        food: Math.max(0, g.resources.food - (card.cost.food ?? 0) + (effect.food ?? 0)),
+        materials: Math.max(0, g.resources.materials - (card.cost.materials ?? 0) + (effect.materials ?? 0)),
+        population: Math.max(0, g.resources.population - (card.cost.population ?? 0) + (effect.population ?? 0)),
       };
       //console.log('Recursos antes:', g.resources);
       //console.log('Recursos depois:', newResources);

@@ -388,13 +388,16 @@ const GamePage: React.FC = () => {
   }, [loading, user, gameState.loading, decksLoading, activeDeck]);
 
   // Limpar estado salvo quando sair da página do jogo
+  const clearSavedGameRef = useRef(gameState.clearSavedGame);
+  clearSavedGameRef.current = gameState.clearSavedGame;
+  
   useEffect(() => {
     return () => {
       // Este código executa quando o componente é desmontado
       console.log('🎮 Saindo da página do jogo, limpando estado salvo...');
-      gameState.clearSavedGame();
+      clearSavedGameRef.current();
     };
-  }, [gameState.clearSavedGame]);
+  }, []);
 
   // Sistema de Notificações Medievais - usando timestamps para evitar duplicações
   const notificationRefs = useRef({
