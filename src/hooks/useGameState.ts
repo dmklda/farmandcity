@@ -20,6 +20,7 @@ const phaseOrder: GamePhase[] = ['draw', 'action', 'build', 'production', 'end']
 import { executeCardEffects, hasOptionalEffects, extractOptionalEffects, processProductionBoosts, processOnPlayEffects } from '../utils/effectExecutor';
 import { parseEffectLogic } from '../utils/effectParser';
 import { cleanupExpiredRestrictions, canPlayCard as canPlayCardWithRestrictions } from '../utils/effectExecutor';
+import { initializeGlobalDebug } from '../utils/effectDebug';
 import RestrictionsDisplay from '../components/RestrictionsDisplay';
 import OptionalEffectDialog from '../components/OptionalEffectDialog';
 
@@ -1682,6 +1683,17 @@ export function useGameState() {
       return () => clearTimeout(timeoutId);
     }
   }, [game, gameLoading, activeDeck, saveGameState]);
+
+  // Inicializar sistema de debug global
+  useEffect(() => {
+    if (!gameLoading) {
+      initializeGlobalDebug(
+        () => game,
+        () => temporaryBoosts,
+        () => continuousBoosts
+      );
+    }
+  }, [gameLoading]);
 
   // Verificar descarte obrigatório quando mão excede limite
   useEffect(() => {
@@ -3652,14 +3664,13 @@ export function useGameState() {
     console.log('[PRODUCTION DEBUG] Recursos calculados para produção:', prod);
     console.log('[PRODUCTION DEBUG] Detalhes:', details);
     
-    // MUDANÇA CRÍTICA: Aplicar os recursos calculados diretamente
-    // Não somar com recursos existentes porque executeCardEffects já aplicou internamente
-    // Precisamos pegar os recursos da cópia atualizada do productionGameState
+    // CORREÇÃO: Aplicar os recursos SOMANDO a produção calculada ao estado ATUAL
+    // executeCardEffects RETORNA as mudanças, não modifica o state
     const finalResources = {
-      coins: Math.max(0, productionGameState.resources.coins),
-      food: Math.max(0, productionGameState.resources.food), 
-      materials: Math.max(0, productionGameState.resources.materials),
-      population: Math.max(0, productionGameState.resources.population)
+      coins: Math.max(0, game.resources.coins + prod.coins),
+      food: Math.max(0, game.resources.food + prod.food), 
+      materials: Math.max(0, game.resources.materials + prod.materials),
+      population: Math.max(0, game.resources.population + prod.population)
     };
     
     console.log('[PRODUCTION DEBUG] Recursos finais após produção:', finalResources);
@@ -4337,6 +4348,7 @@ export function useGameState() {
     
     // ===== SISTEMA DE BOOSTS TEMPORÁRIOS =====
     temporaryBoosts,
+    continuousBoosts,
     // ===== SISTEMA DE COMPRA DE CARTAS MÁGICAS =====
     magicCardPurchase,
     selectMagicCard,

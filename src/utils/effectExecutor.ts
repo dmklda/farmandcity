@@ -1095,15 +1095,17 @@ export function executeConditionalEffects(
     
     // Aplicar os efeitos se todas as condições forem atendidas
     if (allConditionsMet && effects.length > 0) {
-      console.log('[CONDITIONAL DEBUG] Todas as condições atendidas, aplicando efeito da última condição');
-      // No caso de AND, aplicamos o efeito da última condição
-      const effectChanges = executeSimpleEffect(effects[effects.length - 1].effect, gameState, cardId, undefined, undefined, undefined, forceExecution);
-      console.log('[CONDITIONAL DEBUG] Mudanças do efeito aplicado:', effectChanges);
-      
-      // Acumular mudanças
-      for (const [resource, amount] of Object.entries(effectChanges)) {
-        if (amount !== undefined) {
-          changes[resource as keyof Resources] = (changes[resource as keyof Resources] || 0) + amount;
+      console.log('[CONDITIONAL DEBUG] Todas as condições atendidas, aplicando efeitos de TODAS as condições');
+      // CORREÇÃO: No caso de AND, aplicamos os efeitos de TODAS as condições
+      for (const conditionalEffect of effects) {
+        const effectChanges = executeSimpleEffect(conditionalEffect.effect, gameState, cardId, undefined, undefined, undefined, forceExecution);
+        console.log('[CONDITIONAL DEBUG] Mudanças do efeito de', conditionalEffect.type, ':', effectChanges);
+        
+        // Acumular mudanças
+        for (const [resource, amount] of Object.entries(effectChanges)) {
+          if (amount !== undefined) {
+            changes[resource as keyof Resources] = (changes[resource as keyof Resources] || 0) + amount;
+          }
         }
       }
     } else {
